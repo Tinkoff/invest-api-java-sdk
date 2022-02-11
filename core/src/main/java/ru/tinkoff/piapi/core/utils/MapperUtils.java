@@ -40,7 +40,7 @@ public class MapperUtils {
   }
 
   /**
-   * Конвертирует Quotation в BigDecimal. Например {units: 10, nanos: 900000000} -> 10.9
+   * Конвертирует Quotation в BigDecimal. Например {units: 10, nanos: 900000000} -&gt; 10.9
    *
    * @param value значение в формате Quotation
    * @return Значение в формате BigDecimal
@@ -53,7 +53,7 @@ public class MapperUtils {
   }
 
   /**
-   * Конвертирует MoneyValue в BigDecimal. Например {units: 10, nanos: 900000000, currency: 'rub'} -> 10.9
+   * Конвертирует MoneyValue в BigDecimal. Например {units: 10, nanos: 900000000, currency: 'rub'} -&gt; 10.9
    *
    * @param value значение в формате MoneyValue
    * @return Значение в формате BigDecimal
