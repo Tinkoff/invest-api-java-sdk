@@ -1,4 +1,4 @@
-[![Version](https://img.shields.io/maven-central/v/ru.tinkoff.piapi/java-sdk-bom?logo=apache-maven&style=flat-square)](https://search.maven.org/artifact/ru.tinkoff.piapi/java-sdk-bom)
+[![Version](https://img.shields.io/maven-central/v/ru.tinkoff.piapi/java-sdk?logo=apache-maven&style=flat-square)](https://search.maven.org/artifact/ru.tinkoff.piapi/java-sdk)
 [![Release](https://jitpack.io/v/Tinkoff/invest-api-java-sdk.svg?style=flat-square)](https://jitpack.io/#Tinkoff/invest-api-java-sdk)
 [![License](https://img.shields.io/github/license/Tinkoff/invest-api-java-sdk?style=flat-square&logo=apache)](https://www.apache.org/licenses/LICENSE-2.0)
 [![GitHub Actions Status](<https://img.shields.io/github/workflow/status/Tinkoff/invest-api-java-sdk/Java CI with Maven?logo=GitHub&style=flat-square>)](https://github.com/Tinkoff/invest-api-java-sdk/actions?query=workflow%3A"Java+CI+with+Maven")
