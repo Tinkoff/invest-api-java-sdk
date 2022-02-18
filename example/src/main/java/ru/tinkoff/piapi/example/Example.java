@@ -4,37 +4,7 @@ import io.smallrye.mutiny.Multi;
 import org.reactivestreams.FlowAdapters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.tinkoff.piapi.contract.v1.Account;
-import ru.tinkoff.piapi.contract.v1.AccruedInterest;
-import ru.tinkoff.piapi.contract.v1.CandleInstrument;
-import ru.tinkoff.piapi.contract.v1.CandleInterval;
-import ru.tinkoff.piapi.contract.v1.Dividend;
-import ru.tinkoff.piapi.contract.v1.HistoricCandle;
-import ru.tinkoff.piapi.contract.v1.InfoInstrument;
-import ru.tinkoff.piapi.contract.v1.LastPrice;
-import ru.tinkoff.piapi.contract.v1.MarketDataRequest;
-import ru.tinkoff.piapi.contract.v1.MarketDataResponse;
-import ru.tinkoff.piapi.contract.v1.MoneyValue;
-import ru.tinkoff.piapi.contract.v1.OperationState;
-import ru.tinkoff.piapi.contract.v1.Order;
-import ru.tinkoff.piapi.contract.v1.OrderBookInstrument;
-import ru.tinkoff.piapi.contract.v1.OrderDirection;
-import ru.tinkoff.piapi.contract.v1.OrderType;
-import ru.tinkoff.piapi.contract.v1.PositionsFutures;
-import ru.tinkoff.piapi.contract.v1.PositionsSecurities;
-import ru.tinkoff.piapi.contract.v1.Quotation;
-import ru.tinkoff.piapi.contract.v1.Share;
-import ru.tinkoff.piapi.contract.v1.StopOrderDirection;
-import ru.tinkoff.piapi.contract.v1.StopOrderType;
-import ru.tinkoff.piapi.contract.v1.SubscribeCandlesRequest;
-import ru.tinkoff.piapi.contract.v1.SubscribeInfoRequest;
-import ru.tinkoff.piapi.contract.v1.SubscribeOrderBookRequest;
-import ru.tinkoff.piapi.contract.v1.SubscribeTradesRequest;
-import ru.tinkoff.piapi.contract.v1.SubscriptionAction;
-import ru.tinkoff.piapi.contract.v1.SubscriptionInterval;
-import ru.tinkoff.piapi.contract.v1.TradeInstrument;
-import ru.tinkoff.piapi.contract.v1.TradesStreamResponse;
-import ru.tinkoff.piapi.contract.v1.TradingDay;
+import ru.tinkoff.piapi.contract.v1.*;
 import ru.tinkoff.piapi.core.InvestApi;
 
 import java.time.Instant;
@@ -82,7 +52,7 @@ public class Example {
     };
 
     //блокирующий вызов
-     api.getOrdersService().subscribeTradesStream(consumer);
+    api.getOrdersService().subscribeTradesStream(consumer);
   }
 
   private static List<String> randomFigi(InvestApi api, int count) {
@@ -119,7 +89,8 @@ public class Example {
         emitter.emit(marketdataSubscribeInfoRequest(randomFigi));
         emitter.emit(marketdataSubscribeOrderbookRequest(randomFigi, 1));
         emitter.emit(marketdataSubscribeTradesRequest(randomFigi));
-        emitter.emit(marketdataSubscribeCandlesRequest(randomFigi, SubscriptionInterval.SUBSCRIPTION_INTERVAL_ONE_MINUTE));
+        emitter.emit(
+          marketdataSubscribeCandlesRequest(randomFigi, SubscriptionInterval.SUBSCRIPTION_INTERVAL_ONE_MINUTE));
         // emitter.complete(); <-- Если остановить поток запросов, то остановиться и поток ответов.
       }));
 
@@ -166,7 +137,8 @@ public class Example {
       .build();
   }
 
-  private static MarketDataRequest marketdataSubscribeCandlesRequest(List<String> figiList, SubscriptionInterval interval) {
+  private static MarketDataRequest marketdataSubscribeCandlesRequest(List<String> figiList,
+                                                                     SubscriptionInterval interval) {
     var builder = SubscribeCandlesRequest.newBuilder()
       .setSubscriptionAction(SubscriptionAction.SUBSCRIPTION_ACTION_SUBSCRIBE);
     for (String figi : figiList) {
@@ -194,10 +166,14 @@ public class Example {
     //Получаем и печатаем информацию об обеспеченности портфеля
     var marginAttributes = api.getUserService().getMarginAttributesSync(mainAccount.getId());
     log.info("Ликвидная стоимость портфеля: {}", moneyValueToBigDecimal(marginAttributes.getLiquidPortfolio()));
-    log.info("Начальная маржа — начальное обеспечение для совершения новой сделки: {}", moneyValueToBigDecimal(marginAttributes.getStartingMargin()));
-    log.info("Минимальная маржа — это минимальное обеспечение для поддержания позиции, которую вы уже открыли: {}", moneyValueToBigDecimal(marginAttributes.getMinimalMargin()));
-    log.info("Уровень достаточности средств. Соотношение стоимости ликвидного портфеля к начальной марже: {}", quotationToBigDecimal(marginAttributes.getFundsSufficiencyLevel()));
-    log.info("Объем недостающих средств. Разница между стартовой маржой и ликвидной стоимости портфеля: {}", moneyValueToBigDecimal(marginAttributes.getAmountOfMissingFunds()));
+    log.info("Начальная маржа — начальное обеспечение для совершения новой сделки: {}",
+      moneyValueToBigDecimal(marginAttributes.getStartingMargin()));
+    log.info("Минимальная маржа — это минимальное обеспечение для поддержания позиции, которую вы уже открыли: {}",
+      moneyValueToBigDecimal(marginAttributes.getMinimalMargin()));
+    log.info("Уровень достаточности средств. Соотношение стоимости ликвидного портфеля к начальной марже: {}",
+      quotationToBigDecimal(marginAttributes.getFundsSufficiencyLevel()));
+    log.info("Объем недостающих средств. Разница между стартовой маржой и ликвидной стоимости портфеля: {}",
+      moneyValueToBigDecimal(marginAttributes.getAmountOfMissingFunds()));
   }
 
 
@@ -209,8 +185,11 @@ public class Example {
 
     var lastPrice = api.getMarketDataService().getLastPricesSync(List.of(figi)).get(0).getPrice();
     var minPriceIncrement = api.getInstrumentsService().getInstrumentByFigiSync(figi).get().getMinPriceIncrement();
-    var stopPrice = Quotation.newBuilder().setUnits(lastPrice.getUnits() - minPriceIncrement.getUnits() * 100).setNano(lastPrice.getNano() - minPriceIncrement.getNano() * 100).build();
-    var stopOrderId = api.getStopOrdersService().postStopOrderGoodTillDateSync(figi, 1, stopPrice, stopPrice, StopOrderDirection.STOP_ORDER_DIRECTION_BUY, mainAccount, StopOrderType.STOP_ORDER_TYPE_STOP_LOSS, Instant.now().plus(1, ChronoUnit.DAYS));
+    var stopPrice = Quotation.newBuilder().setUnits(lastPrice.getUnits() - minPriceIncrement.getUnits() * 100)
+      .setNano(lastPrice.getNano() - minPriceIncrement.getNano() * 100).build();
+    var stopOrderId = api.getStopOrdersService()
+      .postStopOrderGoodTillDateSync(figi, 1, stopPrice, stopPrice, StopOrderDirection.STOP_ORDER_DIRECTION_BUY,
+        mainAccount, StopOrderType.STOP_ORDER_TYPE_STOP_LOSS, Instant.now().plus(1, ChronoUnit.DAYS));
     log.info("выставлена стоп-заявка. id: {}", stopOrderId);
 
     //Получаем список стоп-заявок и смотрим, что наша заявка в ней есть
@@ -229,10 +208,13 @@ public class Example {
 
     var lastPrice = api.getMarketDataService().getLastPricesSync(List.of(figi)).get(0).getPrice();
     var minPriceIncrement = api.getInstrumentsService().getInstrumentByFigiSync(figi).get().getMinPriceIncrement();
-    var price = Quotation.newBuilder().setUnits(lastPrice.getUnits() - minPriceIncrement.getUnits() * 100).setNano(lastPrice.getNano() - minPriceIncrement.getNano() * 100).build();
+    var price = Quotation.newBuilder().setUnits(lastPrice.getUnits() - minPriceIncrement.getUnits() * 100)
+      .setNano(lastPrice.getNano() - minPriceIncrement.getNano() * 100).build();
 
     //Выставляем заявку на покупку по лимитной цене
-    var orderId = api.getOrdersService().postOrderSync(figi, 1, price, OrderDirection.ORDER_DIRECTION_BUY, mainAccount, OrderType.ORDER_TYPE_LIMIT, UUID.randomUUID().toString()).getOrderId();
+    var orderId = api.getOrdersService()
+      .postOrderSync(figi, 1, price, OrderDirection.ORDER_DIRECTION_BUY, mainAccount, OrderType.ORDER_TYPE_LIMIT,
+        UUID.randomUUID().toString()).getOrderId();
 
     //Получаем список активных заявок, проверяем наличие нашей заявки в списке
     var orders = api.getOrdersService().getOrdersSync(mainAccount);
@@ -316,7 +298,10 @@ public class Example {
       var quantity = position.getQuantity();
       var currentPrice = moneyValueToBigDecimal(position.getCurrentPrice());
       var expectedYield = quotationToBigDecimal(position.getExpectedYield());
-      log.info("позиция с figi: {}, количество инструмента: {}, текущая цена инструмента: {}, текущая расчитанная доходность: {}", figi, quantity, currentPrice, expectedYield);
+      log.info(
+        "позиция с figi: {}, количество инструмента: {}, текущая цена инструмента: {}, текущая расчитанная " +
+          "доходность: {}",
+        figi, quantity, currentPrice, expectedYield);
     }
 
   }
@@ -363,7 +348,9 @@ public class Example {
     var mainAccount = accounts.get(0).getId();
 
     //Получаем и печатаем список операций клиента
-    var operations = api.getOperationsService().getOperationsSync(mainAccount, Instant.now().minus(30, ChronoUnit.DAYS), Instant.now(), OperationState.OPERATION_STATE_UNSPECIFIED, "");
+    var operations = api.getOperationsService()
+      .getOperationsSync(mainAccount, Instant.now().minus(30, ChronoUnit.DAYS), Instant.now(),
+        OperationState.OPERATION_STATE_UNSPECIFIED, "");
     for (int i = 0; i < Math.min(operations.size(), 5); i++) {
       var operation = operations.get(i);
       var date = timestampToString(operation.getDate());
@@ -387,7 +374,9 @@ public class Example {
     for (int i = 0; i < Math.min(shares.size(), 3); i++) {
       var share = shares.get(i);
       var figi = share.getFigi();
-      var dividends = api.getInstrumentsService().getDividendsSync(figi, Instant.now(), Instant.now().plus(30, ChronoUnit.DAYS));
+      var dividends =
+        api.getInstrumentsService().getDividendsSync(figi, Instant.now(), Instant.now().plus(30, ChronoUnit.DAYS))
+          .get();
       for (Dividend dividend : dividends) {
         log.info("дивиденд для figi {}: {}", figi, dividend);
       }
@@ -397,7 +386,8 @@ public class Example {
     for (int i = 0; i < Math.min(bonds.size(), 3); i++) {
       var bond = bonds.get(i);
       var figi = bond.getFigi();
-      var accruedInterests = api.getInstrumentsService().getAccruedInterestsSync(figi, Instant.now(), Instant.now().plus(30, ChronoUnit.DAYS));
+      var accruedInterests = api.getInstrumentsService()
+        .getAccruedInterestsSync(figi, Instant.now(), Instant.now().plus(30, ChronoUnit.DAYS)).get();
       for (AccruedInterest accruedInterest : accruedInterests) {
         log.info("НКД для figi {}: {}", figi, accruedInterest);
       }
@@ -407,15 +397,19 @@ public class Example {
     for (int i = 0; i < Math.min(futures.size(), 3); i++) {
       var future = futures.get(i);
       var figi = future.getFigi();
-      var futuresMargin = api.getInstrumentsService().getFuturesMarginSync(figi);
-      log.info("гарантийное обеспечение при покупке для figi {}: {}", figi, moneyValueToBigDecimal(futuresMargin.getInitialMarginOnBuy()));
-      log.info("гарантийное обеспечение при продаже для figi {}: {}", figi, moneyValueToBigDecimal(futuresMargin.getInitialMarginOnSell()));
+      var futuresMargin = api.getInstrumentsService().getFuturesMarginSync(figi).get();
+      log.info("гарантийное обеспечение при покупке для figi {}: {}", figi,
+        moneyValueToBigDecimal(futuresMargin.getInitialMarginOnBuy()));
+      log.info("гарантийное обеспечение при продаже для figi {}: {}", figi,
+        moneyValueToBigDecimal(futuresMargin.getInitialMarginOnSell()));
       log.info("шаг цены figi для {}: {}", figi, quotationToBigDecimal(futuresMargin.getMinPriceIncrement()));
-      log.info("стоимость шага цены для figi {}: {}", figi, quotationToBigDecimal(futuresMargin.getMinPriceIncrementAmount()));
+      log.info("стоимость шага цены для figi {}: {}", figi,
+        quotationToBigDecimal(futuresMargin.getMinPriceIncrementAmount()));
     }
 
     //Получаем время работы биржи
-    var tradingSchedules = api.getInstrumentsService().getTradingScheduleSync("spb", Instant.now(), Instant.now().plus(5, ChronoUnit.DAYS));
+    var tradingSchedules =
+      api.getInstrumentsService().getTradingScheduleSync("spb", Instant.now(), Instant.now().plus(5, ChronoUnit.DAYS));
     for (TradingDay tradingDay : tradingSchedules.get().getDaysList()) {
       var date = timestampToString(tradingDay.getDate());
       var startDate = timestampToString(tradingDay.getStartTime());
@@ -429,7 +423,9 @@ public class Example {
 
     //Получаем инструмент по его figi
     var instrument = api.getInstrumentsService().getInstrumentByFigiSync("BBG000B9XRY4").get();
-    log.info("инструмент figi: {}, лотность: {}, текущий режим торгов: {}, признак внебиржи: {}, признак доступности торгов через api : {}",
+    log.info(
+      "инструмент figi: {}, лотность: {}, текущий режим торгов: {}, признак внебиржи: {}, признак доступности торгов " +
+        "через api : {}",
       instrument.getFigi(),
       instrument.getLot(),
       instrument.getTradingStatus().name(),
@@ -475,7 +471,9 @@ public class Example {
     var bids = orderBook.getBidsList();
     var lastPrice = quotationToBigDecimal(orderBook.getLastPrice());
     var closePrice = quotationToBigDecimal(orderBook.getClosePrice());
-    log.info("получен стакан по инструменту {}, глубина стакана: {}, количество предложений на покупку: {}, количество предложений на продажу: {}, цена последней сделки: {}, цена закрытия: {}",
+    log.info(
+      "получен стакан по инструменту {}, глубина стакана: {}, количество предложений на покупку: {}, количество " +
+        "предложений на продажу: {}, цена последней сделки: {}, цена закрытия: {}",
       figi, depth, bids.size(), asks.size(), lastPrice, closePrice);
 
     log.info("предложения на покупку");
@@ -498,11 +496,20 @@ public class Example {
 
     //Получаем и печатаем список свечей для инструмента
     var figi = randomFigi(api, 1).get(0);
-    var candles1min = api.getMarketDataService().getCandlesSync(figi, Instant.now().minus(1, ChronoUnit.DAYS), Instant.now(), CandleInterval.CANDLE_INTERVAL_1_MIN);
-    var candles5min = api.getMarketDataService().getCandlesSync(figi, Instant.now().minus(1, ChronoUnit.DAYS), Instant.now(), CandleInterval.CANDLE_INTERVAL_5_MIN);
-    var candles15min = api.getMarketDataService().getCandlesSync(figi, Instant.now().minus(1, ChronoUnit.DAYS), Instant.now(), CandleInterval.CANDLE_INTERVAL_15_MIN);
-    var candlesHour = api.getMarketDataService().getCandlesSync(figi, Instant.now().minus(1, ChronoUnit.DAYS), Instant.now(), CandleInterval.CANDLE_INTERVAL_HOUR);
-    var candlesDay = api.getMarketDataService().getCandlesSync(figi, Instant.now().minus(1, ChronoUnit.DAYS), Instant.now(), CandleInterval.CANDLE_INTERVAL_DAY);
+    var candles1min = api.getMarketDataService()
+      .getCandlesSync(figi, Instant.now().minus(1, ChronoUnit.DAYS), Instant.now(),
+        CandleInterval.CANDLE_INTERVAL_1_MIN);
+    var candles5min = api.getMarketDataService()
+      .getCandlesSync(figi, Instant.now().minus(1, ChronoUnit.DAYS), Instant.now(),
+        CandleInterval.CANDLE_INTERVAL_5_MIN);
+    var candles15min = api.getMarketDataService()
+      .getCandlesSync(figi, Instant.now().minus(1, ChronoUnit.DAYS), Instant.now(),
+        CandleInterval.CANDLE_INTERVAL_15_MIN);
+    var candlesHour = api.getMarketDataService()
+      .getCandlesSync(figi, Instant.now().minus(1, ChronoUnit.DAYS), Instant.now(),
+        CandleInterval.CANDLE_INTERVAL_HOUR);
+    var candlesDay = api.getMarketDataService()
+      .getCandlesSync(figi, Instant.now().minus(1, ChronoUnit.DAYS), Instant.now(), CandleInterval.CANDLE_INTERVAL_DAY);
 
     log.info("получено {} 1-минутных свечей для инструмента с figi {}", candles1min.size(), figi);
     for (HistoricCandle candle : candles1min) {
@@ -537,7 +544,9 @@ public class Example {
     var low = quotationToBigDecimal(candle.getLow());
     var volume = candle.getVolume();
     var time = timestampToString(candle.getTime());
-    log.info("цена открытия: {}, цена закрытия: {}, минимальная цена за 1 лот: {}, максимальная цена за 1 лот: {}, объем торгов в лотах: {}, время свечи: {}",
+    log.info(
+      "цена открытия: {}, цена закрытия: {}, минимальная цена за 1 лот: {}, максимальная цена за 1 лот: {}, объем " +
+        "торгов в лотах: {}, время свечи: {}",
       open, close, low, high, volume, time);
   }
 }
