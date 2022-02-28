@@ -1,6 +1,7 @@
 package ru.tinkoff.piapi.core;
 
 import org.junit.jupiter.api.Test;
+import ru.tinkoff.piapi.contract.v1.GetFuturesMarginResponse;
 import ru.tinkoff.piapi.contract.v1.MoneyValue;
 import ru.tinkoff.piapi.contract.v1.Quotation;
 import ru.tinkoff.piapi.core.utils.MapperUtils;
@@ -49,5 +50,31 @@ public class MapperTest {
     var actualValue = MapperUtils.bigDecimalToQuotation(value);
     var expectedValue = Quotation.newBuilder().setUnits(10).setNano(100000000).build();
     assertEquals(expectedValue, actualValue);
+  }
+
+  @Test
+  public void futuresPriceTest() {
+    var value = BigDecimal.valueOf(30);
+    var response = GetFuturesMarginResponse
+      .newBuilder()
+      .setMinPriceIncrement(Quotation.newBuilder().setUnits(10).setNano(0).build())
+      .setMinPriceIncrementAmount(Quotation.newBuilder().setUnits(20).setNano(0).build())
+      .build();
+    var actualValue = MapperUtils.futuresPrice(value, response);
+    var expectedValue = BigDecimal.valueOf(60); //30 / 10 * 20
+    assertEquals(0, actualValue.compareTo(expectedValue));
+  }
+
+  @Test
+  public void futuresPriceTest2() {
+    var value = Quotation.newBuilder().setUnits(30).setNano(0).build();
+    var response = GetFuturesMarginResponse
+      .newBuilder()
+      .setMinPriceIncrement(Quotation.newBuilder().setUnits(10).setNano(0).build())
+      .setMinPriceIncrementAmount(Quotation.newBuilder().setUnits(20).setNano(0).build())
+      .build();
+    var actualValue = MapperUtils.futuresPrice(value, response);
+    var expectedValue = BigDecimal.valueOf(60); //30 / 10 * 20
+    assertEquals(0, actualValue.compareTo(expectedValue));
   }
 }

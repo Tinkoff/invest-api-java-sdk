@@ -1,12 +1,39 @@
 package ru.tinkoff.piapi.core.utils;
 
+import ru.tinkoff.piapi.contract.v1.GetFuturesMarginResponse;
 import ru.tinkoff.piapi.contract.v1.MoneyValue;
 import ru.tinkoff.piapi.contract.v1.Quotation;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 public class MapperUtils {
 
+  /**
+   * Расчет реальной стоимости фьючерса. Подробнее: https://tinkoff.github.io/investAPI/head-marketdata/#_1
+   *
+   * @param pricePoints - цена в пунктах для инструмента с типом Futures
+   * @param futuresMarginResponse - ответ при вызове unary метода InstrumentsService.GetFuturesMargin
+   * @return Значение в формате BigDecimal
+   */
+  public static BigDecimal futuresPrice(Quotation pricePoints, GetFuturesMarginResponse futuresMarginResponse) {
+    var minPriceIncrement = quotationToBigDecimal(futuresMarginResponse.getMinPriceIncrement());
+    var minPriceIncrementAmount = quotationToBigDecimal(futuresMarginResponse.getMinPriceIncrementAmount());
+    return quotationToBigDecimal(pricePoints).multiply(minPriceIncrementAmount).divide(minPriceIncrement, RoundingMode.HALF_UP) ;
+  }
+
+  /**
+   * Расчет реальной стоимости фьючерса. Подробнее: https://tinkoff.github.io/investAPI/head-marketdata/#_1
+   *
+   * @param pricePoints - цена в пунктах для инструмента с типом Futures
+   * @param futuresMarginResponse - ответ при вызове unary метода InstrumentsService.GetFuturesMargin
+   * @return Значение в формате BigDecimal
+   */
+  public static BigDecimal futuresPrice(BigDecimal pricePoints, GetFuturesMarginResponse futuresMarginResponse) {
+    var minPriceIncrement = quotationToBigDecimal(futuresMarginResponse.getMinPriceIncrement());
+    var minPriceIncrementAmount = quotationToBigDecimal(futuresMarginResponse.getMinPriceIncrementAmount());
+    return pricePoints.multiply(minPriceIncrementAmount).divide(minPriceIncrement, RoundingMode.HALF_UP) ;
+  }
 
   public static Quotation bigDecimalToQuotation(BigDecimal value) {
     return Quotation.newBuilder()
