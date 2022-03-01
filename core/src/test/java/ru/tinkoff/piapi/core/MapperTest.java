@@ -53,7 +53,7 @@ public class MapperTest {
   }
 
   @Test
-  public void futuresPriceTest() {
+  public void futuresPriceBigDecimalTest() {
     var value = BigDecimal.valueOf(30);
     var response = GetFuturesMarginResponse
       .newBuilder()
@@ -66,7 +66,7 @@ public class MapperTest {
   }
 
   @Test
-  public void futuresPriceTest2() {
+  public void futuresPriceQuotationTest() {
     var value = Quotation.newBuilder().setUnits(30).setNano(0).build();
     var response = GetFuturesMarginResponse
       .newBuilder()

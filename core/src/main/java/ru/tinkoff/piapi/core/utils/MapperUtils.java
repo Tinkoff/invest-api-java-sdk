@@ -10,11 +10,11 @@ import java.math.RoundingMode;
 public class MapperUtils {
 
   /**
-   * Расчет реальной стоимости фьючерса. Подробнее: https://tinkoff.github.io/investAPI/head-marketdata/#_1
+   * Расчет реальной стоимости фьючерса. <a href='https://tinkoff.github.io/investAPI/head-marketdata/#_1'>Подробнее в документации<a/>
    *
-   * @param pricePoints - цена в пунктах для инструмента с типом Futures
-   * @param futuresMarginResponse - ответ при вызове unary метода InstrumentsService.GetFuturesMargin
-   * @return Значение в формате BigDecimal
+   * @param pricePoints цена в пунктах для инструмента с типом Futures
+   * @param futuresMarginResponse ответ при вызове unary метода InstrumentsService.GetFuturesMargin
+   * @return реальная стоимость фьючерса
    */
   public static BigDecimal futuresPrice(Quotation pricePoints, GetFuturesMarginResponse futuresMarginResponse) {
     var minPriceIncrement = quotationToBigDecimal(futuresMarginResponse.getMinPriceIncrement());
@@ -23,11 +23,11 @@ public class MapperUtils {
   }
 
   /**
-   * Расчет реальной стоимости фьючерса. Подробнее: https://tinkoff.github.io/investAPI/head-marketdata/#_1
+   * Расчет реальной стоимости фьючерса. <a href='https://tinkoff.github.io/investAPI/head-marketdata/#_1'>Подробнее в документации<a/>
    *
-   * @param pricePoints - цена в пунктах для инструмента с типом Futures
-   * @param futuresMarginResponse - ответ при вызове unary метода InstrumentsService.GetFuturesMargin
-   * @return Значение в формате BigDecimal
+   * @param pricePoints цена в пунктах для инструмента с типом Futures
+   * @param futuresMarginResponse ответ при вызове unary метода InstrumentsService.GetFuturesMargin
+   * @return реальная стоимость фьючерса
    */
   public static BigDecimal futuresPrice(BigDecimal pricePoints, GetFuturesMarginResponse futuresMarginResponse) {
     var minPriceIncrement = quotationToBigDecimal(futuresMarginResponse.getMinPriceIncrement());
