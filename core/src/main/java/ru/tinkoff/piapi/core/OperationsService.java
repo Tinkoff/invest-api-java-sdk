@@ -39,13 +39,17 @@ public class OperationsService {
     @Nonnull String accountId,
     @Nonnull Instant from,
     @Nonnull Instant to) {
-    return operationsBlockingStub.getOperations(
-        OperationsRequest.newBuilder()
-          .setAccountId(accountId)
-          .setFrom(DateUtils.instantToTimestamp(from))
-          .setTo(DateUtils.instantToTimestamp(to))
-          .build())
-      .getOperationsList();
+    if (Helpers.areFromAndToValid(from, to)) {
+      return operationsBlockingStub.getOperations(
+          OperationsRequest.newBuilder()
+            .setAccountId(accountId)
+            .setFrom(DateUtils.instantToTimestamp(from))
+            .setTo(DateUtils.instantToTimestamp(to))
+            .build())
+        .getOperationsList();
+    } else {
+      throw new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE);
+    }
   }
 
   /**
@@ -61,14 +65,18 @@ public class OperationsService {
     @Nonnull String accountId,
     @Nonnull Instant from,
     @Nonnull Instant to) {
-    return operationsBlockingStub.getOperations(
-        OperationsRequest.newBuilder()
-          .setAccountId(accountId)
-          .setFrom(DateUtils.instantToTimestamp(from))
-          .setTo(DateUtils.instantToTimestamp(to))
-          .setState(OperationState.OPERATION_STATE_EXECUTED)
-          .build())
-      .getOperationsList();
+    if (Helpers.areFromAndToValid(from, to)) {
+      return operationsBlockingStub.getOperations(
+          OperationsRequest.newBuilder()
+            .setAccountId(accountId)
+            .setFrom(DateUtils.instantToTimestamp(from))
+            .setTo(DateUtils.instantToTimestamp(to))
+            .setState(OperationState.OPERATION_STATE_EXECUTED)
+            .build())
+        .getOperationsList();
+    } else {
+      throw new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE);
+    }
   }
 
   /**
@@ -84,14 +92,18 @@ public class OperationsService {
     @Nonnull String accountId,
     @Nonnull Instant from,
     @Nonnull Instant to) {
-    return operationsBlockingStub.getOperations(
-        OperationsRequest.newBuilder()
-          .setAccountId(accountId)
-          .setFrom(DateUtils.instantToTimestamp(from))
-          .setTo(DateUtils.instantToTimestamp(to))
-          .setState(OperationState.OPERATION_STATE_CANCELED)
-          .build())
-      .getOperationsList();
+    if (Helpers.areFromAndToValid(from, to)) {
+      return operationsBlockingStub.getOperations(
+          OperationsRequest.newBuilder()
+            .setAccountId(accountId)
+            .setFrom(DateUtils.instantToTimestamp(from))
+            .setTo(DateUtils.instantToTimestamp(to))
+            .setState(OperationState.OPERATION_STATE_CANCELED)
+            .build())
+        .getOperationsList();
+    } else {
+      throw new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE);
+    }
   }
 
   /**
@@ -110,14 +122,18 @@ public class OperationsService {
     @Nonnull Instant from,
     @Nonnull Instant to,
     @Nonnull String figi) {
-    return operationsBlockingStub.getOperations(
-        OperationsRequest.newBuilder()
-          .setAccountId(accountId)
-          .setFrom(DateUtils.instantToTimestamp(from))
-          .setTo(DateUtils.instantToTimestamp(to))
-          .setFigi(figi)
-          .build())
-      .getOperationsList();
+    if (Helpers.areFromAndToValid(from, to)) {
+      return operationsBlockingStub.getOperations(
+          OperationsRequest.newBuilder()
+            .setAccountId(accountId)
+            .setFrom(DateUtils.instantToTimestamp(from))
+            .setTo(DateUtils.instantToTimestamp(to))
+            .setFigi(figi)
+            .build())
+        .getOperationsList();
+    } else {
+      throw new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE);
+    }
   }
 
   /**
@@ -136,15 +152,19 @@ public class OperationsService {
     @Nonnull Instant from,
     @Nonnull Instant to,
     @Nonnull String figi) {
-    return operationsBlockingStub.getOperations(
-        OperationsRequest.newBuilder()
-          .setAccountId(accountId)
-          .setFrom(DateUtils.instantToTimestamp(from))
-          .setTo(DateUtils.instantToTimestamp(to))
-          .setState(OperationState.OPERATION_STATE_EXECUTED)
-          .setFigi(figi)
-          .build())
-      .getOperationsList();
+    if (Helpers.areFromAndToValid(from, to)) {
+      return operationsBlockingStub.getOperations(
+          OperationsRequest.newBuilder()
+            .setAccountId(accountId)
+            .setFrom(DateUtils.instantToTimestamp(from))
+            .setTo(DateUtils.instantToTimestamp(to))
+            .setState(OperationState.OPERATION_STATE_EXECUTED)
+            .setFigi(figi)
+            .build())
+        .getOperationsList();
+    } else {
+      throw new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE);
+    }
   }
 
   /**
@@ -163,15 +183,19 @@ public class OperationsService {
     @Nonnull Instant from,
     @Nonnull Instant to,
     @Nonnull String figi) {
-    return operationsBlockingStub.getOperations(
-        OperationsRequest.newBuilder()
-          .setAccountId(accountId)
-          .setFrom(DateUtils.instantToTimestamp(from))
-          .setTo(DateUtils.instantToTimestamp(to))
-          .setState(OperationState.OPERATION_STATE_CANCELED)
-          .setFigi(figi)
-          .build())
-      .getOperationsList();
+    if (Helpers.areFromAndToValid(from, to)) {
+      return operationsBlockingStub.getOperations(
+          OperationsRequest.newBuilder()
+            .setAccountId(accountId)
+            .setFrom(DateUtils.instantToTimestamp(from))
+            .setTo(DateUtils.instantToTimestamp(to))
+            .setState(OperationState.OPERATION_STATE_CANCELED)
+            .setFigi(figi)
+            .build())
+        .getOperationsList();
+    } else {
+      throw new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE);
+    }
   }
 
   /**
@@ -270,15 +294,19 @@ public class OperationsService {
     @Nonnull String accountId,
     @Nonnull Instant from,
     @Nonnull Instant to) {
-    return Helpers.<OperationsResponse>wrapWithFuture(
-        observer -> operationsStub.getOperations(
-          OperationsRequest.newBuilder()
-            .setAccountId(accountId)
-            .setFrom(DateUtils.instantToTimestamp(from))
-            .setTo(DateUtils.instantToTimestamp(to))
-            .build(),
-          observer))
-      .thenApply(OperationsResponse::getOperationsList);
+    if (Helpers.areFromAndToValid(from, to)) {
+      return Helpers.<OperationsResponse>wrapWithFuture(
+          observer -> operationsStub.getOperations(
+            OperationsRequest.newBuilder()
+              .setAccountId(accountId)
+              .setFrom(DateUtils.instantToTimestamp(from))
+              .setTo(DateUtils.instantToTimestamp(to))
+              .build(),
+            observer))
+        .thenApply(OperationsResponse::getOperationsList);
+    } else {
+      return CompletableFuture.failedFuture(new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE));
+    }
   }
 
   /**
@@ -294,16 +322,20 @@ public class OperationsService {
     @Nonnull String accountId,
     @Nonnull Instant from,
     @Nonnull Instant to) {
-    return Helpers.<OperationsResponse>wrapWithFuture(
-        observer -> operationsStub.getOperations(
-          OperationsRequest.newBuilder()
-            .setAccountId(accountId)
-            .setFrom(DateUtils.instantToTimestamp(from))
-            .setTo(DateUtils.instantToTimestamp(to))
-            .setState(OperationState.OPERATION_STATE_EXECUTED)
-            .build(),
-          observer))
-      .thenApply(OperationsResponse::getOperationsList);
+    if (Helpers.areFromAndToValid(from, to)) {
+      return Helpers.<OperationsResponse>wrapWithFuture(
+          observer -> operationsStub.getOperations(
+            OperationsRequest.newBuilder()
+              .setAccountId(accountId)
+              .setFrom(DateUtils.instantToTimestamp(from))
+              .setTo(DateUtils.instantToTimestamp(to))
+              .setState(OperationState.OPERATION_STATE_EXECUTED)
+              .build(),
+            observer))
+        .thenApply(OperationsResponse::getOperationsList);
+    } else {
+      return CompletableFuture.failedFuture(new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE));
+    }
   }
 
   /**
@@ -319,16 +351,20 @@ public class OperationsService {
     @Nonnull String accountId,
     @Nonnull Instant from,
     @Nonnull Instant to) {
-    return Helpers.<OperationsResponse>wrapWithFuture(
-        observer -> operationsStub.getOperations(
-          OperationsRequest.newBuilder()
-            .setAccountId(accountId)
-            .setFrom(DateUtils.instantToTimestamp(from))
-            .setTo(DateUtils.instantToTimestamp(to))
-            .setState(OperationState.OPERATION_STATE_CANCELED)
-            .build(),
-          observer))
-      .thenApply(OperationsResponse::getOperationsList);
+    if (Helpers.areFromAndToValid(from, to)) {
+      return Helpers.<OperationsResponse>wrapWithFuture(
+          observer -> operationsStub.getOperations(
+            OperationsRequest.newBuilder()
+              .setAccountId(accountId)
+              .setFrom(DateUtils.instantToTimestamp(from))
+              .setTo(DateUtils.instantToTimestamp(to))
+              .setState(OperationState.OPERATION_STATE_CANCELED)
+              .build(),
+            observer))
+        .thenApply(OperationsResponse::getOperationsList);
+    } else {
+      return CompletableFuture.failedFuture(new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE));
+    }
   }
 
   /**
@@ -346,16 +382,20 @@ public class OperationsService {
     @Nonnull Instant from,
     @Nonnull Instant to,
     @Nonnull String figi) {
-    return Helpers.<OperationsResponse>wrapWithFuture(
-        observer -> operationsStub.getOperations(
-          OperationsRequest.newBuilder()
-            .setAccountId(accountId)
-            .setFrom(DateUtils.instantToTimestamp(from))
-            .setTo(DateUtils.instantToTimestamp(to))
-            .setFigi(figi)
-            .build(),
-          observer))
-      .thenApply(OperationsResponse::getOperationsList);
+    if (Helpers.areFromAndToValid(from, to)) {
+      return Helpers.<OperationsResponse>wrapWithFuture(
+          observer -> operationsStub.getOperations(
+            OperationsRequest.newBuilder()
+              .setAccountId(accountId)
+              .setFrom(DateUtils.instantToTimestamp(from))
+              .setTo(DateUtils.instantToTimestamp(to))
+              .setFigi(figi)
+              .build(),
+            observer))
+        .thenApply(OperationsResponse::getOperationsList);
+    } else {
+      return CompletableFuture.failedFuture(new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE));
+    }
   }
 
   /**
@@ -373,17 +413,21 @@ public class OperationsService {
     @Nonnull Instant from,
     @Nonnull Instant to,
     @Nonnull String figi) {
-    return Helpers.<OperationsResponse>wrapWithFuture(
-        observer -> operationsStub.getOperations(
-          OperationsRequest.newBuilder()
-            .setAccountId(accountId)
-            .setFrom(DateUtils.instantToTimestamp(from))
-            .setTo(DateUtils.instantToTimestamp(to))
-            .setState(OperationState.OPERATION_STATE_EXECUTED)
-            .setFigi(figi)
-            .build(),
-          observer))
-      .thenApply(OperationsResponse::getOperationsList);
+    if (Helpers.areFromAndToValid(from, to)) {
+      return Helpers.<OperationsResponse>wrapWithFuture(
+          observer -> operationsStub.getOperations(
+            OperationsRequest.newBuilder()
+              .setAccountId(accountId)
+              .setFrom(DateUtils.instantToTimestamp(from))
+              .setTo(DateUtils.instantToTimestamp(to))
+              .setState(OperationState.OPERATION_STATE_EXECUTED)
+              .setFigi(figi)
+              .build(),
+            observer))
+        .thenApply(OperationsResponse::getOperationsList);
+    } else {
+      return CompletableFuture.failedFuture(new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE));
+    }
   }
 
   /**
@@ -401,17 +445,21 @@ public class OperationsService {
     @Nonnull Instant from,
     @Nonnull Instant to,
     @Nonnull String figi) {
-    return Helpers.<OperationsResponse>wrapWithFuture(
-        observer -> operationsStub.getOperations(
-          OperationsRequest.newBuilder()
-            .setAccountId(accountId)
-            .setFrom(DateUtils.instantToTimestamp(from))
-            .setTo(DateUtils.instantToTimestamp(to))
-            .setState(OperationState.OPERATION_STATE_CANCELED)
-            .setFigi(figi)
-            .build(),
-          observer))
-      .thenApply(OperationsResponse::getOperationsList);
+    if (Helpers.areFromAndToValid(from, to)) {
+      return Helpers.<OperationsResponse>wrapWithFuture(
+          observer -> operationsStub.getOperations(
+            OperationsRequest.newBuilder()
+              .setAccountId(accountId)
+              .setFrom(DateUtils.instantToTimestamp(from))
+              .setTo(DateUtils.instantToTimestamp(to))
+              .setState(OperationState.OPERATION_STATE_CANCELED)
+              .setFigi(figi)
+              .build(),
+            observer))
+        .thenApply(OperationsResponse::getOperationsList);
+    } else {
+      return CompletableFuture.failedFuture(new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE));
+    }
   }
 
   /**

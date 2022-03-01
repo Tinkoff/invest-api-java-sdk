@@ -68,10 +68,12 @@ public class OperationsServiceTest extends GrpcClientTester<OperationsService> {
 
   @Nested
   class GetOperationsTest {
+
     @Test
-    void getAllOperations_Test() {
+    void getAll_Test() {
       var accountId = "accountId";
       var someMoment = Instant.now();
+      var someMomentPlusMinute = someMoment.plusSeconds(60);
       var expected = OperationsResponse.newBuilder()
         .addOperations(Operation.newBuilder().setId("operationId").build())
         .build();
@@ -87,9 +89,9 @@ public class OperationsServiceTest extends GrpcClientTester<OperationsService> {
       var service = mkClientBasedOnServer(grpcService);
 
       var actualSync =
-        service.getAllOperationsSync(accountId, someMoment, someMoment);
+        service.getAllOperationsSync(accountId, someMoment, someMomentPlusMinute);
       var actualAsync =
-        service.getAllOperations(accountId, someMoment, someMoment)
+        service.getAllOperations(accountId, someMoment, someMomentPlusMinute)
           .join();
 
       assertEquals(expected.getOperationsList(), actualSync);
@@ -98,15 +100,36 @@ public class OperationsServiceTest extends GrpcClientTester<OperationsService> {
       var inArg = OperationsRequest.newBuilder()
         .setAccountId(accountId)
         .setFrom(DateUtils.instantToTimestamp(someMoment))
-        .setTo(DateUtils.instantToTimestamp(someMoment))
+        .setTo(DateUtils.instantToTimestamp(someMomentPlusMinute))
         .build();
       verify(grpcService, times(2)).getOperations(eq(inArg), any());
     }
 
     @Test
-    void getExecutedOperations_Test() {
+    void getAll_shouldThrowIfToIsNotAfterFrom_Test() {
       var accountId = "accountId";
       var someMoment = Instant.now();
+      var someMomentPlusMinute = someMoment.plusSeconds(60);
+      var grpcService = mock(OperationsServiceGrpc.OperationsServiceImplBase.class, delegatesTo(
+        new OperationsServiceGrpc.OperationsServiceImplBase() {}));
+      var service = mkClientBasedOnServer(grpcService);
+
+      assertThrows(IllegalArgumentException.class, () -> service.getAllOperationsSync(
+        accountId,
+        someMomentPlusMinute,
+        someMoment));
+      futureThrown.expect(CompletionException.class);
+      futureThrown.expectCause(IsInstanceOf.instanceOf(IllegalArgumentException.class));
+      service.getAllOperations(accountId, someMomentPlusMinute, someMoment);
+
+      verify(grpcService, never()).getOperations(any(), any());
+    }
+
+    @Test
+    void getExecuted_Test() {
+      var accountId = "accountId";
+      var someMoment = Instant.now();
+      var someMomentPlusMinute = someMoment.plusSeconds(60);
       var expected = OperationsResponse.newBuilder()
         .addOperations(Operation.newBuilder().setId("operationId").build())
         .build();
@@ -122,9 +145,9 @@ public class OperationsServiceTest extends GrpcClientTester<OperationsService> {
       var service = mkClientBasedOnServer(grpcService);
 
       var actualSync =
-        service.getExecutedOperationsSync(accountId, someMoment, someMoment);
+        service.getExecutedOperationsSync(accountId, someMoment, someMomentPlusMinute);
       var actualAsync =
-        service.getExecutedOperations(accountId, someMoment, someMoment)
+        service.getExecutedOperations(accountId, someMoment, someMomentPlusMinute)
           .join();
 
       assertEquals(expected.getOperationsList(), actualSync);
@@ -133,16 +156,37 @@ public class OperationsServiceTest extends GrpcClientTester<OperationsService> {
       var inArg = OperationsRequest.newBuilder()
         .setAccountId(accountId)
         .setFrom(DateUtils.instantToTimestamp(someMoment))
-        .setTo(DateUtils.instantToTimestamp(someMoment))
+        .setTo(DateUtils.instantToTimestamp(someMomentPlusMinute))
         .setState(OperationState.OPERATION_STATE_EXECUTED)
         .build();
       verify(grpcService, times(2)).getOperations(eq(inArg), any());
     }
 
     @Test
-    void getCancelledOperations_Test() {
+    void getExecuted_shouldThrowIfToIsNotAfterFrom_Test() {
       var accountId = "accountId";
       var someMoment = Instant.now();
+      var someMomentPlusMinute = someMoment.plusSeconds(60);
+      var grpcService = mock(OperationsServiceGrpc.OperationsServiceImplBase.class, delegatesTo(
+        new OperationsServiceGrpc.OperationsServiceImplBase() {}));
+      var service = mkClientBasedOnServer(grpcService);
+
+      assertThrows(IllegalArgumentException.class, () -> service.getExecutedOperationsSync(
+        accountId,
+        someMomentPlusMinute,
+        someMoment));
+      futureThrown.expect(CompletionException.class);
+      futureThrown.expectCause(IsInstanceOf.instanceOf(IllegalArgumentException.class));
+      service.getExecutedOperations(accountId, someMomentPlusMinute, someMoment);
+
+      verify(grpcService, never()).getOperations(any(), any());
+    }
+
+    @Test
+    void getCancelled_Test() {
+      var accountId = "accountId";
+      var someMoment = Instant.now();
+      var someMomentPlusMinute = someMoment.plusSeconds(60);
       var expected = OperationsResponse.newBuilder()
         .addOperations(Operation.newBuilder().setId("operationId").build())
         .build();
@@ -158,9 +202,9 @@ public class OperationsServiceTest extends GrpcClientTester<OperationsService> {
       var service = mkClientBasedOnServer(grpcService);
 
       var actualSync =
-        service.getCancelledOperationsSync(accountId, someMoment, someMoment);
+        service.getCancelledOperationsSync(accountId, someMoment, someMomentPlusMinute);
       var actualAsync =
-        service.getCancelledOperations(accountId, someMoment, someMoment)
+        service.getCancelledOperations(accountId, someMoment, someMomentPlusMinute)
           .join();
 
       assertEquals(expected.getOperationsList(), actualSync);
@@ -169,17 +213,38 @@ public class OperationsServiceTest extends GrpcClientTester<OperationsService> {
       var inArg = OperationsRequest.newBuilder()
         .setAccountId(accountId)
         .setFrom(DateUtils.instantToTimestamp(someMoment))
-        .setTo(DateUtils.instantToTimestamp(someMoment))
+        .setTo(DateUtils.instantToTimestamp(someMomentPlusMinute))
         .setState(OperationState.OPERATION_STATE_CANCELED)
         .build();
       verify(grpcService, times(2)).getOperations(eq(inArg), any());
     }
 
     @Test
-    void getAllOperationsForFigi_Test() {
+    void getCancelled_shouldThrowIfToIsNotAfterFrom_Test() {
+      var accountId = "accountId";
+      var someMoment = Instant.now();
+      var someMomentPlusMinute = someMoment.plusSeconds(60);
+      var grpcService = mock(OperationsServiceGrpc.OperationsServiceImplBase.class, delegatesTo(
+        new OperationsServiceGrpc.OperationsServiceImplBase() {}));
+      var service = mkClientBasedOnServer(grpcService);
+
+      assertThrows(IllegalArgumentException.class, () -> service.getCancelledOperationsSync(
+        accountId,
+        someMomentPlusMinute,
+        someMoment));
+      futureThrown.expect(CompletionException.class);
+      futureThrown.expectCause(IsInstanceOf.instanceOf(IllegalArgumentException.class));
+      service.getCancelledOperations(accountId, someMomentPlusMinute, someMoment);
+
+      verify(grpcService, never()).getOperations(any(), any());
+    }
+
+    @Test
+    void getAllForFigi_Test() {
       var figi = "figi";
       var accountId = "accountId";
       var someMoment = Instant.now();
+      var someMomentPlusMinute = someMoment.plusSeconds(60);
       var expected = OperationsResponse.newBuilder()
         .addOperations(Operation.newBuilder().setId("operationId").build())
         .build();
@@ -195,9 +260,9 @@ public class OperationsServiceTest extends GrpcClientTester<OperationsService> {
       var service = mkClientBasedOnServer(grpcService);
 
       var actualSync =
-        service.getAllOperationsSync(accountId, someMoment, someMoment, figi);
+        service.getAllOperationsSync(accountId, someMoment, someMomentPlusMinute, figi);
       var actualAsync =
-        service.getAllOperations(accountId, someMoment, someMoment, figi)
+        service.getAllOperations(accountId, someMoment, someMomentPlusMinute, figi)
           .join();
 
       assertEquals(expected.getOperationsList(), actualSync);
@@ -206,17 +271,40 @@ public class OperationsServiceTest extends GrpcClientTester<OperationsService> {
       var inArg = OperationsRequest.newBuilder()
         .setAccountId(accountId)
         .setFrom(DateUtils.instantToTimestamp(someMoment))
-        .setTo(DateUtils.instantToTimestamp(someMoment))
+        .setTo(DateUtils.instantToTimestamp(someMomentPlusMinute))
         .setFigi(figi)
         .build();
       verify(grpcService, times(2)).getOperations(eq(inArg), any());
     }
 
     @Test
-    void getExecutedOperationsForFigi_Test() {
+    void getAllForFigi_shouldThrowIfToIsNotAfterFrom_Test() {
       var figi = "figi";
       var accountId = "accountId";
       var someMoment = Instant.now();
+      var someMomentPlusMinute = someMoment.plusSeconds(60);
+      var grpcService = mock(OperationsServiceGrpc.OperationsServiceImplBase.class, delegatesTo(
+        new OperationsServiceGrpc.OperationsServiceImplBase() {}));
+      var service = mkClientBasedOnServer(grpcService);
+
+      assertThrows(IllegalArgumentException.class, () -> service.getAllOperationsSync(
+        accountId,
+        someMomentPlusMinute,
+        someMoment,
+        figi));
+      futureThrown.expect(CompletionException.class);
+      futureThrown.expectCause(IsInstanceOf.instanceOf(IllegalArgumentException.class));
+      service.getAllOperations(accountId, someMomentPlusMinute, someMoment, figi);
+
+      verify(grpcService, never()).getOperations(any(), any());
+    }
+
+    @Test
+    void getExecutedForFigi_Test() {
+      var figi = "figi";
+      var accountId = "accountId";
+      var someMoment = Instant.now();
+      var someMomentPlusMinute = someMoment.plusSeconds(60);
       var expected = OperationsResponse.newBuilder()
         .addOperations(Operation.newBuilder().setId("operationId").build())
         .build();
@@ -232,9 +320,9 @@ public class OperationsServiceTest extends GrpcClientTester<OperationsService> {
       var service = mkClientBasedOnServer(grpcService);
 
       var actualSync =
-        service.getExecutedOperationsSync(accountId, someMoment, someMoment, figi);
+        service.getExecutedOperationsSync(accountId, someMoment, someMomentPlusMinute, figi);
       var actualAsync =
-        service.getExecutedOperations(accountId, someMoment, someMoment, figi)
+        service.getExecutedOperations(accountId, someMoment, someMomentPlusMinute, figi)
           .join();
 
       assertEquals(expected.getOperationsList(), actualSync);
@@ -243,7 +331,7 @@ public class OperationsServiceTest extends GrpcClientTester<OperationsService> {
       var inArg = OperationsRequest.newBuilder()
         .setAccountId(accountId)
         .setFrom(DateUtils.instantToTimestamp(someMoment))
-        .setTo(DateUtils.instantToTimestamp(someMoment))
+        .setTo(DateUtils.instantToTimestamp(someMomentPlusMinute))
         .setState(OperationState.OPERATION_STATE_EXECUTED)
         .setFigi(figi)
         .build();
@@ -251,10 +339,33 @@ public class OperationsServiceTest extends GrpcClientTester<OperationsService> {
     }
 
     @Test
-    void getCancelledOperationsForFigi_Test() {
+    void getExecutedForFigi_shouldThrowIfToIsNotAfterFrom_Test() {
       var figi = "figi";
       var accountId = "accountId";
       var someMoment = Instant.now();
+      var someMomentPlusMinute = someMoment.plusSeconds(60);
+      var grpcService = mock(OperationsServiceGrpc.OperationsServiceImplBase.class, delegatesTo(
+        new OperationsServiceGrpc.OperationsServiceImplBase() {}));
+      var service = mkClientBasedOnServer(grpcService);
+
+      assertThrows(IllegalArgumentException.class, () -> service.getExecutedOperationsSync(
+        accountId,
+        someMomentPlusMinute,
+        someMoment,
+        figi));
+      futureThrown.expect(CompletionException.class);
+      futureThrown.expectCause(IsInstanceOf.instanceOf(IllegalArgumentException.class));
+      service.getExecutedOperations(accountId, someMomentPlusMinute, someMoment, figi);
+
+      verify(grpcService, never()).getOperations(any(), any());
+    }
+
+    @Test
+    void getCancelledForFigi_Test() {
+      var figi = "figi";
+      var accountId = "accountId";
+      var someMoment = Instant.now();
+      var someMomentPlusMinute = someMoment.plusSeconds(60);
       var expected = OperationsResponse.newBuilder()
         .addOperations(Operation.newBuilder().setId("operationId").build())
         .build();
@@ -270,9 +381,9 @@ public class OperationsServiceTest extends GrpcClientTester<OperationsService> {
       var service = mkClientBasedOnServer(grpcService);
 
       var actualSync =
-        service.getCancelledOperationsSync(accountId, someMoment, someMoment, figi);
+        service.getCancelledOperationsSync(accountId, someMoment, someMomentPlusMinute, figi);
       var actualAsync =
-        service.getCancelledOperations(accountId, someMoment, someMoment, figi)
+        service.getCancelledOperations(accountId, someMoment, someMomentPlusMinute, figi)
           .join();
 
       assertEquals(expected.getOperationsList(), actualSync);
@@ -281,11 +392,33 @@ public class OperationsServiceTest extends GrpcClientTester<OperationsService> {
       var inArg = OperationsRequest.newBuilder()
         .setAccountId(accountId)
         .setFrom(DateUtils.instantToTimestamp(someMoment))
-        .setTo(DateUtils.instantToTimestamp(someMoment))
+        .setTo(DateUtils.instantToTimestamp(someMomentPlusMinute))
         .setState(OperationState.OPERATION_STATE_CANCELED)
         .setFigi(figi)
         .build();
       verify(grpcService, times(2)).getOperations(eq(inArg), any());
+    }
+
+    @Test
+    void getCancelledForFigi_shouldThrowIfToIsNotAfterFrom_Test() {
+      var figi = "figi";
+      var accountId = "accountId";
+      var someMoment = Instant.now();
+      var someMomentPlusMinute = someMoment.plusSeconds(60);
+      var grpcService = mock(OperationsServiceGrpc.OperationsServiceImplBase.class, delegatesTo(
+        new OperationsServiceGrpc.OperationsServiceImplBase() {}));
+      var service = mkClientBasedOnServer(grpcService);
+
+      assertThrows(IllegalArgumentException.class, () -> service.getCancelledOperationsSync(
+        accountId,
+        someMomentPlusMinute,
+        someMoment,
+        figi));
+      futureThrown.expect(CompletionException.class);
+      futureThrown.expectCause(IsInstanceOf.instanceOf(IllegalArgumentException.class));
+      service.getCancelledOperations(accountId, someMomentPlusMinute, someMoment, figi);
+
+      verify(grpcService, never()).getOperations(any(), any());
     }
   }
 
@@ -459,9 +592,6 @@ public class OperationsServiceTest extends GrpcClientTester<OperationsService> {
       var grpcService = mock(OperationsServiceGrpc.OperationsServiceImplBase.class, delegatesTo(
         new OperationsServiceGrpc.OperationsServiceImplBase() {}));
       var service = mkClientBasedOnServer(grpcService);
-
-      var someMoment = Instant.now();
-      var someMomentPlusMinute = someMoment.plusSeconds(60);
 
       assertThrows(IllegalArgumentException.class, () -> service.getBrokerReportSync(taskId, -1));
       futureThrown.expect(CompletionException.class);
