@@ -3,10 +3,13 @@ package ru.tinkoff.piapi.core.utils;
 import io.grpc.stub.StreamObserver;
 import io.smallrye.mutiny.subscription.MultiEmitter;
 
+import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 public class Helpers {
+
+  public static final String TO_IS_NOT_AFTER_FROM_MESSAGE = "Окончание периода не может быть раньше начала.";
 
   /**
    * Связывание асинхронного Unary-вызова с {@link CompletableFuture}.
@@ -80,6 +83,17 @@ public class Helpers {
   public static String preprocessInputOrderId(String orderId) {
     var maxLength = Math.min(orderId.length(), 36);
     return orderId.isBlank() ? orderId.trim() : orderId.substring(0, maxLength);
+  }
+
+  /**
+   * Проверка того, что левая граница временного интервала находится перед правой.
+   *
+   * @param from Левая граница.
+   * @param to Правая граница.
+   * @return Флаг успешности проверки.
+   */
+  public static boolean areFromAndToValid(Instant from, Instant to) {
+    return from.isBefore(to);
   }
 
 }

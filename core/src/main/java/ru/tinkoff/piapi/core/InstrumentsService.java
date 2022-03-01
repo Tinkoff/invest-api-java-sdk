@@ -22,8 +22,6 @@ import java.util.function.Function;
  */
 public class InstrumentsService {
 
-  private static final String TO_IS_NOT_AFTER_FROM_MESSAGE = "Окончание периода не может быть раньше начала.";
-
   private final InstrumentsServiceGrpc.InstrumentsServiceBlockingStub instrumentsBlockingStub;
   private final InstrumentsServiceGrpc.InstrumentsServiceStub instrumentsStub;
 
@@ -32,10 +30,6 @@ public class InstrumentsService {
     @Nonnull InstrumentsServiceGrpc.InstrumentsServiceStub instrumentsStub) {
     this.instrumentsBlockingStub = instrumentsBlockingStub;
     this.instrumentsStub = instrumentsStub;
-  }
-
-  private static boolean areFromAndToValid(Instant from, Instant to) {
-    return from.isBefore(to);
   }
 
   private static <R> Optional<R> wrapPossibleNotFoundWithOptional(R response, Throwable ex) {
@@ -67,7 +61,7 @@ public class InstrumentsService {
   public List<TradingSchedule> getTradingSchedulesSync(
     @Nonnull Instant from,
     @Nonnull Instant to) {
-    if (areFromAndToValid(from, to)) {
+    if (Helpers.areFromAndToValid(from, to)) {
       return instrumentsBlockingStub.tradingSchedules(
           TradingSchedulesRequest.newBuilder()
             .setFrom(DateUtils.instantToTimestamp(from))
@@ -75,7 +69,7 @@ public class InstrumentsService {
             .build())
         .getExchangesList();
     } else {
-      throw new IllegalArgumentException(TO_IS_NOT_AFTER_FROM_MESSAGE);
+      throw new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE);
     }
   }
 
@@ -94,7 +88,7 @@ public class InstrumentsService {
     @Nonnull String exchange,
     @Nonnull Instant from,
     @Nonnull Instant to) {
-    if (areFromAndToValid(from, to)) {
+    if (Helpers.areFromAndToValid(from, to)) {
       try {
         return Optional.of(
           instrumentsBlockingStub.tradingSchedules(
@@ -113,7 +107,7 @@ public class InstrumentsService {
         }
       }
     } else {
-      throw new IllegalArgumentException(TO_IS_NOT_AFTER_FROM_MESSAGE);
+      throw new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE);
     }
   }
 
@@ -420,7 +414,7 @@ public class InstrumentsService {
     @Nonnull String figi,
     @Nonnull Instant from,
     @Nonnull Instant to) {
-    if (areFromAndToValid(from, to)) {
+    if (Helpers.areFromAndToValid(from, to)) {
       try {
         return Optional.of(
           instrumentsBlockingStub.getAccruedInterests(
@@ -438,7 +432,7 @@ public class InstrumentsService {
         }
       }
     } else {
-      throw new IllegalArgumentException(TO_IS_NOT_AFTER_FROM_MESSAGE);
+      throw new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE);
     }
   }
 
@@ -508,7 +502,7 @@ public class InstrumentsService {
     @Nonnull String figi,
     @Nonnull Instant from,
     @Nonnull Instant to) {
-    if (areFromAndToValid(from, to)) {
+    if (Helpers.areFromAndToValid(from, to)) {
       try {
         return Optional.of(
           instrumentsBlockingStub.getDividends(
@@ -526,7 +520,7 @@ public class InstrumentsService {
         }
       }
     } else {
-      throw new IllegalArgumentException(TO_IS_NOT_AFTER_FROM_MESSAGE);
+      throw new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE);
     }
   }
 
@@ -543,7 +537,7 @@ public class InstrumentsService {
   public CompletableFuture<List<TradingSchedule>> getTradingSchedules(
     @Nonnull Instant from,
     @Nonnull Instant to) {
-    if (areFromAndToValid(from, to)) {
+    if (Helpers.areFromAndToValid(from, to)) {
       return Helpers.<TradingSchedulesResponse>wrapWithFuture(
           observer -> instrumentsStub.tradingSchedules(
             TradingSchedulesRequest.newBuilder()
@@ -553,7 +547,7 @@ public class InstrumentsService {
             observer))
         .thenApply(TradingSchedulesResponse::getExchangesList);
     } else {
-      return CompletableFuture.failedFuture(new IllegalArgumentException(TO_IS_NOT_AFTER_FROM_MESSAGE));
+      return CompletableFuture.failedFuture(new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE));
     }
   }
 
@@ -572,7 +566,7 @@ public class InstrumentsService {
     @Nonnull String exchange,
     @Nonnull Instant from,
     @Nonnull Instant to) {
-    if (areFromAndToValid(from, to)) {
+    if (Helpers.areFromAndToValid(from, to)) {
       return Helpers.<TradingSchedulesResponse>wrapWithFuture(
           observer -> instrumentsStub.tradingSchedules(
             TradingSchedulesRequest.newBuilder()
@@ -584,7 +578,7 @@ public class InstrumentsService {
         .handle(InstrumentsService::wrapPossibleNotFoundWithOptional)
         .thenApply(x -> x.map(v -> v.getExchangesList().get(0)));
     } else {
-      return CompletableFuture.failedFuture(new IllegalArgumentException(TO_IS_NOT_AFTER_FROM_MESSAGE));
+      return CompletableFuture.failedFuture(new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE));
     }
   }
 
@@ -921,7 +915,7 @@ public class InstrumentsService {
     @Nonnull String figi,
     @Nonnull Instant from,
     @Nonnull Instant to) {
-    if (areFromAndToValid(from, to)) {
+    if (Helpers.areFromAndToValid(from, to)) {
       return Helpers.<GetAccruedInterestsResponse>wrapWithFuture(
           observer -> instrumentsStub.getAccruedInterests(
             GetAccruedInterestsRequest.newBuilder()
@@ -933,7 +927,7 @@ public class InstrumentsService {
         .handle(InstrumentsService::wrapPossibleNotFoundWithOptional)
         .thenApply(x -> x.map(GetAccruedInterestsResponse::getAccruedInterestsList));
     } else {
-      return CompletableFuture.failedFuture(new IllegalArgumentException(TO_IS_NOT_AFTER_FROM_MESSAGE));
+      return CompletableFuture.failedFuture(new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE));
     }
   }
 
@@ -999,7 +993,7 @@ public class InstrumentsService {
     @Nonnull String figi,
     @Nonnull Instant from,
     @Nonnull Instant to) {
-    if (areFromAndToValid(from, to)) {
+    if (Helpers.areFromAndToValid(from, to)) {
       return Helpers.<GetDividendsResponse>wrapWithFuture(
           observer -> instrumentsStub.getDividends(
             GetDividendsRequest.newBuilder()
@@ -1011,7 +1005,7 @@ public class InstrumentsService {
         .handle(InstrumentsService::wrapPossibleNotFoundWithOptional)
         .thenApply(x -> x.map(GetDividendsResponse::getDividendsList));
     } else {
-      return CompletableFuture.failedFuture(new IllegalArgumentException(TO_IS_NOT_AFTER_FROM_MESSAGE));
+      return CompletableFuture.failedFuture(new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE));
     }
   }
 

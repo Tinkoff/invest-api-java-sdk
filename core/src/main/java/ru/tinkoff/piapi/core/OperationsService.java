@@ -211,6 +211,53 @@ public class OperationsService {
   }
 
   /**
+   * Заказ (синхронный) брокерского отчёта.
+   *
+   * @param accountId Идентификатор счёта.
+   * @param from      Начало периода (по UTC).
+   * @param to        Окончание периода (по UTC).
+   * @return Идентификатор задачи составления отчёта.
+   */
+  @Nonnull
+  public String requestBrokerReportSync(
+    @Nonnull String accountId,
+    @Nonnull Instant from,
+    @Nonnull Instant to) {
+    if (Helpers.areFromAndToValid(from, to)) {
+      var request = BrokerReportRequest.newBuilder()
+        .setGenerateBrokerReportRequest(
+          GenerateBrokerReportRequest.newBuilder()
+            .setAccountId(accountId)
+            .setFrom(DateUtils.instantToTimestamp(from))
+            .setTo(DateUtils.instantToTimestamp(to))
+            .build())
+        .build();
+      return operationsBlockingStub.getBrokerReport(request).getGenerateBrokerReportResponse().getTaskId();
+    } else {
+      throw new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE);
+    }
+  }
+
+  /**
+   * Получение (синхронное) данных их брокерского отчёта на указанной странице.
+   *
+   * @param taskId Идентификатор задачи.
+   * @param page   Номер страницы (начиная с 0).
+   * @return Брокерский отчёт.
+   */
+  @Nonnull
+  public GetBrokerReportResponse getBrokerReportSync(@Nonnull String taskId, int page) {
+    if (page < 0) {
+      throw new IllegalArgumentException("Номерами страниц могут быть только положительные числа.");
+    }
+
+    var request = BrokerReportRequest.newBuilder()
+      .setGetBrokerReportRequest(GetBrokerReportRequest.newBuilder().setTaskId(taskId).setPage(page).build())
+      .build();
+    return operationsBlockingStub.getBrokerReport(request).getGetBrokerReportResponse();
+  }
+
+  /**
    * Получение (асинхронное) списка операций всех типов по счёту в заданном периоде времени.
    *
    * @param accountId Идентификатор счёта.
@@ -408,5 +455,58 @@ public class OperationsService {
     return Helpers.<WithdrawLimitsResponse>wrapWithFuture(
         observer -> operationsStub.getWithdrawLimits(request, observer))
       .thenApply(WithdrawLimits::fromResponse);
+  }
+
+  /**
+   * Заказ (асинхронный) брокерского отчёта.
+   *
+   * @param accountId Идентификатор счёта.
+   * @param from      Начало периода (по UTC).
+   * @param to        Окончание периода (по UTC).
+   * @return Идентификатор задачи составления отчёта.
+   */
+  @Nonnull
+  public CompletableFuture<String> requestBrokerReport(
+    @Nonnull String accountId,
+    @Nonnull Instant from,
+    @Nonnull Instant to) {
+    if (Helpers.areFromAndToValid(from, to)) {
+      var request = BrokerReportRequest.newBuilder()
+        .setGenerateBrokerReportRequest(
+          GenerateBrokerReportRequest.newBuilder()
+            .setAccountId(accountId)
+            .setFrom(DateUtils.instantToTimestamp(from))
+            .setTo(DateUtils.instantToTimestamp(to))
+            .build())
+        .build();
+      return Helpers.<BrokerReportResponse>wrapWithFuture(
+          observer -> operationsStub.getBrokerReport(request, observer))
+        .thenApply(BrokerReportResponse::getGenerateBrokerReportResponse)
+        .thenApply(GenerateBrokerReportResponse::getTaskId);
+    } else {
+      return CompletableFuture.failedFuture(new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE));
+    }
+  }
+
+  /**
+   * Получение (асинхронное) данных их брокерского отчёта на указанной странице.
+   *
+   * @param taskId Идентификатор задачи.
+   * @param page   Номер страницы (начиная с 0).
+   * @return Брокерский отчёт.
+   */
+  @Nonnull
+  public CompletableFuture<GetBrokerReportResponse> getBrokerReport(@Nonnull String taskId, int page) {
+    if (page < 0) {
+      return CompletableFuture.failedFuture(
+        new IllegalArgumentException("Номерами страниц могут быть только положительные числа."));
+    }
+
+    var request = BrokerReportRequest.newBuilder()
+      .setGetBrokerReportRequest(GetBrokerReportRequest.newBuilder().setTaskId(taskId).setPage(page).build())
+      .build();
+    return Helpers.<BrokerReportResponse>wrapWithFuture(
+        observer -> operationsStub.getBrokerReport(request, observer))
+      .thenApply(BrokerReportResponse::getGetBrokerReportResponse);
   }
 }
