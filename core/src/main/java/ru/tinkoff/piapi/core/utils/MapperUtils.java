@@ -10,7 +10,7 @@ import java.math.RoundingMode;
 public class MapperUtils {
 
   /**
-   * Расчет реальной стоимости фьючерса. <a href='https://tinkoff.github.io/investAPI/head-marketdata/#_1'>Подробнее в документации<a/>
+   * Расчет реальной стоимости фьючерса. <a href='https://tinkoff.github.io/investAPI/head-marketdata/#_1'>Подробнее в документации</a>
    *
    * @param pricePoints цена в пунктах для инструмента с типом Futures
    * @param futuresMarginResponse ответ при вызове unary метода InstrumentsService.GetFuturesMargin
@@ -23,7 +23,7 @@ public class MapperUtils {
   }
 
   /**
-   * Расчет реальной стоимости фьючерса. <a href='https://tinkoff.github.io/investAPI/head-marketdata/#_1'>Подробнее в документации<a/>
+   * Расчет реальной стоимости фьючерса. <a href='https://tinkoff.github.io/investAPI/head-marketdata/#_1'>Подробнее в документации</a>
    *
    * @param pricePoints цена в пунктах для инструмента с типом Futures
    * @param futuresMarginResponse ответ при вызове unary метода InstrumentsService.GetFuturesMargin
