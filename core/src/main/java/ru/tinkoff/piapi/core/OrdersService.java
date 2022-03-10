@@ -4,6 +4,7 @@ import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.subscription.BackPressureStrategy;
 import org.reactivestreams.FlowAdapters;
 import ru.tinkoff.piapi.contract.v1.*;
+import ru.tinkoff.piapi.core.stream.orders.OrdersStreamService;
 import ru.tinkoff.piapi.core.utils.DateUtils;
 import ru.tinkoff.piapi.core.utils.Helpers;
 
@@ -42,6 +43,8 @@ public class OrdersService {
     return FlowAdapters.toFlowPublisher(mutinyPublisher);
   }
 
+  /** Deprecated. Используйте {@link OrdersStreamService}
+   */
   public void subscribeTradesStream(Consumer<TradesStreamResponse> consumer) {
     Multi.createFrom()
       .safePublisher(

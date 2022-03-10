@@ -7,6 +7,8 @@ import io.grpc.stub.MetadataUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.tinkoff.piapi.contract.v1.*;
+import ru.tinkoff.piapi.core.stream.marketdata.MarketDataStreamService;
+import ru.tinkoff.piapi.core.stream.orders.OrdersStreamService;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -46,7 +48,9 @@ public class InvestApi {
   private final InstrumentsService instrumentsService;
   private final StopOrdersService stopOrdersService;
   private final OrdersService ordersService;
+  private final OrdersStreamService ordersStreamService;
   private final MarketDataService marketDataService;
+  private final MarketDataStreamService marketDataStreamService;
   private final SandboxService sandboxService;
 
   private InvestApi(@Nonnull Channel channel, boolean sandboxMode, boolean readonlyMode) {
@@ -63,7 +67,8 @@ public class InvestApi {
       MarketDataStreamServiceGrpc.newStub(channel),
       MarketDataServiceGrpc.newBlockingStub(channel),
       MarketDataServiceGrpc.newStub(channel));
-
+    this.marketDataStreamService = new MarketDataStreamService(MarketDataStreamServiceGrpc.newStub(channel));
+    this.ordersStreamService = new OrdersStreamService(OrdersStreamServiceGrpc.newStub(channel));
     if (sandboxMode) {
       this.sandboxService = new SandboxService(
         SandboxServiceGrpc.newBlockingStub(channel),
@@ -195,6 +200,7 @@ public class InvestApi {
         (int) connectionTimeout.toMillis()) // Намерено сужаем тип - предполагается,
       // что таймаут имеет разумную величину.
       .useTransportSecurity()
+      .keepAliveTimeout(60, TimeUnit.SECONDS)
       .build();
   }
 
@@ -225,6 +231,16 @@ public class InvestApi {
   }
 
   /**
+   * Получение сервиса стримов котировок.
+   *
+   * @return Сервис стримов котировок.
+   */
+  @Nonnull
+  public MarketDataStreamService getMarketDataStreamService() {
+    return marketDataStreamService;
+  }
+
+  /**
    * Получение сервиса торговых поручений.
    *
    * @return Сервис торговых поручений.
@@ -234,6 +250,18 @@ public class InvestApi {
     if (sandboxMode) throw new IllegalStateException("Недоступно в режиме \"песочницы\".");
 
     return ordersService;
+  }
+
+  /**
+   * Получение сервиса стримов торговых поручений.
+   *
+   * @return Сервис стримов торговых поручений.
+   */
+  @Nonnull
+  public OrdersStreamService getOrdersStreamService() {
+    if (sandboxMode) throw new IllegalStateException("Недоступно в режиме \"песочницы\".");
+
+    return ordersStreamService;
   }
 
   /**
