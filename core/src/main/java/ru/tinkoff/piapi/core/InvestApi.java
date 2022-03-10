@@ -7,8 +7,8 @@ import io.grpc.stub.MetadataUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.tinkoff.piapi.contract.v1.*;
-import ru.tinkoff.piapi.core.stream.marketdata.MarketDataStreamService;
-import ru.tinkoff.piapi.core.stream.orders.OrdersStreamService;
+import ru.tinkoff.piapi.core.stream.MarketDataStreamService;
+import ru.tinkoff.piapi.core.stream.OrdersStreamService;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;

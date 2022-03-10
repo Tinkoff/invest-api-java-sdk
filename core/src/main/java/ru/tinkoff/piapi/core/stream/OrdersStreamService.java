@@ -1,8 +1,9 @@
-package ru.tinkoff.piapi.core.stream.orders;
+package ru.tinkoff.piapi.core.stream;
 
 import ru.tinkoff.piapi.contract.v1.OrdersStreamServiceGrpc;
 import ru.tinkoff.piapi.contract.v1.TradesStreamRequest;
 import ru.tinkoff.piapi.contract.v1.TradesStreamResponse;
+import ru.tinkoff.piapi.core.stream.StreamObserverWithProcessor;
 import ru.tinkoff.piapi.core.stream.StreamProcessor;
 
 import javax.annotation.Nonnull;
@@ -31,6 +32,6 @@ public class OrdersStreamService {
     var request = TradesStreamRequest
       .newBuilder()
       .build();
-    stub.tradesStream(request, new OrdersStreamObserverWithProcessor(streamProcessor, onErrorCallback));
+    stub.tradesStream(request, new StreamObserverWithProcessor<>(streamProcessor, onErrorCallback));
   }
 }

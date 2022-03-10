@@ -1,4 +1,4 @@
-package ru.tinkoff.piapi.core.stream.marketdata;
+package ru.tinkoff.piapi.core.stream;
 
 import ru.tinkoff.piapi.contract.v1.CandleInstrument;
 import ru.tinkoff.piapi.contract.v1.InfoInstrument;
@@ -13,6 +13,7 @@ import ru.tinkoff.piapi.contract.v1.SubscribeTradesRequest;
 import ru.tinkoff.piapi.contract.v1.SubscriptionAction;
 import ru.tinkoff.piapi.contract.v1.SubscriptionInterval;
 import ru.tinkoff.piapi.contract.v1.TradeInstrument;
+import ru.tinkoff.piapi.core.stream.StreamObserverWithProcessor;
 import ru.tinkoff.piapi.core.stream.StreamProcessor;
 
 import javax.annotation.Nonnull;
@@ -24,7 +25,7 @@ import java.util.function.Consumer;
 
 public class MarketDataStreamService {
   private final MarketDataStreamServiceGrpc.MarketDataStreamServiceStub stub;
-  private final Map<StreamProcessor<MarketDataResponse>, MarketdataStreamObserverWithProcessor> processorObserverMap;
+  private final Map<StreamProcessor<MarketDataResponse>, StreamObserverWithProcessor<MarketDataResponse>> processorObserverMap;
 
   public MarketDataStreamService(
     @Nonnull MarketDataStreamServiceGrpc.MarketDataStreamServiceStub stub) {
@@ -214,12 +215,12 @@ public class MarketDataStreamService {
     stub.marketDataStream(getObserver(streamProcessor, onErrorCallback)).onNext(request);
   }
 
-  private MarketdataStreamObserverWithProcessor getObserver(@Nonnull StreamProcessor<MarketDataResponse> streamProcessor,
-                                                            @Nullable Consumer<Throwable> onErrorCallback) {
+  private StreamObserverWithProcessor<MarketDataResponse> getObserver(@Nonnull StreamProcessor<MarketDataResponse> streamProcessor,
+                                                                      @Nullable Consumer<Throwable> onErrorCallback) {
     if (processorObserverMap.containsKey(streamProcessor)) {
       return processorObserverMap.get(streamProcessor);
     }
-    var observer = new MarketdataStreamObserverWithProcessor(streamProcessor, onErrorCallback);
+    var observer = new StreamObserverWithProcessor<>(streamProcessor, onErrorCallback);
     processorObserverMap.put(streamProcessor, observer);
     return observer;
   }

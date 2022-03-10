@@ -18,7 +18,7 @@ import ru.tinkoff.piapi.contract.v1.MarketDataRequest;
 import ru.tinkoff.piapi.contract.v1.MarketDataResponse;
 import ru.tinkoff.piapi.contract.v1.MarketDataServiceGrpc;
 import ru.tinkoff.piapi.contract.v1.MarketDataStreamServiceGrpc;
-import ru.tinkoff.piapi.core.stream.marketdata.MarketDataStreamService;
+import ru.tinkoff.piapi.core.stream.MarketDataStreamService;
 import ru.tinkoff.piapi.core.utils.DateUtils;
 import ru.tinkoff.piapi.core.utils.Helpers;
 
