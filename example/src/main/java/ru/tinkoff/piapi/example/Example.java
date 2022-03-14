@@ -59,10 +59,10 @@ public class Example {
 
     //Подписка стрим сделок. Не блокирующий вызов
     //При необходимости обработки ошибок (реконнект по вине сервера или клиента), рекомендуется сделать onErrorCallback
-    api.getOrdersStreamService().subscribeTradesStream(consumer, onErrorCallback);
+    api.getOrdersStreamService().subscribeTrades(consumer, onErrorCallback);
 
     //Если обработка ошибок не требуется, то можно использовать перегруженный метод
-    api.getOrdersStreamService().subscribeTradesStream(consumer);
+    api.getOrdersStreamService().subscribeTrades(consumer);
   }
 
   private static List<String> randomFigi(InvestApi api, int count) {
@@ -90,17 +90,25 @@ public class Example {
       } else if (response.hasTrade()) {
         log.info("Новые данные по сделкам: {}", response);
       } else if (response.hasSubscribeCandlesResponse()) {
-        var count = response.getSubscribeCandlesResponse().getCandlesSubscriptionsList().stream().filter(el -> el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
-        log.info("удачных подписок на свечи: {}", count);
+        var successCount = response.getSubscribeCandlesResponse().getCandlesSubscriptionsList().stream().filter(el -> el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
+        var errorCount = response.getSubscribeTradesResponse().getTradeSubscriptionsList().stream().filter(el -> !el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
+        log.info("удачных подписок на свечи: {}", successCount);
+        log.info("неудачных подписок на свечи: {}", errorCount);
       } else if (response.hasSubscribeInfoResponse()) {
-        var count = response.getSubscribeInfoResponse().getInfoSubscriptionsList().stream().filter(el -> el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
-        log.info("удачных подписок на статусы: {}", count);
+        var successCount = response.getSubscribeInfoResponse().getInfoSubscriptionsList().stream().filter(el -> el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
+        var errorCount = response.getSubscribeTradesResponse().getTradeSubscriptionsList().stream().filter(el -> !el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
+        log.info("удачных подписок на статусы: {}", successCount);
+        log.info("неудачных подписок на статусы: {}", errorCount);
       } else if (response.hasSubscribeOrderBookResponse()) {
-        var count = response.getSubscribeOrderBookResponse().getOrderBookSubscriptionsList().stream().filter(el -> el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
-        log.info("удачных подписок на стакан: {}", count);
+        var successCount = response.getSubscribeOrderBookResponse().getOrderBookSubscriptionsList().stream().filter(el -> el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
+        var errorCount = response.getSubscribeTradesResponse().getTradeSubscriptionsList().stream().filter(el -> !el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
+        log.info("удачных подписок на стакан: {}", successCount);
+        log.info("неудачных подписок на стакан: {}", errorCount);
       } else if (response.hasSubscribeTradesResponse()) {
-        var count = response.getSubscribeTradesResponse().getTradeSubscriptionsList().stream().filter(el -> el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
-        log.info("удачных подписок на сделки: {}", count);
+        var successCount = response.getSubscribeTradesResponse().getTradeSubscriptionsList().stream().filter(el -> el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
+        var errorCount = response.getSubscribeTradesResponse().getTradeSubscriptionsList().stream().filter(el -> !el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
+        log.info("удачных подписок на сделки: {}", successCount);
+        log.info("неудачных подписок на сделки: {}", errorCount);
       }
     };
     Consumer<Throwable> onErrorCallback = error -> {
@@ -109,27 +117,31 @@ public class Example {
 
     //Подписка на список инструментов. Не блокирующий вызов
     //При необходимости обработки ошибок (реконнект по вине сервера или клиента), рекомендуется сделать onErrorCallback
-    api.getMarketDataStreamService().subscribeTradesStream(randomFigi, processor, onErrorCallback);
-    api.getMarketDataStreamService().subscribeCandlesStream(randomFigi, processor, onErrorCallback );
-    api.getMarketDataStreamService().subscribeInfoStream(randomFigi, processor, onErrorCallback);
-    api.getMarketDataStreamService().subscribeOrderbookStream(randomFigi, processor, onErrorCallback);
+    api.getMarketDataStreamService().newStream("trades_stream", processor, onErrorCallback).subscribeTrades(randomFigi);
+    api.getMarketDataStreamService().newStream("candles_stream", processor, onErrorCallback).subscribeCandles(randomFigi);
+    api.getMarketDataStreamService().newStream("info_stream", processor, onErrorCallback).subscribeInfo(randomFigi);
+    api.getMarketDataStreamService().newStream("orderbook_stream", processor, onErrorCallback).subscribeOrderbook(randomFigi);
+    api.getMarketDataStreamService().newStream("last_prices_stream", processor, onErrorCallback).subscribeLastPrices(randomFigi);
 
-    //Если обработка ошибок не требуется, то можно использовать перегруженный метод
-    api.getMarketDataStreamService().subscribeTradesStream(randomFigi, processor);
-    api.getMarketDataStreamService().subscribeCandlesStream(randomFigi, processor, SubscriptionInterval.SUBSCRIPTION_INTERVAL_FIVE_MINUTES);
-    api.getMarketDataStreamService().subscribeInfoStream(randomFigi, processor);
-    api.getMarketDataStreamService().subscribeOrderbookStream(randomFigi, processor, 10);
 
     //Для стримов стаканов и свечей есть перегруженные методы с дефолтными значениями
     //глубина стакана = 10, интервал свечи = 1 минута
-    api.getMarketDataStreamService().subscribeOrderbookStream(randomFigi, processor);
-    api.getMarketDataStreamService().subscribeCandlesStream(randomFigi, processor);
+    api.getMarketDataStreamService().getStreamById("trades_stream").subscribeOrderbook(randomFigi);
+    api.getMarketDataStreamService().getStreamById("candles_stream").subscribeCandles(randomFigi);
 
     //Отписка на список инструментов. Не блокирующий вызов
-    api.getMarketDataStreamService().unsubscribeTradesStream(randomFigi, processor);
-    api.getMarketDataStreamService().unsubscribeCandlesStream(randomFigi, processor);
-    api.getMarketDataStreamService().unsubscribeInfoStream(randomFigi, processor);
-    api.getMarketDataStreamService().subscribeOrderbookStream(randomFigi, processor);
+    api.getMarketDataStreamService().getStreamById("trades_stream").unsubscribeTrades(randomFigi);
+    api.getMarketDataStreamService().getStreamById("candles_stream").unsubscribeCandles(randomFigi);
+    api.getMarketDataStreamService().getStreamById("info_stream").unsubscribeInfo(randomFigi);
+    api.getMarketDataStreamService().getStreamById("orderbook_stream").subscribeOrderbook(randomFigi);
+    api.getMarketDataStreamService().getStreamById("last_prices_stream").unsubscribeLastPrices(randomFigi);
+
+    //Каждый marketdata стрим может отдавать информацию максимум по 300 инструментам
+    //Если нужно подписаться на большее количество, есть 2 варианта:
+    // - открыть новый стрим
+    api.getMarketDataStreamService().newStream("new_stream", processor, onErrorCallback).subscribeCandles(randomFigi);
+    // - отписаться от инструментов в существующем стриме, освободим место под новые
+    api.getMarketDataStreamService().getStreamById("new_stream").unsubscribeCandles(randomFigi);
   }
 
   private static void usersServiceExample(InvestApi api) {

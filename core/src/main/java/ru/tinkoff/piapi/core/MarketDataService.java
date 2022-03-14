@@ -18,7 +18,7 @@ import ru.tinkoff.piapi.contract.v1.MarketDataRequest;
 import ru.tinkoff.piapi.contract.v1.MarketDataResponse;
 import ru.tinkoff.piapi.contract.v1.MarketDataServiceGrpc;
 import ru.tinkoff.piapi.contract.v1.MarketDataStreamServiceGrpc;
-import ru.tinkoff.piapi.core.stream.MarketDataStreamService;
+import ru.tinkoff.piapi.core.stream.MarketDataSubscriptionService;
 import ru.tinkoff.piapi.core.utils.DateUtils;
 import ru.tinkoff.piapi.core.utils.Helpers;
 
@@ -42,7 +42,7 @@ public class MarketDataService {
     this.marketDataStub = marketDataStub;
   }
 
-  /** Deprecated. Используйте {@link MarketDataStreamService}
+  /** Deprecated. Используйте {@link MarketDataSubscriptionService}
    */
   @Deprecated(forRemoval = true)
   @Nonnull
