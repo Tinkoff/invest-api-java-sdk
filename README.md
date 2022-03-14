@@ -8,19 +8,24 @@
 Данный проект представляет собой инструментарий на языке Java для работы с API Тинькофф Инвестиции, который можно
 использовать для создания торговых роботов.
 
+## Пререквизиты
+- Java версии не ниже 11
+- Maven версии не ниже 3, либо Gradle версии не ниже 5.0
+
+
 ## Использование
 
 Для начала работы подключите к вашему проекту core-модуль
 
-```xml
-<dependency>
-  <groupId>ru.tinkoff.piapi</groupId>
-  <artifactId>java-sdk-core</artifactId>
-  <version>1.0-M1</version>
-</dependency>
-```
+|     Система сборки     | Код                                                                                                                                                                                                                                                                                                                     |
+|:----------------------:|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|         Maven          | <b>\<dependency></b><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>\<groupId></b>ru.tinkoff.piapi<b>\</groupId></b><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>\<artifactId></b>java-sdk-core<b>\</artifactId></b><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>\<version></b>1.0-M3<b>\</version></b><br><b>\</dependency></b> |
+ | Gradle with Groovy DSL | <b>implementation</b> 'ru.tinkoff.piapi:java-sdk-core:1.0-M3'                                                                                                                                                                                                                                                           |
+ | Gradle with Kotlin DSL | <b>implementation</b>("ru.tinkoff.piapi:java-sdk-core:1.0-M3")                                                                                                                                                                                                                                                          |
 
-После чего можно пользоваться инструментарием
+
+
+После этого можно пользоваться инструментарием
 
 ```java
 import ru.tinkoff.piapi.core.InvestApi;
@@ -33,12 +38,14 @@ var order = api.getOrdersService().postOrderSync(...)
 
 ## Сборка
 
-Для сборки библиотеки понадобится Apache Maven версии не ниже 3, а также JDK версии не ниже 11. Затем в терминале
-перейдите в директорию проекта и выполните следующую команду
+Для сборки перейдите в директорию проекта и выполните одну из следующих команд
 
-```bash
-mvn clean package
-```
+|     Система сборки     | Код                |
+|:----------------------:|--------------------|
+|         Maven          | mvn clean package  |
+| Gradle with Groovy DSL | gradle clean build |
+| Gradle with Kotlin DSL | gradle clean build |
+
 
 ## Предложения и пожелания к SDK
 
