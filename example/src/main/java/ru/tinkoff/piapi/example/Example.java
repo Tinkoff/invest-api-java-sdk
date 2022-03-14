@@ -140,7 +140,7 @@ public class Example {
     //Если нужно подписаться на большее количество, есть 2 варианта:
     // - открыть новый стрим
     api.getMarketDataStreamService().newStream("new_stream", processor, onErrorCallback).subscribeCandles(randomFigi);
-    // - отписаться от инструментов в существующем стриме, освободим место под новые
+    // - отписаться от инструментов в существующем стриме, освободив место под новые
     api.getMarketDataStreamService().getStreamById("new_stream").unsubscribeCandles(randomFigi);
   }
 
