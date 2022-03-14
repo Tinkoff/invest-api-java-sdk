@@ -1,7 +1,5 @@
 package ru.tinkoff.piapi.example;
 
-import io.smallrye.mutiny.Multi;
-import org.reactivestreams.FlowAdapters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.tinkoff.piapi.contract.v1.*;
@@ -9,6 +7,7 @@ import ru.tinkoff.piapi.core.InvestApi;
 import ru.tinkoff.piapi.core.models.FuturePosition;
 import ru.tinkoff.piapi.core.models.Money;
 import ru.tinkoff.piapi.core.models.SecurityPosition;
+import ru.tinkoff.piapi.core.stream.StreamProcessor;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -46,16 +45,24 @@ public class Example {
   }
 
   private static void ordersStreamExample(InvestApi api) {
-    Consumer<TradesStreamResponse> consumer = item -> {
-      if (item.hasPing()) {
+    StreamProcessor<TradesStreamResponse> consumer = response -> {
+      if (response.hasPing()) {
         log.info("пинг сообщение");
-      } else if (item.hasOrderTrades()) {
-        log.info("Новые данные по сделкам: {}", item);
+      } else if (response.hasOrderTrades()) {
+        log.info("Новые данные по сделкам: {}", response);
       }
     };
 
-    //блокирующий вызов
-    api.getOrdersService().subscribeTradesStream(consumer);
+    Consumer<Throwable> onErrorCallback = error -> {
+      log.error(error.toString());
+    };
+
+    //Подписка стрим сделок. Не блокирующий вызов
+    //При необходимости обработки ошибок (реконнект по вине сервера или клиента), рекомендуется сделать onErrorCallback
+    api.getOrdersStreamService().subscribeTrades(consumer, onErrorCallback);
+
+    //Если обработка ошибок не требуется, то можно использовать перегруженный метод
+    api.getOrdersStreamService().subscribeTrades(consumer);
   }
 
   private static List<String> randomFigi(InvestApi api, int count) {
@@ -68,88 +75,78 @@ public class Example {
   }
 
   private static void marketdataStreamExample(InvestApi api) {
-
-    Consumer<MarketDataResponse> consumer = item -> {
-      if (item.hasTradingStatus()) {
-        log.info("Новые данные по статусам: {}", item);
-      } else if (item.hasPing()) {
-        log.info("пинг сообщение");
-      } else if (item.hasCandle()) {
-        log.info("Новые данные по свечам: {}", item);
-      } else if (item.hasOrderbook()) {
-        log.info("Новые данные по стакану: {}", item);
-      } else if (item.hasTrade()) {
-        log.info("Новые данные по сделкам: {}", item);
-      }
-    };
-
     var randomFigi = randomFigi(api, 5);
 
-    // Пример stream-вызова со статусом инструментов.
-    // На вход подаётся поток запросов.
-    var request = FlowAdapters.toFlowPublisher(
-      Multi.createFrom().<MarketDataRequest>emitter(emitter -> {
-        emitter.emit(marketdataSubscribeInfoRequest(randomFigi));
-        emitter.emit(marketdataSubscribeOrderbookRequest(randomFigi, 1));
-        emitter.emit(marketdataSubscribeTradesRequest(randomFigi));
-        emitter.emit(
-          marketdataSubscribeCandlesRequest(randomFigi, SubscriptionInterval.SUBSCRIPTION_INTERVAL_ONE_MINUTE));
-        // emitter.complete(); <-- Если остановить поток запросов, то остановиться и поток ответов.
-      }));
+    //Описываем, что делать с приходящими в стриме данными
+    StreamProcessor<MarketDataResponse> processor = response -> {
+      if (response.hasTradingStatus()) {
+        log.info("Новые данные по статусам: {}", response);
+      } else if (response.hasPing()) {
+        log.info("пинг сообщение");
+      } else if (response.hasCandle()) {
+        log.info("Новые данные по свечам: {}", response);
+      } else if (response.hasOrderbook()) {
+        log.info("Новые данные по стакану: {}", response);
+      } else if (response.hasTrade()) {
+        log.info("Новые данные по сделкам: {}", response);
+      } else if (response.hasSubscribeCandlesResponse()) {
+        var successCount = response.getSubscribeCandlesResponse().getCandlesSubscriptionsList().stream().filter(el -> el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
+        var errorCount = response.getSubscribeTradesResponse().getTradeSubscriptionsList().stream().filter(el -> !el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
+        log.info("удачных подписок на свечи: {}", successCount);
+        log.info("неудачных подписок на свечи: {}", errorCount);
+      } else if (response.hasSubscribeInfoResponse()) {
+        var successCount = response.getSubscribeInfoResponse().getInfoSubscriptionsList().stream().filter(el -> el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
+        var errorCount = response.getSubscribeTradesResponse().getTradeSubscriptionsList().stream().filter(el -> !el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
+        log.info("удачных подписок на статусы: {}", successCount);
+        log.info("неудачных подписок на статусы: {}", errorCount);
+      } else if (response.hasSubscribeOrderBookResponse()) {
+        var successCount = response.getSubscribeOrderBookResponse().getOrderBookSubscriptionsList().stream().filter(el -> el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
+        var errorCount = response.getSubscribeTradesResponse().getTradeSubscriptionsList().stream().filter(el -> !el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
+        log.info("удачных подписок на стакан: {}", successCount);
+        log.info("неудачных подписок на стакан: {}", errorCount);
+      } else if (response.hasSubscribeTradesResponse()) {
+        var successCount = response.getSubscribeTradesResponse().getTradeSubscriptionsList().stream().filter(el -> el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
+        var errorCount = response.getSubscribeTradesResponse().getTradeSubscriptionsList().stream().filter(el -> !el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
+        log.info("удачных подписок на сделки: {}", successCount);
+        log.info("неудачных подписок на сделки: {}", errorCount);
+      } else if (response.hasSubscribeLastPriceResponse()) {
+        var successCount = response.getSubscribeLastPriceResponse().getLastPriceSubscriptionsList().stream().filter(el -> el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
+        var errorCount = response.getSubscribeLastPriceResponse().getLastPriceSubscriptionsList().stream().filter(el -> !el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
+        log.info("удачных подписок на последние цены: {}", successCount);
+        log.info("неудачных подписок на последние цены: {}", errorCount);
+      }
+    };
+    Consumer<Throwable> onErrorCallback = error -> {
+      log.error(error.toString());
+    };
 
-    // На выходе поток ответов.
-    Multi.createFrom()
-      .safePublisher(
-        FlowAdapters.toPublisher(
-          api.getMarketDataService().marketDataStream(request)))
-      .subscribe()
-      .asIterable()
-      .forEach(consumer);
-  }
+    //Подписка на список инструментов. Не блокирующий вызов
+    //При необходимости обработки ошибок (реконнект по вине сервера или клиента), рекомендуется сделать onErrorCallback
+    api.getMarketDataStreamService().newStream("trades_stream", processor, onErrorCallback).subscribeTrades(randomFigi);
+    api.getMarketDataStreamService().newStream("candles_stream", processor, onErrorCallback).subscribeCandles(randomFigi);
+    api.getMarketDataStreamService().newStream("info_stream", processor, onErrorCallback).subscribeInfo(randomFigi);
+    api.getMarketDataStreamService().newStream("orderbook_stream", processor, onErrorCallback).subscribeOrderbook(randomFigi);
+    api.getMarketDataStreamService().newStream("last_prices_stream", processor, onErrorCallback).subscribeLastPrices(randomFigi);
 
-  private static MarketDataRequest marketdataSubscribeInfoRequest(List<String> figiList) {
-    var builder = SubscribeInfoRequest.newBuilder()
-      .setSubscriptionAction(SubscriptionAction.SUBSCRIPTION_ACTION_SUBSCRIBE);
-    for (String figi : figiList) {
-      builder.addInstruments(InfoInstrument.newBuilder().setFigi(figi).build());
-    }
-    return MarketDataRequest.newBuilder()
-      .setSubscribeInfoRequest(builder.build())
-      .build();
-  }
 
-  private static MarketDataRequest marketdataSubscribeOrderbookRequest(List<String> figiList, int depth) {
-    var builder = SubscribeOrderBookRequest.newBuilder()
-      .setSubscriptionAction(SubscriptionAction.SUBSCRIPTION_ACTION_SUBSCRIBE);
-    for (String figi : figiList) {
-      builder.addInstruments(OrderBookInstrument.newBuilder().setFigi(figi).setDepth(depth).build());
-    }
-    return MarketDataRequest.newBuilder()
-      .setSubscribeOrderBookRequest(builder.build())
-      .build();
-  }
+    //Для стримов стаканов и свечей есть перегруженные методы с дефолтными значениями
+    //глубина стакана = 10, интервал свечи = 1 минута
+    api.getMarketDataStreamService().getStreamById("trades_stream").subscribeOrderbook(randomFigi);
+    api.getMarketDataStreamService().getStreamById("candles_stream").subscribeCandles(randomFigi);
 
-  private static MarketDataRequest marketdataSubscribeTradesRequest(List<String> figiList) {
-    var builder = SubscribeTradesRequest.newBuilder()
-      .setSubscriptionAction(SubscriptionAction.SUBSCRIPTION_ACTION_SUBSCRIBE);
-    for (String figi : figiList) {
-      builder.addInstruments(TradeInstrument.newBuilder().setFigi(figi).build());
-    }
-    return MarketDataRequest.newBuilder()
-      .setSubscribeTradesRequest(builder.build())
-      .build();
-  }
+    //Отписка на список инструментов. Не блокирующий вызов
+    api.getMarketDataStreamService().getStreamById("trades_stream").unsubscribeTrades(randomFigi);
+    api.getMarketDataStreamService().getStreamById("candles_stream").unsubscribeCandles(randomFigi);
+    api.getMarketDataStreamService().getStreamById("info_stream").unsubscribeInfo(randomFigi);
+    api.getMarketDataStreamService().getStreamById("orderbook_stream").subscribeOrderbook(randomFigi);
+    api.getMarketDataStreamService().getStreamById("last_prices_stream").unsubscribeLastPrices(randomFigi);
 
-  private static MarketDataRequest marketdataSubscribeCandlesRequest(List<String> figiList,
-                                                                     SubscriptionInterval interval) {
-    var builder = SubscribeCandlesRequest.newBuilder()
-      .setSubscriptionAction(SubscriptionAction.SUBSCRIPTION_ACTION_SUBSCRIBE);
-    for (String figi : figiList) {
-      builder.addInstruments(CandleInstrument.newBuilder().setFigi(figi).setInterval(interval).build());
-    }
-    return MarketDataRequest.newBuilder()
-      .setSubscribeCandlesRequest(builder.build())
-      .build();
+    //Каждый marketdata стрим может отдавать информацию максимум по 300 инструментам
+    //Если нужно подписаться на большее количество, есть 2 варианта:
+    // - открыть новый стрим
+    api.getMarketDataStreamService().newStream("new_stream", processor, onErrorCallback).subscribeCandles(randomFigi);
+    // - отписаться от инструментов в существующем стриме, освободив место под новые
+    api.getMarketDataStreamService().getStreamById("new_stream").unsubscribeCandles(randomFigi);
   }
 
   private static void usersServiceExample(InvestApi api) {
@@ -178,7 +175,6 @@ public class Example {
     log.info("Объем недостающих средств. Разница между стартовой маржой и ликвидной стоимости портфеля: {}",
       moneyValueToBigDecimal(marginAttributes.getAmountOfMissingFunds()));
   }
-
 
   private static void stopOrdersServiceExample(InvestApi api, String figi) {
 
@@ -242,7 +238,6 @@ public class Example {
     getLastPricesExample(api);
     getTradingStatusExample(api);
   }
-
 
   private static void getWithdrawLimitsExample(InvestApi api) {
     var accounts = api.getUserService().getAccountsSync();
@@ -492,7 +487,6 @@ public class Example {
       log.info("количество в лотах: {}, цена: {}", quantity, price);
     }
   }
-
 
   private static void getCandlesExample(InvestApi api) {
 

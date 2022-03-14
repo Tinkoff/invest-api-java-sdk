@@ -3,7 +3,6 @@ package ru.tinkoff.piapi.core;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.subscription.BackPressureStrategy;
 import org.reactivestreams.FlowAdapters;
-import ru.tinkoff.piapi.contract.v1.CandleInstrument;
 import ru.tinkoff.piapi.contract.v1.CandleInterval;
 import ru.tinkoff.piapi.contract.v1.GetCandlesRequest;
 import ru.tinkoff.piapi.contract.v1.GetCandlesResponse;
@@ -14,20 +13,12 @@ import ru.tinkoff.piapi.contract.v1.GetOrderBookResponse;
 import ru.tinkoff.piapi.contract.v1.GetTradingStatusRequest;
 import ru.tinkoff.piapi.contract.v1.GetTradingStatusResponse;
 import ru.tinkoff.piapi.contract.v1.HistoricCandle;
-import ru.tinkoff.piapi.contract.v1.InfoInstrument;
 import ru.tinkoff.piapi.contract.v1.LastPrice;
 import ru.tinkoff.piapi.contract.v1.MarketDataRequest;
 import ru.tinkoff.piapi.contract.v1.MarketDataResponse;
 import ru.tinkoff.piapi.contract.v1.MarketDataServiceGrpc;
 import ru.tinkoff.piapi.contract.v1.MarketDataStreamServiceGrpc;
-import ru.tinkoff.piapi.contract.v1.OrderBookInstrument;
-import ru.tinkoff.piapi.contract.v1.SubscribeCandlesRequest;
-import ru.tinkoff.piapi.contract.v1.SubscribeInfoRequest;
-import ru.tinkoff.piapi.contract.v1.SubscribeOrderBookRequest;
-import ru.tinkoff.piapi.contract.v1.SubscribeTradesRequest;
-import ru.tinkoff.piapi.contract.v1.SubscriptionAction;
-import ru.tinkoff.piapi.contract.v1.SubscriptionInterval;
-import ru.tinkoff.piapi.contract.v1.TradeInstrument;
+import ru.tinkoff.piapi.core.stream.MarketDataSubscriptionService;
 import ru.tinkoff.piapi.core.utils.DateUtils;
 import ru.tinkoff.piapi.core.utils.Helpers;
 
@@ -36,7 +27,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow.Publisher;
-import java.util.function.Consumer;
 
 public class MarketDataService {
   private final MarketDataStreamServiceGrpc.MarketDataStreamServiceStub marketDataStreamStub;
@@ -52,6 +42,9 @@ public class MarketDataService {
     this.marketDataStub = marketDataStub;
   }
 
+  /** Deprecated. Используйте {@link MarketDataSubscriptionService}
+   */
+  @Deprecated(forRemoval = true)
   @Nonnull
   public Publisher<MarketDataResponse> marketDataStream(
     @Nonnull Publisher<MarketDataRequest> requestsPublisher) {
