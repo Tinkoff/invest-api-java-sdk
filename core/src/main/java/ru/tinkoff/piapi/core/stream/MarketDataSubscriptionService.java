@@ -18,6 +18,7 @@ import ru.tinkoff.piapi.contract.v1.SubscriptionInterval;
 import ru.tinkoff.piapi.contract.v1.TradeInstrument;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -25,7 +26,9 @@ public class MarketDataSubscriptionService {
   private final StreamObserver<MarketDataRequest> observer;
 
   public MarketDataSubscriptionService(
-    @Nonnull MarketDataStreamServiceGrpc.MarketDataStreamServiceStub stub, StreamProcessor<MarketDataResponse> streamProcessor, Consumer<Throwable> onErrorCallback) {
+    @Nonnull MarketDataStreamServiceGrpc.MarketDataStreamServiceStub stub,
+    @Nonnull StreamProcessor<MarketDataResponse> streamProcessor,
+    @Nullable Consumer<Throwable> onErrorCallback) {
     this.observer = stub.marketDataStream(new StreamObserverWithProcessor<>(streamProcessor, onErrorCallback));
   }
 

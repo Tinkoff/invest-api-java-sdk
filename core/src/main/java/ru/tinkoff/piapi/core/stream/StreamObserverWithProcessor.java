@@ -2,6 +2,8 @@ package ru.tinkoff.piapi.core.stream;
 
 import io.grpc.stub.StreamObserver;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
 public class StreamObserverWithProcessor<T> implements StreamObserver<T> {
@@ -9,8 +11,8 @@ public class StreamObserverWithProcessor<T> implements StreamObserver<T> {
   private final StreamProcessor<T> streamProcessor;
   private final Consumer<Throwable> onErrorCallback;
 
-  public StreamObserverWithProcessor(StreamProcessor<T> streamProcessor,
-                                     Consumer<Throwable> onErrorCallback) {
+  public StreamObserverWithProcessor(@Nonnull StreamProcessor<T> streamProcessor,
+                                     @Nullable Consumer<Throwable> onErrorCallback) {
     this.streamProcessor = streamProcessor;
     this.onErrorCallback = onErrorCallback;
   }
