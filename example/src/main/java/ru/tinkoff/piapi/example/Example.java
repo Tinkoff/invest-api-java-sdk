@@ -109,7 +109,7 @@ public class Example {
         var errorCount = response.getSubscribeTradesResponse().getTradeSubscriptionsList().stream().filter(el -> !el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
         log.info("удачных подписок на сделки: {}", successCount);
         log.info("неудачных подписок на сделки: {}", errorCount);
-      }else if (response.hasSubscribeLastPriceResponse()) {
+      } else if (response.hasSubscribeLastPriceResponse()) {
         var successCount = response.getSubscribeLastPriceResponse().getLastPriceSubscriptionsList().stream().filter(el -> el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
         var errorCount = response.getSubscribeLastPriceResponse().getLastPriceSubscriptionsList().stream().filter(el -> !el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
         log.info("удачных подписок на последние цены: {}", successCount);
