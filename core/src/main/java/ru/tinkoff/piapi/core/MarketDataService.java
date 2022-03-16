@@ -16,8 +16,6 @@ import ru.tinkoff.piapi.contract.v1.HistoricCandle;
 import ru.tinkoff.piapi.contract.v1.LastPrice;
 import ru.tinkoff.piapi.contract.v1.MarketDataRequest;
 import ru.tinkoff.piapi.contract.v1.MarketDataResponse;
-import ru.tinkoff.piapi.contract.v1.MarketDataServiceGrpc;
-import ru.tinkoff.piapi.contract.v1.MarketDataStreamServiceGrpc;
 import ru.tinkoff.piapi.core.stream.MarketDataSubscriptionService;
 import ru.tinkoff.piapi.core.utils.DateUtils;
 import ru.tinkoff.piapi.core.utils.Helpers;
@@ -28,26 +26,30 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow.Publisher;
 
-public class MarketDataService {
-  private final MarketDataStreamServiceGrpc.MarketDataStreamServiceStub marketDataStreamStub;
-  private final MarketDataServiceGrpc.MarketDataServiceBlockingStub marketDataBlockingStub;
-  private final MarketDataServiceGrpc.MarketDataServiceStub marketDataStub;
+import static ru.tinkoff.piapi.contract.v1.MarketDataServiceGrpc.MarketDataServiceBlockingStub;
+import static ru.tinkoff.piapi.contract.v1.MarketDataServiceGrpc.MarketDataServiceStub;
+import static ru.tinkoff.piapi.contract.v1.MarketDataStreamServiceGrpc.MarketDataStreamServiceStub;
+import static ru.tinkoff.piapi.core.utils.Helpers.unaryCall;
 
-  MarketDataService(
-    @Nonnull MarketDataStreamServiceGrpc.MarketDataStreamServiceStub marketDataStreamStub,
-    @Nonnull MarketDataServiceGrpc.MarketDataServiceBlockingStub marketDataBlockingStub,
-    @Nonnull MarketDataServiceGrpc.MarketDataServiceStub marketDataStub) {
+public class MarketDataService {
+  private final MarketDataStreamServiceStub marketDataStreamStub;
+  private final MarketDataServiceBlockingStub marketDataBlockingStub;
+  private final MarketDataServiceStub marketDataStub;
+
+  MarketDataService(@Nonnull MarketDataStreamServiceStub marketDataStreamStub,
+                    @Nonnull MarketDataServiceBlockingStub marketDataBlockingStub,
+                    @Nonnull MarketDataServiceStub marketDataStub) {
     this.marketDataStreamStub = marketDataStreamStub;
     this.marketDataBlockingStub = marketDataBlockingStub;
     this.marketDataStub = marketDataStub;
   }
 
-  /** Deprecated. Используйте {@link MarketDataSubscriptionService}
+  /**
+   * Deprecated. Используйте {@link MarketDataSubscriptionService}
    */
   @Deprecated(forRemoval = true)
   @Nonnull
-  public Publisher<MarketDataResponse> marketDataStream(
-    @Nonnull Publisher<MarketDataRequest> requestsPublisher) {
+  public Publisher<MarketDataResponse> marketDataStream(@Nonnull Publisher<MarketDataRequest> requestsPublisher) {
     var mutinyPublisher = Multi.createFrom().<MarketDataResponse>emitter(
       emitter -> {
         var requestsSubscriber = marketDataStreamStub.marketDataStream(
@@ -67,54 +69,52 @@ public class MarketDataService {
   }
 
   @Nonnull
-  public List<HistoricCandle> getCandlesSync(
-    @Nonnull String figi,
-    @Nonnull Instant from,
-    @Nonnull Instant to,
-    @Nonnull CandleInterval interval) {
-    return marketDataBlockingStub.getCandles(
+  public List<HistoricCandle> getCandlesSync(@Nonnull String figi,
+                                             @Nonnull Instant from,
+                                             @Nonnull Instant to,
+                                             @Nonnull CandleInterval interval) {
+    return unaryCall(() -> marketDataBlockingStub.getCandles(
         GetCandlesRequest.newBuilder()
           .setFigi(figi)
           .setFrom(DateUtils.instantToTimestamp(from))
           .setTo(DateUtils.instantToTimestamp(to))
           .setInterval(interval)
           .build())
-      .getCandlesList();
+      .getCandlesList());
   }
 
   @Nonnull
   public List<LastPrice> getLastPricesSync(@Nonnull Iterable<String> figies) {
-    return marketDataBlockingStub.getLastPrices(
+    return unaryCall(() -> marketDataBlockingStub.getLastPrices(
         GetLastPricesRequest.newBuilder()
           .addAllFigi(figies)
           .build())
-      .getLastPricesList();
+      .getLastPricesList());
   }
 
   @Nonnull
   public GetOrderBookResponse getOrderBookSync(@Nonnull String figi, int depth) {
-    return marketDataBlockingStub.getOrderBook(
+    return unaryCall(() -> marketDataBlockingStub.getOrderBook(
       GetOrderBookRequest.newBuilder()
         .setFigi(figi)
         .setDepth(depth)
-        .build());
+        .build()));
   }
 
   @Nonnull
   public GetTradingStatusResponse getTradingStatusSync(@Nonnull String figi) {
-    return marketDataBlockingStub.getTradingStatus(
+    return unaryCall(() -> marketDataBlockingStub.getTradingStatus(
       GetTradingStatusRequest.newBuilder()
         .setFigi(figi)
-        .build());
+        .build()));
   }
 
   @Nonnull
-  public CompletableFuture<List<HistoricCandle>> getCandles(
-    @Nonnull String figi,
-    @Nonnull Instant from,
-    @Nonnull Instant to,
-    @Nonnull CandleInterval interval) {
-    return Helpers.<GetCandlesResponse>wrapWithFuture(
+  public CompletableFuture<List<HistoricCandle>> getCandles(@Nonnull String figi,
+                                                            @Nonnull Instant from,
+                                                            @Nonnull Instant to,
+                                                            @Nonnull CandleInterval interval) {
+    return Helpers.<GetCandlesResponse>unaryAsyncCall(
         observer -> marketDataStub.getCandles(
           GetCandlesRequest.newBuilder()
             .setFigi(figi)
@@ -128,7 +128,7 @@ public class MarketDataService {
 
   @Nonnull
   public CompletableFuture<List<LastPrice>> getLastPrices(@Nonnull Iterable<String> figies) {
-    return Helpers.<GetLastPricesResponse>wrapWithFuture(
+    return Helpers.<GetLastPricesResponse>unaryAsyncCall(
         observer -> marketDataStub.getLastPrices(
           GetLastPricesRequest.newBuilder()
             .addAllFigi(figies)
@@ -139,7 +139,7 @@ public class MarketDataService {
 
   @Nonnull
   public CompletableFuture<GetOrderBookResponse> getOrderBook(@Nonnull String figi, int depth) {
-    return Helpers.wrapWithFuture(
+    return Helpers.unaryAsyncCall(
       observer -> marketDataStub.getOrderBook(
         GetOrderBookRequest.newBuilder()
           .setFigi(figi)
@@ -150,7 +150,7 @@ public class MarketDataService {
 
   @Nonnull
   public CompletableFuture<GetTradingStatusResponse> getTradingStatus(@Nonnull String figi) {
-    return Helpers.wrapWithFuture(
+    return Helpers.unaryAsyncCall(
       observer -> marketDataStub.getTradingStatus(
         GetTradingStatusRequest.newBuilder()
           .setFigi(figi)

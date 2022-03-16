@@ -1,6 +1,36 @@
 package ru.tinkoff.piapi.core;
 
-import ru.tinkoff.piapi.contract.v1.*;
+import ru.tinkoff.piapi.contract.v1.Account;
+import ru.tinkoff.piapi.contract.v1.CancelOrderRequest;
+import ru.tinkoff.piapi.contract.v1.CancelOrderResponse;
+import ru.tinkoff.piapi.contract.v1.CloseSandboxAccountRequest;
+import ru.tinkoff.piapi.contract.v1.CloseSandboxAccountResponse;
+import ru.tinkoff.piapi.contract.v1.GetAccountsRequest;
+import ru.tinkoff.piapi.contract.v1.GetAccountsResponse;
+import ru.tinkoff.piapi.contract.v1.GetOrderStateRequest;
+import ru.tinkoff.piapi.contract.v1.GetOrdersRequest;
+import ru.tinkoff.piapi.contract.v1.GetOrdersResponse;
+import ru.tinkoff.piapi.contract.v1.MoneyValue;
+import ru.tinkoff.piapi.contract.v1.OpenSandboxAccountRequest;
+import ru.tinkoff.piapi.contract.v1.OpenSandboxAccountResponse;
+import ru.tinkoff.piapi.contract.v1.Operation;
+import ru.tinkoff.piapi.contract.v1.OperationState;
+import ru.tinkoff.piapi.contract.v1.OperationsRequest;
+import ru.tinkoff.piapi.contract.v1.OperationsResponse;
+import ru.tinkoff.piapi.contract.v1.OrderDirection;
+import ru.tinkoff.piapi.contract.v1.OrderState;
+import ru.tinkoff.piapi.contract.v1.OrderType;
+import ru.tinkoff.piapi.contract.v1.PortfolioRequest;
+import ru.tinkoff.piapi.contract.v1.PortfolioResponse;
+import ru.tinkoff.piapi.contract.v1.PositionsRequest;
+import ru.tinkoff.piapi.contract.v1.PositionsResponse;
+import ru.tinkoff.piapi.contract.v1.PostOrderRequest;
+import ru.tinkoff.piapi.contract.v1.PostOrderResponse;
+import ru.tinkoff.piapi.contract.v1.Quotation;
+import ru.tinkoff.piapi.contract.v1.SandboxPayInRequest;
+import ru.tinkoff.piapi.contract.v1.SandboxPayInResponse;
+import ru.tinkoff.piapi.contract.v1.SandboxServiceGrpc.SandboxServiceBlockingStub;
+import ru.tinkoff.piapi.contract.v1.SandboxServiceGrpc.SandboxServiceStub;
 import ru.tinkoff.piapi.core.utils.DateUtils;
 import ru.tinkoff.piapi.core.utils.Helpers;
 
@@ -10,51 +40,50 @@ import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-public class SandboxService {
-  private final SandboxServiceGrpc.SandboxServiceBlockingStub sandboxBlockingStub;
-  private final SandboxServiceGrpc.SandboxServiceStub sandboxStub;
+import static ru.tinkoff.piapi.core.utils.Helpers.unaryCall;
 
-  SandboxService(
-    @Nonnull SandboxServiceGrpc.SandboxServiceBlockingStub sandboxBlockingStub,
-    @Nonnull SandboxServiceGrpc.SandboxServiceStub sandboxStub) {
+public class SandboxService {
+  private final SandboxServiceBlockingStub sandboxBlockingStub;
+  private final SandboxServiceStub sandboxStub;
+
+  SandboxService(@Nonnull SandboxServiceBlockingStub sandboxBlockingStub,
+                 @Nonnull SandboxServiceStub sandboxStub) {
     this.sandboxBlockingStub = sandboxBlockingStub;
     this.sandboxStub = sandboxStub;
   }
 
   @Nonnull
   public String openAccountSync() {
-    return sandboxBlockingStub.openSandboxAccount(
+    return unaryCall(() -> sandboxBlockingStub.openSandboxAccount(
         OpenSandboxAccountRequest.newBuilder()
           .build())
-      .getAccountId();
+      .getAccountId());
   }
 
   @Nonnull
   public List<Account> getAccountsSync() {
-    return sandboxBlockingStub.getSandboxAccounts(
+    return unaryCall(() -> sandboxBlockingStub.getSandboxAccounts(
         GetAccountsRequest.newBuilder()
           .build())
-      .getAccountsList();
+      .getAccountsList());
   }
 
   public void closeAccountSync(@Nonnull String accountId) {
-    //noinspection ResultOfMethodCallIgnored
-    sandboxBlockingStub.closeSandboxAccount(
+    unaryCall(() -> sandboxBlockingStub.closeSandboxAccount(
       CloseSandboxAccountRequest.newBuilder()
         .setAccountId(accountId)
-        .build());
+        .build()));
   }
 
   @Nonnull
-  public PostOrderResponse postOrderSync(
-    @Nonnull String figi,
-    long quantity,
-    @Nonnull Quotation price,
-    @Nonnull OrderDirection direction,
-    @Nonnull String accountId,
-    @Nonnull OrderType type,
-    @Nonnull String orderId) {
-    return sandboxBlockingStub.postSandboxOrder(
+  public PostOrderResponse postOrderSync(@Nonnull String figi,
+                                         long quantity,
+                                         @Nonnull Quotation price,
+                                         @Nonnull OrderDirection direction,
+                                         @Nonnull String accountId,
+                                         @Nonnull OrderType type,
+                                         @Nonnull String orderId) {
+    return unaryCall(() -> sandboxBlockingStub.postSandboxOrder(
       PostOrderRequest.newBuilder()
         .setFigi(figi)
         .setQuantity(quantity)
@@ -63,86 +92,83 @@ public class SandboxService {
         .setAccountId(accountId)
         .setOrderType(type)
         .setOrderId(Helpers.preprocessInputOrderId(orderId))
-        .build());
+        .build()));
   }
 
   @Nonnull
   public List<OrderState> getOrdersSync(@Nonnull String accountId) {
-    return sandboxBlockingStub.getSandboxOrders(
+    return unaryCall(() -> sandboxBlockingStub.getSandboxOrders(
         GetOrdersRequest.newBuilder()
           .setAccountId(accountId)
           .build())
-      .getOrdersList();
+      .getOrdersList());
   }
 
   @Nonnull
-  public Instant cancelOrderSync(
-    @Nonnull String accountId,
-    @Nonnull String orderId) {
-    var responseTime = sandboxBlockingStub.cancelSandboxOrder(
+  public Instant cancelOrderSync(@Nonnull String accountId,
+                                 @Nonnull String orderId) {
+    var responseTime = unaryCall(() -> sandboxBlockingStub.cancelSandboxOrder(
         CancelOrderRequest.newBuilder()
           .setAccountId(accountId)
           .setOrderId(orderId)
           .build())
-      .getTime();
+      .getTime());
 
     return DateUtils.timestampToInstant(responseTime);
   }
 
   @Nonnull
-  public OrderState getOrderStateSync(
-    @Nonnull String accountId,
-    @Nonnull String orderId) {
-    return sandboxBlockingStub.getSandboxOrderState(
+  public OrderState getOrderStateSync(@Nonnull String accountId,
+                                      @Nonnull String orderId) {
+    return unaryCall(() -> sandboxBlockingStub.getSandboxOrderState(
       GetOrderStateRequest.newBuilder()
         .setAccountId(accountId)
         .setOrderId(orderId)
-        .build());
+        .build()));
   }
 
   @Nonnull
   public PositionsResponse getPositionsSync(@Nonnull String accountId) {
-    return sandboxBlockingStub.getSandboxPositions(
-      PositionsRequest.newBuilder().setAccountId(accountId).build());
+    return unaryCall(() -> sandboxBlockingStub.getSandboxPositions(
+      PositionsRequest.newBuilder().setAccountId(accountId).build()));
   }
 
   @Nonnull
-  public List<Operation> getOperationsSync(
-    @Nonnull String accountId,
-    @Nonnull Instant from,
-    @Nonnull Instant to,
-    @Nonnull OperationState operationState,
-    @Nullable String figi) {
-    return sandboxBlockingStub.getSandboxOperations(
-      OperationsRequest.newBuilder()
-        .setAccountId(accountId)
-        .setFrom(DateUtils.instantToTimestamp(from))
-        .setTo(DateUtils.instantToTimestamp(to))
-        .setState(operationState)
-        .setFigi(figi == null ? "" : figi)
-        .build())
-      .getOperationsList();
+  public List<Operation> getOperationsSync(@Nonnull String accountId,
+                                           @Nonnull Instant from,
+                                           @Nonnull Instant to,
+                                           @Nonnull OperationState operationState,
+                                           @Nullable String figi) {
+    return unaryCall(() -> sandboxBlockingStub.getSandboxOperations(
+        OperationsRequest.newBuilder()
+          .setAccountId(accountId)
+          .setFrom(DateUtils.instantToTimestamp(from))
+          .setTo(DateUtils.instantToTimestamp(to))
+          .setState(operationState)
+          .setFigi(figi == null ? "" : figi)
+          .build())
+      .getOperationsList());
   }
 
   @Nonnull
   public PortfolioResponse getPortfolioSync(@Nonnull String accountId) {
-    return sandboxBlockingStub.getSandboxPortfolio(
-      PortfolioRequest.newBuilder().setAccountId(accountId).build());
+    return unaryCall(() -> sandboxBlockingStub.getSandboxPortfolio(
+      PortfolioRequest.newBuilder().setAccountId(accountId).build()));
   }
 
   @Nonnull
   public MoneyValue payInSync(@Nonnull String accountId, @Nonnull MoneyValue moneyValue) {
-    return sandboxBlockingStub.sandboxPayIn(
+    return unaryCall(() -> sandboxBlockingStub.sandboxPayIn(
         SandboxPayInRequest.newBuilder()
           .setAccountId(accountId)
           .setAmount(moneyValue)
           .build())
-      .getBalance();
+      .getBalance());
   }
 
   @Nonnull
   public CompletableFuture<String> openAccount() {
-    return Helpers.<OpenSandboxAccountResponse>wrapWithFuture(
+    return Helpers.<OpenSandboxAccountResponse>unaryAsyncCall(
         observer -> sandboxStub.openSandboxAccount(
           OpenSandboxAccountRequest.newBuilder()
             .build(),
@@ -152,7 +178,7 @@ public class SandboxService {
 
   @Nonnull
   public CompletableFuture<List<Account>> getAccounts() {
-    return Helpers.<GetAccountsResponse>wrapWithFuture(
+    return Helpers.<GetAccountsResponse>unaryAsyncCall(
         observer -> sandboxStub.getSandboxAccounts(
           GetAccountsRequest.newBuilder().build(),
           observer))
@@ -161,7 +187,7 @@ public class SandboxService {
 
   @Nonnull
   public CompletableFuture<Void> closeAccount(@Nonnull String accountId) {
-    return Helpers.<CloseSandboxAccountResponse>wrapWithFuture(
+    return Helpers.<CloseSandboxAccountResponse>unaryAsyncCall(
         observer -> sandboxStub.closeSandboxAccount(
           CloseSandboxAccountRequest.newBuilder()
             .setAccountId(accountId)
@@ -171,15 +197,14 @@ public class SandboxService {
   }
 
   @Nonnull
-  public CompletableFuture<PostOrderResponse> postOrder(
-    @Nonnull String figi,
-    long quantity,
-    @Nonnull Quotation price,
-    @Nonnull OrderDirection direction,
-    @Nonnull String accountId,
-    @Nonnull OrderType type,
-    @Nonnull String orderId) {
-    return Helpers.wrapWithFuture(
+  public CompletableFuture<PostOrderResponse> postOrder(@Nonnull String figi,
+                                                        long quantity,
+                                                        @Nonnull Quotation price,
+                                                        @Nonnull OrderDirection direction,
+                                                        @Nonnull String accountId,
+                                                        @Nonnull OrderType type,
+                                                        @Nonnull String orderId) {
+    return Helpers.unaryAsyncCall(
       observer -> sandboxStub.postSandboxOrder(
         PostOrderRequest.newBuilder()
           .setFigi(figi)
@@ -195,7 +220,7 @@ public class SandboxService {
 
   @Nonnull
   public CompletableFuture<List<OrderState>> getOrders(@Nonnull String accountId) {
-    return Helpers.<GetOrdersResponse>wrapWithFuture(
+    return Helpers.<GetOrdersResponse>unaryAsyncCall(
         observer -> sandboxStub.getSandboxOrders(
           GetOrdersRequest.newBuilder()
             .setAccountId(accountId)
@@ -205,10 +230,9 @@ public class SandboxService {
   }
 
   @Nonnull
-  public CompletableFuture<Instant> cancelOrder(
-    @Nonnull String accountId,
-    @Nonnull String orderId) {
-    return Helpers.<CancelOrderResponse>wrapWithFuture(
+  public CompletableFuture<Instant> cancelOrder(@Nonnull String accountId,
+                                                @Nonnull String orderId) {
+    return Helpers.<CancelOrderResponse>unaryAsyncCall(
         observer -> sandboxStub.cancelSandboxOrder(
           CancelOrderRequest.newBuilder()
             .setAccountId(accountId)
@@ -219,10 +243,9 @@ public class SandboxService {
   }
 
   @Nonnull
-  public CompletableFuture<OrderState> getOrderState(
-    @Nonnull String accountId,
-    @Nonnull String orderId) {
-    return Helpers.wrapWithFuture(
+  public CompletableFuture<OrderState> getOrderState(@Nonnull String accountId,
+                                                     @Nonnull String orderId) {
+    return Helpers.unaryAsyncCall(
       observer -> sandboxStub.getSandboxOrderState(
         GetOrderStateRequest.newBuilder()
           .setAccountId(accountId)
@@ -233,45 +256,43 @@ public class SandboxService {
 
   @Nonnull
   public CompletableFuture<PositionsResponse> getPositions(@Nonnull String accountId) {
-    return Helpers.wrapWithFuture(
+    return Helpers.unaryAsyncCall(
       observer -> sandboxStub.getSandboxPositions(
         PositionsRequest.newBuilder().setAccountId(accountId).build(),
         observer));
   }
 
   @Nonnull
-  public CompletableFuture<List<Operation>> getOperations(
-    @Nonnull String accountId,
-    @Nonnull Instant from,
-    @Nonnull Instant to,
-    @Nonnull OperationState operationState,
-    @Nullable String figi) {
-    return Helpers.<OperationsResponse>wrapWithFuture(
-      observer -> sandboxStub.getSandboxOperations(
-        OperationsRequest.newBuilder()
-          .setAccountId(accountId)
-          .setFrom(DateUtils.instantToTimestamp(from))
-          .setTo(DateUtils.instantToTimestamp(to))
-          .setState(operationState)
-          .setFigi(figi == null ? "" : figi)
-          .build(),
-        observer))
+  public CompletableFuture<List<Operation>> getOperations(@Nonnull String accountId,
+                                                          @Nonnull Instant from,
+                                                          @Nonnull Instant to,
+                                                          @Nonnull OperationState operationState,
+                                                          @Nullable String figi) {
+    return Helpers.<OperationsResponse>unaryAsyncCall(
+        observer -> sandboxStub.getSandboxOperations(
+          OperationsRequest.newBuilder()
+            .setAccountId(accountId)
+            .setFrom(DateUtils.instantToTimestamp(from))
+            .setTo(DateUtils.instantToTimestamp(to))
+            .setState(operationState)
+            .setFigi(figi == null ? "" : figi)
+            .build(),
+          observer))
       .thenApply(OperationsResponse::getOperationsList);
   }
 
   @Nonnull
   public CompletableFuture<PortfolioResponse> getPortfolio(@Nonnull String accountId) {
-    return Helpers.wrapWithFuture(
+    return Helpers.unaryAsyncCall(
       observer -> sandboxStub.getSandboxPortfolio(
         PortfolioRequest.newBuilder().setAccountId(accountId).build(),
         observer));
   }
 
   @Nonnull
-  public CompletableFuture<MoneyValue> payIn(
-    @Nonnull String accountId,
-    @Nonnull MoneyValue moneyValue) {
-    return Helpers.<SandboxPayInResponse>wrapWithFuture(
+  public CompletableFuture<MoneyValue> payIn(@Nonnull String accountId,
+                                             @Nonnull MoneyValue moneyValue) {
+    return Helpers.<SandboxPayInResponse>unaryAsyncCall(
         observer -> sandboxStub.sandboxPayIn(
           SandboxPayInRequest.newBuilder()
             .setAccountId(accountId)
@@ -280,5 +301,4 @@ public class SandboxService {
           observer))
       .thenApply(SandboxPayInResponse::getBalance);
   }
-
 }

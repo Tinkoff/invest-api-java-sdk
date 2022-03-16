@@ -18,13 +18,13 @@ public class Portfolio {
   private final BigDecimal expectedYield;
   private final List<Position> positions;
 
-  Portfolio(@Nonnull Money totalAmountShares,
-            @Nonnull Money totalAmountBonds,
-            @Nonnull Money totalAmountEtfs,
-            @Nonnull Money totalAmountCurrencies,
-            @Nonnull Money totalAmountFutures,
-            @Nonnull BigDecimal expectedYield,
-            @Nonnull List<Position> positions) {
+  private Portfolio(@Nonnull Money totalAmountShares,
+                    @Nonnull Money totalAmountBonds,
+                    @Nonnull Money totalAmountEtfs,
+                    @Nonnull Money totalAmountCurrencies,
+                    @Nonnull Money totalAmountFutures,
+                    @Nonnull BigDecimal expectedYield,
+                    @Nonnull List<Position> positions) {
     this.totalAmountShares = totalAmountShares;
     this.totalAmountBonds = totalAmountBonds;
     this.totalAmountEtfs = totalAmountEtfs;
@@ -76,8 +76,12 @@ public class Portfolio {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     Portfolio portfolio = (Portfolio) o;
     return totalAmountShares.equals(portfolio.totalAmountShares) &&
       totalAmountBonds.equals(portfolio.totalAmountBonds) && totalAmountEtfs.equals(portfolio.totalAmountEtfs) &&

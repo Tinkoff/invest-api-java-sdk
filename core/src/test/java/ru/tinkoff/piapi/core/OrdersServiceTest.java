@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.rules.ExpectedException;
 import org.reactivestreams.FlowAdapters;
 import ru.tinkoff.piapi.contract.v1.*;
+import ru.tinkoff.piapi.core.exception.ReadonlyModeViolationException;
 import ru.tinkoff.piapi.core.utils.DateUtils;
 
 import java.util.List;

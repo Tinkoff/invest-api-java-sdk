@@ -3,7 +3,22 @@ package ru.tinkoff.piapi.core;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.subscription.BackPressureStrategy;
 import org.reactivestreams.FlowAdapters;
-import ru.tinkoff.piapi.contract.v1.*;
+import ru.tinkoff.piapi.contract.v1.CancelOrderRequest;
+import ru.tinkoff.piapi.contract.v1.CancelOrderResponse;
+import ru.tinkoff.piapi.contract.v1.GetOrderStateRequest;
+import ru.tinkoff.piapi.contract.v1.GetOrdersRequest;
+import ru.tinkoff.piapi.contract.v1.GetOrdersResponse;
+import ru.tinkoff.piapi.contract.v1.OrderDirection;
+import ru.tinkoff.piapi.contract.v1.OrderState;
+import ru.tinkoff.piapi.contract.v1.OrderType;
+import ru.tinkoff.piapi.contract.v1.OrdersServiceGrpc.OrdersServiceBlockingStub;
+import ru.tinkoff.piapi.contract.v1.OrdersServiceGrpc.OrdersServiceStub;
+import ru.tinkoff.piapi.contract.v1.OrdersStreamServiceGrpc.OrdersStreamServiceStub;
+import ru.tinkoff.piapi.contract.v1.PostOrderRequest;
+import ru.tinkoff.piapi.contract.v1.PostOrderResponse;
+import ru.tinkoff.piapi.contract.v1.Quotation;
+import ru.tinkoff.piapi.contract.v1.TradesStreamRequest;
+import ru.tinkoff.piapi.contract.v1.TradesStreamResponse;
 import ru.tinkoff.piapi.core.stream.OrdersStreamService;
 import ru.tinkoff.piapi.core.utils.DateUtils;
 import ru.tinkoff.piapi.core.utils.Helpers;
@@ -15,23 +30,29 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow.Publisher;
 import java.util.function.Consumer;
 
+import static ru.tinkoff.piapi.core.utils.Helpers.unaryCall;
+import static ru.tinkoff.piapi.core.utils.ValidationUtils.checkReadonly;
+
 public class OrdersService {
-  private final OrdersStreamServiceGrpc.OrdersStreamServiceStub ordersStreamStub;
-  private final OrdersServiceGrpc.OrdersServiceBlockingStub ordersBlockingStub;
-  private final OrdersServiceGrpc.OrdersServiceStub ordersStub;
+  private final OrdersStreamServiceStub ordersStreamStub;
+  private final OrdersServiceBlockingStub ordersBlockingStub;
+  private final OrdersServiceStub ordersStub;
   private final boolean readonlyMode;
 
-  OrdersService(
-    @Nonnull OrdersStreamServiceGrpc.OrdersStreamServiceStub ordersStreamStub,
-    @Nonnull OrdersServiceGrpc.OrdersServiceBlockingStub ordersBlockingStub,
-    @Nonnull OrdersServiceGrpc.OrdersServiceStub ordersStub,
-    boolean readonlyMode) {
+  OrdersService(@Nonnull OrdersStreamServiceStub ordersStreamStub,
+                @Nonnull OrdersServiceBlockingStub ordersBlockingStub,
+                @Nonnull OrdersServiceStub ordersStub,
+                boolean readonlyMode) {
     this.ordersStreamStub = ordersStreamStub;
     this.ordersBlockingStub = ordersBlockingStub;
     this.ordersStub = ordersStub;
     this.readonlyMode = readonlyMode;
   }
 
+
+  /**
+   * Deprecated. Используйте {@link OrdersStreamService}
+   */
   @Nonnull
   public Publisher<TradesStreamResponse> ordersStream() {
     var mutinyPublisher = Multi.createFrom().<TradesStreamResponse>emitter(
@@ -43,7 +64,8 @@ public class OrdersService {
     return FlowAdapters.toFlowPublisher(mutinyPublisher);
   }
 
-  /** Deprecated. Используйте {@link OrdersStreamService}
+  /**
+   * Deprecated. Используйте {@link OrdersStreamService}
    */
   public void subscribeTradesStream(Consumer<TradesStreamResponse> consumer) {
     Multi.createFrom()
@@ -55,17 +77,16 @@ public class OrdersService {
   }
 
   @Nonnull
-  public PostOrderResponse postOrderSync(
-    @Nonnull String figi,
-    long quantity,
-    @Nonnull Quotation price,
-    @Nonnull OrderDirection direction,
-    @Nonnull String accountId,
-    @Nonnull OrderType type,
-    @Nonnull String orderId) {
-    if (readonlyMode) throw new ReadonlyModeViolationException();
+  public PostOrderResponse postOrderSync(@Nonnull String figi,
+                                         long quantity,
+                                         @Nonnull Quotation price,
+                                         @Nonnull OrderDirection direction,
+                                         @Nonnull String accountId,
+                                         @Nonnull OrderType type,
+                                         @Nonnull String orderId) {
+    checkReadonly(readonlyMode);
 
-    return ordersBlockingStub.postOrder(
+    return unaryCall(() -> ordersBlockingStub.postOrder(
       PostOrderRequest.newBuilder()
         .setFigi(figi)
         .setQuantity(quantity)
@@ -74,57 +95,54 @@ public class OrdersService {
         .setAccountId(accountId)
         .setOrderType(type)
         .setOrderId(Helpers.preprocessInputOrderId(orderId))
-        .build());
+        .build()));
   }
 
   @Nonnull
-  public Instant cancelOrderSync(
-    @Nonnull String accountId,
-    @Nonnull String orderId) {
-    if (readonlyMode) throw new ReadonlyModeViolationException();
+  public Instant cancelOrderSync(@Nonnull String accountId,
+                                 @Nonnull String orderId) {
+    checkReadonly(readonlyMode);
 
-    var responseTime = ordersBlockingStub.cancelOrder(
+    var responseTime = unaryCall(() -> ordersBlockingStub.cancelOrder(
         CancelOrderRequest.newBuilder()
           .setAccountId(accountId)
           .setOrderId(orderId)
           .build())
-      .getTime();
+      .getTime());
 
     return DateUtils.timestampToInstant(responseTime);
   }
 
   @Nonnull
-  public OrderState getOrderStateSync(
-    @Nonnull String accountId,
-    @Nonnull String orderId) {
-    return ordersBlockingStub.getOrderState(
+  public OrderState getOrderStateSync(@Nonnull String accountId,
+                                      @Nonnull String orderId) {
+    return unaryCall(() -> ordersBlockingStub.getOrderState(
       GetOrderStateRequest.newBuilder()
         .setAccountId(accountId)
         .setOrderId(orderId)
-        .build());
+        .build()));
   }
 
   @Nonnull
   public List<OrderState> getOrdersSync(@Nonnull String accountId) {
-    return ordersBlockingStub.getOrders(
+    return unaryCall(() -> ordersBlockingStub.getOrders(
         GetOrdersRequest.newBuilder()
           .setAccountId(accountId)
           .build())
-      .getOrdersList();
+      .getOrdersList());
   }
 
   @Nonnull
-  public CompletableFuture<PostOrderResponse> postOrder(
-    @Nonnull String figi,
-    long quantity,
-    @Nonnull Quotation price,
-    @Nonnull OrderDirection direction,
-    @Nonnull String accountId,
-    @Nonnull OrderType type,
-    @Nonnull String orderId) {
-    if (readonlyMode) return CompletableFuture.failedFuture(new ReadonlyModeViolationException());
+  public CompletableFuture<PostOrderResponse> postOrder(@Nonnull String figi,
+                                                        long quantity,
+                                                        @Nonnull Quotation price,
+                                                        @Nonnull OrderDirection direction,
+                                                        @Nonnull String accountId,
+                                                        @Nonnull OrderType type,
+                                                        @Nonnull String orderId) {
+    checkReadonly(readonlyMode);
 
-    return Helpers.wrapWithFuture(
+    return Helpers.unaryAsyncCall(
       observer -> ordersStub.postOrder(
         PostOrderRequest.newBuilder()
           .setFigi(figi)
@@ -139,12 +157,11 @@ public class OrdersService {
   }
 
   @Nonnull
-  public CompletableFuture<Instant> cancelOrder(
-    @Nonnull String accountId,
-    @Nonnull String orderId) {
-    if (readonlyMode) return CompletableFuture.failedFuture(new ReadonlyModeViolationException());
+  public CompletableFuture<Instant> cancelOrder(@Nonnull String accountId,
+                                                @Nonnull String orderId) {
+    checkReadonly(readonlyMode);
 
-    return Helpers.<CancelOrderResponse>wrapWithFuture(
+    return Helpers.<CancelOrderResponse>unaryAsyncCall(
         observer -> ordersStub.cancelOrder(
           CancelOrderRequest.newBuilder()
             .setAccountId(accountId)
@@ -155,10 +172,9 @@ public class OrdersService {
   }
 
   @Nonnull
-  public CompletableFuture<OrderState> getOrderState(
-    @Nonnull String accountId,
-    @Nonnull String orderId) {
-    return Helpers.wrapWithFuture(
+  public CompletableFuture<OrderState> getOrderState(@Nonnull String accountId,
+                                                     @Nonnull String orderId) {
+    return Helpers.unaryAsyncCall(
       observer -> ordersStub.getOrderState(
         GetOrderStateRequest.newBuilder()
           .setAccountId(accountId)
@@ -169,7 +185,7 @@ public class OrdersService {
 
   @Nonnull
   public CompletableFuture<List<OrderState>> getOrders(@Nonnull String accountId) {
-    return Helpers.<GetOrdersResponse>wrapWithFuture(
+    return Helpers.<GetOrdersResponse>unaryAsyncCall(
         observer -> ordersStub.getOrders(
           GetOrdersRequest.newBuilder()
             .setAccountId(accountId)

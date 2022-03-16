@@ -53,9 +53,7 @@ public class Example {
       }
     };
 
-    Consumer<Throwable> onErrorCallback = error -> {
-      log.error(error.toString());
-    };
+    Consumer<Throwable> onErrorCallback = error -> log.error(error.toString());
 
     //Подписка стрим сделок. Не блокирующий вызов
     //При необходимости обработки ошибок (реконнект по вине сервера или клиента), рекомендуется сделать onErrorCallback
@@ -116,9 +114,7 @@ public class Example {
         log.info("неудачных подписок на последние цены: {}", errorCount);
       }
     };
-    Consumer<Throwable> onErrorCallback = error -> {
-      log.error(error.toString());
-    };
+    Consumer<Throwable> onErrorCallback = error -> log.error(error.toString());
 
     //Подписка на список инструментов. Не блокирующий вызов
     //При необходимости обработки ошибок (реконнект по вине сервера или клиента), рекомендуется сделать onErrorCallback
@@ -183,7 +179,7 @@ public class Example {
     var mainAccount = accounts.get(0).getId();
 
     var lastPrice = api.getMarketDataService().getLastPricesSync(List.of(figi)).get(0).getPrice();
-    var minPriceIncrement = api.getInstrumentsService().getInstrumentByFigiSync(figi).get().getMinPriceIncrement();
+    var minPriceIncrement = api.getInstrumentsService().getInstrumentByFigiSync(figi).getMinPriceIncrement();
     var stopPrice = Quotation.newBuilder().setUnits(lastPrice.getUnits() - minPriceIncrement.getUnits() * 100)
       .setNano(lastPrice.getNano() - minPriceIncrement.getNano() * 100).build();
     var stopOrderId = api.getStopOrdersService()
@@ -206,7 +202,7 @@ public class Example {
     var mainAccount = accounts.get(0).getId();
 
     var lastPrice = api.getMarketDataService().getLastPricesSync(List.of(figi)).get(0).getPrice();
-    var minPriceIncrement = api.getInstrumentsService().getInstrumentByFigiSync(figi).get().getMinPriceIncrement();
+    var minPriceIncrement = api.getInstrumentsService().getInstrumentByFigiSync(figi).getMinPriceIncrement();
     var price = Quotation.newBuilder().setUnits(lastPrice.getUnits() - minPriceIncrement.getUnits() * 100)
       .setNano(lastPrice.getNano() - minPriceIncrement.getNano() * 100).build();
 
@@ -230,6 +226,8 @@ public class Example {
     getPositionsExample(api);
     getPortfolioExample(api);
     getWithdrawLimitsExample(api);
+    getBrokerReportExample(api);
+    getDividendsForeignIssuer(api);
   }
 
   private static void marketdataServiceExample(InvestApi api) {
@@ -238,6 +236,62 @@ public class Example {
     getLastPricesExample(api);
     getTradingStatusExample(api);
   }
+
+  private static void getBrokerReportExample(InvestApi api) {
+    var accounts = api.getUserService().getAccountsSync();
+    var mainAccount = accounts.get(0).getId();
+
+    //Запрашиваем отчет
+    var response = api.getOperationsService().getBrokerReportSync(mainAccount, Instant.now().minus(30, ChronoUnit.DAYS), Instant.now());
+    if (response.hasGenerateBrokerReportResponse()) {
+      //Если отчет не готов - вернется task_id
+      log.info("task_id: {}", response.getGenerateBrokerReportResponse().getTaskId());
+    } else if (response.hasGetBrokerReportResponse()) {
+      //Если отчет уже готов - вернется отчет
+      var report = response.getGetBrokerReportResponse();
+      log.info("отчет содержит в себе {} позиций", report.getItemsCount());
+    }
+
+
+    //Можно запрашивать готовый отчет по task_id
+    var taskId = "feb07b1f-300a-438c-ad01-4798c74e915e";
+    //Асинхронно
+    var report = api.getOperationsService().getBrokerReport(taskId, 0).join();
+    log.info("отчет содержит в себе {} позиций", report.getItemsCount());
+
+    //Синхронно
+    var reportSync = api.getOperationsService().getBrokerReportSync(taskId, 0);
+    log.info("отчет содержит в себе {} позиций", reportSync.getItemsCount());
+  }
+
+  private static void getDividendsForeignIssuer(InvestApi api) {
+    var accounts = api.getUserService().getAccountsSync();
+    var mainAccount = accounts.get(0).getId();
+
+    //Запрашиваем справку о доходах за пределами РФ
+    var response = api.getOperationsService().getDividendsForeignIssuerSync(mainAccount, Instant.now().minus(30, ChronoUnit.DAYS), Instant.now());
+    var taskId = "feb07b1f-300a-438c-ad01-4798c74e915e";
+
+    if (response.hasGenerateDivForeignIssuerReportResponse()) {
+      //Если отчет не готов - вернется task_id
+      taskId = response.getGenerateDivForeignIssuerReportResponse().getTaskId();
+      log.info("task_id: {}", taskId);
+    } else if (response.hasDivForeignIssuerReport()) {
+      //Если отчет уже готов - вернется отчет
+      var report = response.getDivForeignIssuerReport();
+      log.info("отчет содержит в себе {} позиций", report.getItemsCount());
+    }
+
+    //Можно запрашивать готовый отчет по task_id
+    //Асинхронно
+    var report = api.getOperationsService().getDividendsForeignIssuer(taskId, 0).join();
+    log.info("отчет содержит в себе {} позиций", report.getItemsCount());
+
+    //Синхронно
+    var reportSync = api.getOperationsService().getDividendsForeignIssuerSync(taskId, 0);
+    log.info("отчет содержит в себе {} позиций", reportSync.getItemsCount());
+  }
+
 
   private static void getWithdrawLimitsExample(InvestApi api) {
     var accounts = api.getUserService().getAccountsSync();
@@ -372,8 +426,7 @@ public class Example {
       var share = shares.get(i);
       var figi = share.getFigi();
       var dividends =
-        api.getInstrumentsService().getDividendsSync(figi, Instant.now(), Instant.now().plus(30, ChronoUnit.DAYS))
-          .get();
+        api.getInstrumentsService().getDividendsSync(figi, Instant.now(), Instant.now().plus(30, ChronoUnit.DAYS));
       for (Dividend dividend : dividends) {
         log.info("дивиденд для figi {}: {}", figi, dividend);
       }
@@ -384,7 +437,7 @@ public class Example {
       var bond = bonds.get(i);
       var figi = bond.getFigi();
       var accruedInterests = api.getInstrumentsService()
-        .getAccruedInterestsSync(figi, Instant.now(), Instant.now().plus(30, ChronoUnit.DAYS)).get();
+        .getAccruedInterestsSync(figi, Instant.now(), Instant.now().plus(30, ChronoUnit.DAYS));
       for (AccruedInterest accruedInterest : accruedInterests) {
         log.info("НКД для figi {}: {}", figi, accruedInterest);
       }
@@ -394,7 +447,7 @@ public class Example {
     for (int i = 0; i < Math.min(futures.size(), 3); i++) {
       var future = futures.get(i);
       var figi = future.getFigi();
-      var futuresMargin = api.getInstrumentsService().getFuturesMarginSync(figi).get();
+      var futuresMargin = api.getInstrumentsService().getFuturesMarginSync(figi);
       log.info("гарантийное обеспечение при покупке для figi {}: {}", figi,
         moneyValueToBigDecimal(futuresMargin.getInitialMarginOnBuy()));
       log.info("гарантийное обеспечение при продаже для figi {}: {}", figi,
@@ -407,7 +460,7 @@ public class Example {
     //Получаем время работы биржи
     var tradingSchedules =
       api.getInstrumentsService().getTradingScheduleSync("spb", Instant.now(), Instant.now().plus(5, ChronoUnit.DAYS));
-    for (TradingDay tradingDay : tradingSchedules.get().getDaysList()) {
+    for (TradingDay tradingDay : tradingSchedules.getDaysList()) {
       var date = timestampToString(tradingDay.getDate());
       var startDate = timestampToString(tradingDay.getStartTime());
       var endDate = timestampToString(tradingDay.getEndTime());
@@ -419,7 +472,7 @@ public class Example {
     }
 
     //Получаем инструмент по его figi
-    var instrument = api.getInstrumentsService().getInstrumentByFigiSync("BBG000B9XRY4").get();
+    var instrument = api.getInstrumentsService().getInstrumentByFigiSync("BBG000B9XRY4");
     log.info(
       "инструмент figi: {}, лотность: {}, текущий режим торгов: {}, признак внебиржи: {}, признак доступности торгов " +
         "через api : {}",
@@ -434,6 +487,15 @@ public class Example {
     //Проверяем, что будет ошибка 50002. Об ошибках и причинах их возникновения - https://tinkoff.github.io/investAPI/errors/
     var bondFigi = "BBG00RPRPX12"; //инструмент с типом bond
     api.getInstrumentsService().getCurrencyByFigiSync(bondFigi);
+
+    //Получаем информацию о купонах облигации
+    var bondCoupons = api.getInstrumentsService().getBondCouponsSync(bondFigi, Instant.now().minus(1, ChronoUnit.YEARS), Instant.now());
+    for (Coupon bondCoupon : bondCoupons) {
+      var couponDate = bondCoupon.getCouponDate();
+      var couponType = bondCoupon.getCouponType().getDescriptorForType();
+      var payment = moneyValueToBigDecimal(bondCoupon.getPayOneBond());
+      log.info("выплаты по купонам. дата: {}, тип: {}, выплата на 1 облигацию: {}", couponDate, couponType, payment);
+    }
   }
 
   private static void getTradingStatusExample(InvestApi api) {

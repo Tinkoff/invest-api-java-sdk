@@ -7,22 +7,64 @@ import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import org.hamcrest.core.IsInstanceOf;
 import org.junit.Rule;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 import org.junit.rules.ExpectedException;
-import ru.tinkoff.piapi.contract.v1.*;
-import ru.tinkoff.piapi.core.utils.DateUtils;
+import ru.tinkoff.piapi.contract.v1.AccruedInterest;
+import ru.tinkoff.piapi.contract.v1.Bond;
+import ru.tinkoff.piapi.contract.v1.BondResponse;
+import ru.tinkoff.piapi.contract.v1.BondsResponse;
+import ru.tinkoff.piapi.contract.v1.CurrenciesResponse;
+import ru.tinkoff.piapi.contract.v1.Currency;
+import ru.tinkoff.piapi.contract.v1.CurrencyResponse;
+import ru.tinkoff.piapi.contract.v1.Dividend;
+import ru.tinkoff.piapi.contract.v1.Etf;
+import ru.tinkoff.piapi.contract.v1.EtfResponse;
+import ru.tinkoff.piapi.contract.v1.EtfsResponse;
+import ru.tinkoff.piapi.contract.v1.Future;
+import ru.tinkoff.piapi.contract.v1.FutureResponse;
+import ru.tinkoff.piapi.contract.v1.FuturesResponse;
+import ru.tinkoff.piapi.contract.v1.GetAccruedInterestsRequest;
+import ru.tinkoff.piapi.contract.v1.GetAccruedInterestsResponse;
+import ru.tinkoff.piapi.contract.v1.GetDividendsRequest;
+import ru.tinkoff.piapi.contract.v1.GetDividendsResponse;
+import ru.tinkoff.piapi.contract.v1.GetFuturesMarginRequest;
+import ru.tinkoff.piapi.contract.v1.GetFuturesMarginResponse;
+import ru.tinkoff.piapi.contract.v1.Instrument;
+import ru.tinkoff.piapi.contract.v1.InstrumentIdType;
+import ru.tinkoff.piapi.contract.v1.InstrumentRequest;
+import ru.tinkoff.piapi.contract.v1.InstrumentResponse;
+import ru.tinkoff.piapi.contract.v1.InstrumentStatus;
+import ru.tinkoff.piapi.contract.v1.InstrumentsRequest;
+import ru.tinkoff.piapi.contract.v1.InstrumentsServiceGrpc;
+import ru.tinkoff.piapi.contract.v1.MoneyValue;
+import ru.tinkoff.piapi.contract.v1.Quotation;
+import ru.tinkoff.piapi.contract.v1.Share;
+import ru.tinkoff.piapi.contract.v1.ShareResponse;
+import ru.tinkoff.piapi.contract.v1.SharesResponse;
+import ru.tinkoff.piapi.contract.v1.TradingSchedule;
+import ru.tinkoff.piapi.contract.v1.TradingSchedulesRequest;
+import ru.tinkoff.piapi.contract.v1.TradingSchedulesResponse;
+import ru.tinkoff.piapi.core.exception.ApiRuntimeException;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.AdditionalAnswers.delegatesTo;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static ru.tinkoff.piapi.core.utils.DateUtils.timestampToInstant;
 
 public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService> {
 
@@ -34,6 +76,17 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
     return new InstrumentsService(
       InstrumentsServiceGrpc.newBlockingStub(channel),
       InstrumentsServiceGrpc.newStub(channel));
+  }
+
+  private void assertThrowsApiRuntimeException(String code, Executable executable) {
+    var apiRuntimeException = assertThrows(ApiRuntimeException.class, executable);
+    assertEquals(code, apiRuntimeException.getCode());
+  }
+
+  private void assertThrowsAsyncApiRuntimeException(String code, Executable executable) {
+    var throwable = assertThrows(CompletionException.class, executable).getCause();
+    assertTrue(throwable instanceof ApiRuntimeException);
+    assertEquals(code, ((ApiRuntimeException) throwable).getCode());
   }
 
   @Nested
@@ -60,11 +113,11 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .setTo(Timestamp.newBuilder().setSeconds(1234567890).setNanos(111222333).build())
         .build();
       var actualSync = service.getTradingSchedulesSync(
-        DateUtils.timestampToInstant(inArg.getFrom()),
-        DateUtils.timestampToInstant(inArg.getTo()));
+        timestampToInstant(inArg.getFrom()),
+        timestampToInstant(inArg.getTo()));
       var actualAsync = service.getTradingSchedules(
-        DateUtils.timestampToInstant(inArg.getFrom()),
-        DateUtils.timestampToInstant(inArg.getTo())).join();
+        timestampToInstant(inArg.getFrom()),
+        timestampToInstant(inArg.getTo())).join();
 
       assertIterableEquals(expected.getExchangesList(), actualSync);
       assertIterableEquals(expected.getExchangesList(), actualAsync);
@@ -93,7 +146,7 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
       assertThrows(IllegalArgumentException.class, () -> service.getTradingSchedulesSync(now, nowMinusSecond));
       futureThrown.expect(CompletionException.class);
       futureThrown.expectCause(IsInstanceOf.instanceOf(IllegalArgumentException.class));
-      service.getTradingSchedules(now, nowMinusSecond);
+      assertThrows(IllegalArgumentException.class, () -> service.getTradingSchedules(now, nowMinusSecond));
 
       verify(grpcService, never()).tradingSchedules(any(), any());
     }
@@ -122,15 +175,15 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .build();
       var actualSync = service.getTradingScheduleSync(
         exchange,
-        DateUtils.timestampToInstant(inArg.getFrom()),
-        DateUtils.timestampToInstant(inArg.getTo()));
+        timestampToInstant(inArg.getFrom()),
+        timestampToInstant(inArg.getTo()));
       var actualAsync = service.getTradingSchedule(
         exchange,
-        DateUtils.timestampToInstant(inArg.getFrom()),
-        DateUtils.timestampToInstant(inArg.getTo())).join();
+        timestampToInstant(inArg.getFrom()),
+        timestampToInstant(inArg.getTo())).join();
 
-      assertEquals(Optional.of(expected.getExchangesList().get(0)), actualSync);
-      assertEquals(Optional.of(expected.getExchangesList().get(0)), actualAsync);
+      assertEquals(expected.getExchangesList().get(0), actualSync);
+      assertEquals(expected.getExchangesList().get(0), actualAsync);
 
       verify(grpcService, times(2)).tradingSchedules(eq(inArg), any());
     }
@@ -148,7 +201,7 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
       assertThrows(IllegalArgumentException.class, () -> service.getTradingScheduleSync(exchange, now, nowMinusSecond));
       futureThrown.expect(CompletionException.class);
       futureThrown.expectCause(IsInstanceOf.instanceOf(IllegalArgumentException.class));
-      service.getTradingSchedule(exchange, now, nowMinusSecond);
+      assertThrows(IllegalArgumentException.class, () -> service.getTradingSchedule(exchange, now, nowMinusSecond));
 
       verify(grpcService, never()).tradingSchedules(any(), any());
     }
@@ -156,13 +209,13 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
     @Test
     void getOneSchedule_shouldReturnNoneInCaseOfNotFoundStatus_Test() {
       var exchange = "MOEX";
-      var expected = Optional.<TradingSchedule>empty();
+      var expected = TradingSchedule.getDefaultInstance();
       var grpcService = mock(InstrumentsServiceGrpc.InstrumentsServiceImplBase.class, delegatesTo(
         new InstrumentsServiceGrpc.InstrumentsServiceImplBase() {
           @Override
           public void tradingSchedules(TradingSchedulesRequest request,
                                        StreamObserver<TradingSchedulesResponse> responseObserver) {
-            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND));
+            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND.withDescription("50001")));
           }
         }));
       var service = mkClientBasedOnServer(grpcService);
@@ -172,17 +225,15 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .setFrom(Timestamp.newBuilder().setSeconds(1234567890).build())
         .setTo(Timestamp.newBuilder().setSeconds(1234567890).setNanos(111222333).build())
         .build();
-      var actualSync = service.getTradingScheduleSync(
+      assertThrowsApiRuntimeException("50001", () -> service.getTradingScheduleSync(
         exchange,
-        DateUtils.timestampToInstant(inArg.getFrom()),
-        DateUtils.timestampToInstant(inArg.getTo()));
-      var actualAsync = service.getTradingSchedule(
+        timestampToInstant(inArg.getFrom()),
+        timestampToInstant(inArg.getTo())));
+      assertThrowsAsyncApiRuntimeException("50001", () -> service.getTradingSchedule(
         exchange,
-        DateUtils.timestampToInstant(inArg.getFrom()),
-        DateUtils.timestampToInstant(inArg.getTo())).join();
+        timestampToInstant(inArg.getFrom()),
+        timestampToInstant(inArg.getTo())).join());
 
-      assertEquals(expected, actualSync);
-      assertEquals(expected, actualAsync);
 
       verify(grpcService, times(2)).tradingSchedules(eq(inArg), any());
     }
@@ -216,8 +267,8 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
       var actualSync = service.getBondByTickerSync(inArg.getId(), inArg.getClassCode());
       var actualAsync = service.getBondByTicker(inArg.getId(), inArg.getClassCode()).join();
 
-      assertEquals(Optional.of(expected.getInstrument()), actualSync);
-      assertEquals(Optional.of(expected.getInstrument()), actualAsync);
+      assertEquals(expected.getInstrument(), actualSync);
+      assertEquals(expected.getInstrument(), actualAsync);
 
       verify(grpcService, times(2)).bondBy(eq(inArg), any());
     }
@@ -229,7 +280,7 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
           @Override
           public void bondBy(InstrumentRequest request,
                              StreamObserver<BondResponse> responseObserver) {
-            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND));
+            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND.withDescription("50002")));
           }
         }));
       var service = mkClientBasedOnServer(grpcService);
@@ -239,11 +290,9 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .setId("TCS")
         .setClassCode("moex")
         .build();
-      var actualSync = service.getBondByTickerSync(inArg.getId(), inArg.getClassCode());
-      var actualAsync = service.getBondByTicker(inArg.getId(), inArg.getClassCode()).join();
 
-      assertEquals(Optional.<Bond>empty(), actualSync);
-      assertEquals(Optional.<Bond>empty(), actualAsync);
+      assertThrowsApiRuntimeException("50002", () -> service.getBondByTickerSync(inArg.getId(), inArg.getClassCode()));
+      assertThrowsAsyncApiRuntimeException("50002", () -> service.getBondByTicker(inArg.getId(), inArg.getClassCode()).join());
 
       verify(grpcService, times(2)).bondBy(eq(inArg), any());
     }
@@ -271,8 +320,8 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
       var actualSync = service.getBondByFigiSync(inArg.getId());
       var actualAsync = service.getBondByFigi(inArg.getId()).join();
 
-      assertEquals(Optional.of(expected.getInstrument()), actualSync);
-      assertEquals(Optional.of(expected.getInstrument()), actualAsync);
+      assertEquals(expected.getInstrument(), actualSync);
+      assertEquals(expected.getInstrument(), actualAsync);
 
       verify(grpcService, times(2)).bondBy(eq(inArg), any());
     }
@@ -284,7 +333,7 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
           @Override
           public void bondBy(InstrumentRequest request,
                              StreamObserver<BondResponse> responseObserver) {
-            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND));
+            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND.withDescription("50002")));
           }
         }));
       var service = mkClientBasedOnServer(grpcService);
@@ -293,11 +342,9 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .setIdType(InstrumentIdType.INSTRUMENT_ID_TYPE_FIGI)
         .setId("figi")
         .build();
-      var actualSync = service.getBondByFigiSync(inArg.getId());
-      var actualAsync = service.getBondByFigi(inArg.getId()).join();
 
-      assertEquals(Optional.<Bond>empty(), actualSync);
-      assertEquals(Optional.<Bond>empty(), actualAsync);
+      assertThrowsApiRuntimeException("50002", () -> service.getBondByFigiSync(inArg.getId()));
+      assertThrowsAsyncApiRuntimeException("50002", () -> service.getBondByFigi(inArg.getId()).join());
 
       verify(grpcService, times(2)).bondBy(eq(inArg), any());
     }
@@ -387,8 +434,8 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
       var actualSync = service.getCurrencyByTickerSync(inArg.getId(), inArg.getClassCode());
       var actualAsync = service.getCurrencyByTicker(inArg.getId(), inArg.getClassCode()).join();
 
-      assertEquals(Optional.of(expected.getInstrument()), actualSync);
-      assertEquals(Optional.of(expected.getInstrument()), actualAsync);
+      assertEquals(expected.getInstrument(), actualSync);
+      assertEquals(expected.getInstrument(), actualAsync);
 
       verify(grpcService, times(2)).currencyBy(eq(inArg), any());
     }
@@ -400,7 +447,7 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
           @Override
           public void currencyBy(InstrumentRequest request,
                                  StreamObserver<CurrencyResponse> responseObserver) {
-            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND));
+            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND.withDescription("50002")));
           }
         }));
       var service = mkClientBasedOnServer(grpcService);
@@ -410,11 +457,9 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .setId("TCS")
         .setClassCode("moex")
         .build();
-      var actualSync = service.getCurrencyByTickerSync(inArg.getId(), inArg.getClassCode());
-      var actualAsync = service.getCurrencyByTicker(inArg.getId(), inArg.getClassCode()).join();
 
-      assertEquals(Optional.<Currency>empty(), actualSync);
-      assertEquals(Optional.<Currency>empty(), actualAsync);
+      assertThrowsApiRuntimeException("50002", () -> service.getCurrencyByTickerSync(inArg.getId(), inArg.getClassCode()));
+      assertThrowsAsyncApiRuntimeException("50002", () -> service.getCurrencyByTicker(inArg.getId(), inArg.getClassCode()).join());
 
       verify(grpcService, times(2)).currencyBy(eq(inArg), any());
     }
@@ -442,8 +487,8 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
       var actualSync = service.getCurrencyByFigiSync(inArg.getId());
       var actualAsync = service.getCurrencyByFigi(inArg.getId()).join();
 
-      assertEquals(Optional.of(expected.getInstrument()), actualSync);
-      assertEquals(Optional.of(expected.getInstrument()), actualAsync);
+      assertEquals(expected.getInstrument(), actualSync);
+      assertEquals(expected.getInstrument(), actualAsync);
 
       verify(grpcService, times(2)).currencyBy(eq(inArg), any());
     }
@@ -455,7 +500,7 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
           @Override
           public void currencyBy(InstrumentRequest request,
                                  StreamObserver<CurrencyResponse> responseObserver) {
-            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND));
+            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND.withDescription("50002")));
           }
         }));
       var service = mkClientBasedOnServer(grpcService);
@@ -464,11 +509,9 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .setIdType(InstrumentIdType.INSTRUMENT_ID_TYPE_FIGI)
         .setId("figi")
         .build();
-      var actualSync = service.getCurrencyByFigiSync(inArg.getId());
-      var actualAsync = service.getCurrencyByFigi(inArg.getId()).join();
 
-      assertEquals(Optional.<Currency>empty(), actualSync);
-      assertEquals(Optional.<Currency>empty(), actualAsync);
+      assertThrowsApiRuntimeException("50002", () -> service.getCurrencyByFigiSync(inArg.getId()));
+      assertThrowsAsyncApiRuntimeException("50002", () -> service.getCurrencyByFigi(inArg.getId()).join());
 
       verify(grpcService, times(2)).currencyBy(eq(inArg), any());
     }
@@ -555,11 +598,9 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .setId("TCS")
         .setClassCode("moex")
         .build();
-      var actualSync = service.getEtfByTickerSync(inArg.getId(), inArg.getClassCode());
-      var actualAsync = service.getEtfByTicker(inArg.getId(), inArg.getClassCode()).join();
 
-      assertEquals(Optional.of(expected.getInstrument()), actualSync);
-      assertEquals(Optional.of(expected.getInstrument()), actualAsync);
+      Assertions.assertEquals(expected.getInstrument(), service.getEtfByTickerSync(inArg.getId(), inArg.getClassCode()));
+      assertEquals(expected.getInstrument(), service.getEtfByTicker(inArg.getId(), inArg.getClassCode()).join());
 
       verify(grpcService, times(2)).etfBy(eq(inArg), any());
     }
@@ -571,7 +612,7 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
           @Override
           public void etfBy(InstrumentRequest request,
                             StreamObserver<EtfResponse> responseObserver) {
-            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND));
+            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND.withDescription("50002")));
           }
         }));
       var service = mkClientBasedOnServer(grpcService);
@@ -581,11 +622,9 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .setId("TCS")
         .setClassCode("moex")
         .build();
-      var actualSync = service.getEtfByTickerSync(inArg.getId(), inArg.getClassCode());
-      var actualAsync = service.getEtfByTicker(inArg.getId(), inArg.getClassCode()).join();
 
-      assertEquals(Optional.<Etf>empty(), actualSync);
-      assertEquals(Optional.<Etf>empty(), actualAsync);
+      assertThrowsApiRuntimeException("50002", () -> service.getEtfByTickerSync(inArg.getId(), inArg.getClassCode()));
+      assertThrowsAsyncApiRuntimeException("50002", () -> service.getEtfByTicker(inArg.getId(), inArg.getClassCode()).join());
 
       verify(grpcService, times(2)).etfBy(eq(inArg), any());
     }
@@ -610,11 +649,9 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .setIdType(InstrumentIdType.INSTRUMENT_ID_TYPE_FIGI)
         .setId("figi")
         .build();
-      var actualSync = service.getEtfByFigiSync(inArg.getId());
-      var actualAsync = service.getEtfByFigi(inArg.getId()).join();
 
-      assertEquals(Optional.of(expected.getInstrument()), actualSync);
-      assertEquals(Optional.of(expected.getInstrument()), actualAsync);
+      assertEquals(expected.getInstrument(), service.getEtfByFigiSync(inArg.getId()));
+      assertEquals(expected.getInstrument(), service.getEtfByFigi(inArg.getId()).join());
 
       verify(grpcService, times(2)).etfBy(eq(inArg), any());
     }
@@ -626,7 +663,7 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
           @Override
           public void etfBy(InstrumentRequest request,
                             StreamObserver<EtfResponse> responseObserver) {
-            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND));
+            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND.withDescription("50002")));
           }
         }));
       var service = mkClientBasedOnServer(grpcService);
@@ -635,11 +672,9 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .setIdType(InstrumentIdType.INSTRUMENT_ID_TYPE_FIGI)
         .setId("figi")
         .build();
-      var actualSync = service.getEtfByFigiSync(inArg.getId());
-      var actualAsync = service.getEtfByFigi(inArg.getId()).join();
 
-      assertEquals(Optional.<Etf>empty(), actualSync);
-      assertEquals(Optional.<Etf>empty(), actualAsync);
+      assertThrowsApiRuntimeException("50002", () -> service.getEtfByFigiSync(inArg.getId()));
+      assertThrowsAsyncApiRuntimeException("50002", () -> service.getEtfByFigi(inArg.getId()).join());
 
       verify(grpcService, times(2)).etfBy(eq(inArg), any());
     }
@@ -726,11 +761,9 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .setId("TCS")
         .setClassCode("moex")
         .build();
-      var actualSync = service.getFutureByTickerSync(inArg.getId(), inArg.getClassCode());
-      var actualAsync = service.getFutureByTicker(inArg.getId(), inArg.getClassCode()).join();
 
-      assertEquals(Optional.of(expected.getInstrument()), actualSync);
-      assertEquals(Optional.of(expected.getInstrument()), actualAsync);
+      assertEquals(expected.getInstrument(), service.getFutureByTickerSync(inArg.getId(), inArg.getClassCode()));
+      assertEquals(expected.getInstrument(), service.getFutureByTicker(inArg.getId(), inArg.getClassCode()).join());
 
       verify(grpcService, times(2)).futureBy(eq(inArg), any());
     }
@@ -742,7 +775,7 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
           @Override
           public void futureBy(InstrumentRequest request,
                                StreamObserver<FutureResponse> responseObserver) {
-            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND));
+            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND.withDescription("50002")));
           }
         }));
       var service = mkClientBasedOnServer(grpcService);
@@ -752,11 +785,9 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .setId("ticker")
         .setClassCode("MOEX")
         .build();
-      var actualSync = service.getFutureByTickerSync(inArg.getId(), inArg.getClassCode());
-      var actualAsync = service.getFutureByTicker(inArg.getId(), inArg.getClassCode()).join();
 
-      assertEquals(Optional.<Future>empty(), actualSync);
-      assertEquals(Optional.<Future>empty(), actualAsync);
+      assertThrowsApiRuntimeException("50002", () -> service.getFutureByTickerSync(inArg.getId(), inArg.getClassCode()));
+      assertThrowsAsyncApiRuntimeException("50002", () -> service.getFutureByTicker(inArg.getId(), inArg.getClassCode()).join());
 
       verify(grpcService, times(2)).futureBy(eq(inArg), any());
     }
@@ -781,11 +812,9 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .setIdType(InstrumentIdType.INSTRUMENT_ID_TYPE_FIGI)
         .setId("figi")
         .build();
-      var actualSync = service.getFutureByFigiSync(inArg.getId());
-      var actualAsync = service.getFutureByFigi(inArg.getId()).join();
 
-      assertEquals(Optional.of(expected.getInstrument()), actualSync);
-      assertEquals(Optional.of(expected.getInstrument()), actualAsync);
+      assertEquals(expected.getInstrument(), service.getFutureByFigiSync(inArg.getId()));
+      assertEquals(expected.getInstrument(), service.getFutureByFigi(inArg.getId()).join());
 
       verify(grpcService, times(2)).futureBy(eq(inArg), any());
     }
@@ -797,7 +826,7 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
           @Override
           public void futureBy(InstrumentRequest request,
                                StreamObserver<FutureResponse> responseObserver) {
-            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND));
+            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND.withDescription("50002")));
           }
         }));
       var service = mkClientBasedOnServer(grpcService);
@@ -806,11 +835,9 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .setIdType(InstrumentIdType.INSTRUMENT_ID_TYPE_FIGI)
         .setId("figi")
         .build();
-      var actualSync = service.getFutureByFigiSync(inArg.getId());
-      var actualAsync = service.getFutureByFigi(inArg.getId()).join();
 
-      assertEquals(Optional.<Future>empty(), actualSync);
-      assertEquals(Optional.<Future>empty(), actualAsync);
+      assertThrowsApiRuntimeException("50002", () -> service.getFutureByFigiSync(inArg.getId()));
+      assertThrowsAsyncApiRuntimeException("50002", () -> service.getFutureByFigi(inArg.getId()).join());
 
       verify(grpcService, times(2)).futureBy(eq(inArg), any());
     }
@@ -897,11 +924,9 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .setId("TCS")
         .setClassCode("moex")
         .build();
-      var actualSync = service.getShareByTickerSync(inArg.getId(), inArg.getClassCode());
-      var actualAsync = service.getShareByTicker(inArg.getId(), inArg.getClassCode()).join();
 
-      assertEquals(Optional.of(expected.getInstrument()), actualSync);
-      assertEquals(Optional.of(expected.getInstrument()), actualAsync);
+      assertEquals(expected.getInstrument(), service.getShareByTickerSync(inArg.getId(), inArg.getClassCode()));
+      assertEquals(expected.getInstrument(), service.getShareByTicker(inArg.getId(), inArg.getClassCode()).join());
 
       verify(grpcService, times(2)).shareBy(eq(inArg), any());
     }
@@ -913,7 +938,7 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
           @Override
           public void shareBy(InstrumentRequest request,
                               StreamObserver<ShareResponse> responseObserver) {
-            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND));
+            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND.withDescription("50002")));
           }
         }));
       var service = mkClientBasedOnServer(grpcService);
@@ -923,11 +948,9 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .setId("ticker")
         .setClassCode("MOEX")
         .build();
-      var actualSync = service.getShareByTickerSync(inArg.getId(), inArg.getClassCode());
-      var actualAsync = service.getShareByTicker(inArg.getId(), inArg.getClassCode()).join();
 
-      assertEquals(Optional.<Share>empty(), actualSync);
-      assertEquals(Optional.<Share>empty(), actualAsync);
+      assertThrowsApiRuntimeException("50002", () -> service.getShareByTickerSync(inArg.getId(), inArg.getClassCode()));
+      assertThrowsAsyncApiRuntimeException("50002", () -> service.getShareByTicker(inArg.getId(), inArg.getClassCode()).join());
 
       verify(grpcService, times(2)).shareBy(eq(inArg), any());
     }
@@ -952,11 +975,9 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .setIdType(InstrumentIdType.INSTRUMENT_ID_TYPE_FIGI)
         .setId("figi")
         .build();
-      var actualSync = service.getShareByFigiSync(inArg.getId());
-      var actualAsync = service.getShareByFigi(inArg.getId()).join();
 
-      assertEquals(Optional.of(expected.getInstrument()), actualSync);
-      assertEquals(Optional.of(expected.getInstrument()), actualAsync);
+      assertEquals(expected.getInstrument(), service.getShareByFigiSync(inArg.getId()));
+      assertEquals(expected.getInstrument(), service.getShareByFigi(inArg.getId()).join());
 
       verify(grpcService, times(2)).shareBy(eq(inArg), any());
     }
@@ -968,7 +989,7 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
           @Override
           public void shareBy(InstrumentRequest request,
                               StreamObserver<ShareResponse> responseObserver) {
-            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND));
+            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND.withDescription("50002")));
           }
         }));
       var service = mkClientBasedOnServer(grpcService);
@@ -977,11 +998,9 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .setIdType(InstrumentIdType.INSTRUMENT_ID_TYPE_FIGI)
         .setId("figi")
         .build();
-      var actualSync = service.getShareByFigiSync(inArg.getId());
-      var actualAsync = service.getShareByFigi(inArg.getId()).join();
 
-      assertEquals(Optional.<Share>empty(), actualSync);
-      assertEquals(Optional.<Share>empty(), actualAsync);
+      assertThrowsApiRuntimeException("50002", () -> service.getShareByFigiSync(inArg.getId()));
+      assertThrowsAsyncApiRuntimeException("50002", () -> service.getShareByFigi(inArg.getId()).join());
 
       verify(grpcService, times(2)).shareBy(eq(inArg), any());
     }
@@ -1070,17 +1089,15 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .setFrom(Timestamp.newBuilder().setSeconds(1234567890).build())
         .setTo(Timestamp.newBuilder().setSeconds(1234567890).setNanos(111222333).build())
         .build();
-      var actualSync = service.getAccruedInterestsSync(
-        inArg.getFigi(),
-        DateUtils.timestampToInstant(inArg.getFrom()),
-        DateUtils.timestampToInstant(inArg.getTo()));
-      var actualAsync = service.getAccruedInterests(
-        inArg.getFigi(),
-        DateUtils.timestampToInstant(inArg.getFrom()),
-        DateUtils.timestampToInstant(inArg.getTo())).join();
 
-      assertEquals(Optional.of(expected.getAccruedInterestsList()), actualSync);
-      assertEquals(Optional.of(expected.getAccruedInterestsList()), actualAsync);
+      assertEquals(expected.getAccruedInterestsList(), service.getAccruedInterestsSync(
+        inArg.getFigi(),
+        timestampToInstant(inArg.getFrom()),
+        timestampToInstant(inArg.getTo())));
+      assertEquals(expected.getAccruedInterestsList(), service.getAccruedInterests(
+        inArg.getFigi(),
+        timestampToInstant(inArg.getFrom()),
+        timestampToInstant(inArg.getTo())).join());
 
       verify(grpcService, times(2)).getAccruedInterests(eq(inArg), any());
     }
@@ -1092,7 +1109,7 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
           @Override
           public void getAccruedInterests(GetAccruedInterestsRequest request,
                                           StreamObserver<GetAccruedInterestsResponse> responseObserver) {
-            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND));
+            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND.withDescription("50002")));
           }
         }));
       var service = mkClientBasedOnServer(grpcService);
@@ -1102,17 +1119,15 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .setFrom(Timestamp.newBuilder().setSeconds(1234567890).build())
         .setTo(Timestamp.newBuilder().setSeconds(1234567890).setNanos(111222333).build())
         .build();
-      var actualSync = service.getAccruedInterestsSync(
-        inArg.getFigi(),
-        DateUtils.timestampToInstant(inArg.getFrom()),
-        DateUtils.timestampToInstant(inArg.getTo()));
-      var actualAsync = service.getAccruedInterests(
-        inArg.getFigi(),
-        DateUtils.timestampToInstant(inArg.getFrom()),
-        DateUtils.timestampToInstant(inArg.getTo())).join();
 
-      assertEquals(Optional.<List<AccruedInterest>>empty(), actualSync);
-      assertEquals(Optional.<List<AccruedInterest>>empty(), actualAsync);
+      assertThrowsApiRuntimeException("50002", () -> service.getAccruedInterestsSync(
+        inArg.getFigi(),
+        timestampToInstant(inArg.getFrom()),
+        timestampToInstant(inArg.getTo())));
+      assertThrowsAsyncApiRuntimeException("50002", () -> service.getAccruedInterests(
+        inArg.getFigi(),
+        timestampToInstant(inArg.getFrom()),
+        timestampToInstant(inArg.getTo())).join());
 
       verify(grpcService, times(2)).getAccruedInterests(eq(inArg), any());
     }
@@ -1132,7 +1147,7 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         nowMinusSecond));
       futureThrown.expect(CompletionException.class);
       futureThrown.expectCause(IsInstanceOf.instanceOf(IllegalArgumentException.class));
-      service.getAccruedInterests("figi", now, nowMinusSecond);
+      assertThrows(IllegalArgumentException.class, () -> service.getAccruedInterests("figi", now, nowMinusSecond));
 
       verify(grpcService, never()).getAccruedInterests(any(), any());
     }
@@ -1162,11 +1177,9 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
       var inArg = GetFuturesMarginRequest.newBuilder()
         .setFigi("figi")
         .build();
-      var actualSync = service.getFuturesMarginSync(inArg.getFigi());
-      var actualAsync = service.getFuturesMargin(inArg.getFigi()).join();
 
-      assertEquals(Optional.of(expected), actualSync);
-      assertEquals(Optional.of(expected), actualAsync);
+      assertEquals(expected, service.getFuturesMarginSync(inArg.getFigi()));
+      assertEquals(expected, service.getFuturesMargin(inArg.getFigi()).join());
 
       verify(grpcService, times(2)).getFuturesMargin(eq(inArg), any());
     }
@@ -1178,7 +1191,7 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
           @Override
           public void getFuturesMargin(GetFuturesMarginRequest request,
                                        StreamObserver<GetFuturesMarginResponse> responseObserver) {
-            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND));
+            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND.withDescription("50002")));
           }
         }));
       var service = mkClientBasedOnServer(grpcService);
@@ -1186,11 +1199,9 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
       var inArg = GetFuturesMarginRequest.newBuilder()
         .setFigi("figi")
         .build();
-      var actualSync = service.getFuturesMarginSync(inArg.getFigi());
-      var actualAsync = service.getFuturesMargin(inArg.getFigi()).join();
 
-      assertEquals(Optional.<GetFuturesMarginResponse>empty(), actualSync);
-      assertEquals(Optional.<GetFuturesMarginResponse>empty(), actualAsync);
+      assertThrowsApiRuntimeException("50002", () -> service.getFuturesMarginSync(inArg.getFigi()));
+      assertThrowsAsyncApiRuntimeException("50002", () -> service.getFuturesMargin(inArg.getFigi()).join());
 
       verify(grpcService, times(2)).getFuturesMargin(eq(inArg), any());
     }
@@ -1221,11 +1232,9 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .setId("TCS")
         .setClassCode("moex")
         .build();
-      var actualSync = service.getInstrumentByTickerSync(inArg.getId(), inArg.getClassCode());
-      var actualAsync = service.getInstrumentByTicker(inArg.getId(), inArg.getClassCode()).join();
 
-      assertEquals(Optional.of(expected.getInstrument()), actualSync);
-      assertEquals(Optional.of(expected.getInstrument()), actualAsync);
+      assertEquals(expected.getInstrument(), service.getInstrumentByTickerSync(inArg.getId(), inArg.getClassCode()));
+      assertEquals(expected.getInstrument(), service.getInstrumentByTicker(inArg.getId(), inArg.getClassCode()).join());
 
       verify(grpcService, times(2)).getInstrumentBy(eq(inArg), any());
     }
@@ -1237,7 +1246,7 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
           @Override
           public void getInstrumentBy(InstrumentRequest request,
                                       StreamObserver<InstrumentResponse> responseObserver) {
-            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND));
+            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND.withDescription("50002")));
           }
         }));
       var service = mkClientBasedOnServer(grpcService);
@@ -1247,11 +1256,9 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .setId("TCS")
         .setClassCode("moex")
         .build();
-      var actualSync = service.getInstrumentByTickerSync(inArg.getId(), inArg.getClassCode());
-      var actualAsync = service.getInstrumentByTicker(inArg.getId(), inArg.getClassCode()).join();
 
-      assertEquals(Optional.<Instrument>empty(), actualSync);
-      assertEquals(Optional.<Instrument>empty(), actualAsync);
+      assertThrowsApiRuntimeException("50002", () -> service.getInstrumentByTickerSync(inArg.getId(), inArg.getClassCode()));
+      assertThrowsAsyncApiRuntimeException("50002", () -> service.getInstrumentByTicker(inArg.getId(), inArg.getClassCode()).join());
 
       verify(grpcService, times(2)).getInstrumentBy(eq(inArg), any());
     }
@@ -1276,11 +1283,9 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .setIdType(InstrumentIdType.INSTRUMENT_ID_TYPE_FIGI)
         .setId("figi")
         .build();
-      var actualSync = service.getInstrumentByFigiSync(inArg.getId());
-      var actualAsync = service.getInstrumentByFigi(inArg.getId()).join();
 
-      assertEquals(Optional.of(expected.getInstrument()), actualSync);
-      assertEquals(Optional.of(expected.getInstrument()), actualAsync);
+      assertEquals(expected.getInstrument(), service.getInstrumentByFigiSync(inArg.getId()));
+      assertEquals(expected.getInstrument(), service.getInstrumentByFigi(inArg.getId()).join());
 
       verify(grpcService, times(2)).getInstrumentBy(eq(inArg), any());
     }
@@ -1292,7 +1297,7 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
           @Override
           public void getInstrumentBy(InstrumentRequest request,
                                       StreamObserver<InstrumentResponse> responseObserver) {
-            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND));
+            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND.withDescription("50002")));
           }
         }));
       var service = mkClientBasedOnServer(grpcService);
@@ -1301,11 +1306,9 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .setIdType(InstrumentIdType.INSTRUMENT_ID_TYPE_FIGI)
         .setId("figi")
         .build();
-      var actualSync = service.getInstrumentByFigiSync(inArg.getId());
-      var actualAsync = service.getInstrumentByFigi(inArg.getId()).join();
 
-      assertEquals(Optional.<Instrument>empty(), actualSync);
-      assertEquals(Optional.<Instrument>empty(), actualAsync);
+      assertThrowsApiRuntimeException("50002", () -> service.getInstrumentByFigiSync(inArg.getId()));
+      assertThrowsAsyncApiRuntimeException("50002", () -> service.getInstrumentByFigi(inArg.getId()).join());
 
       verify(grpcService, times(2)).getInstrumentBy(eq(inArg), any());
     }
@@ -1336,17 +1339,15 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .setFrom(Timestamp.newBuilder().setSeconds(1234567890).build())
         .setTo(Timestamp.newBuilder().setSeconds(1234567890).setNanos(111222333).build())
         .build();
-      var actualSync = service.getDividendsSync(
-        inArg.getFigi(),
-        DateUtils.timestampToInstant(inArg.getFrom()),
-        DateUtils.timestampToInstant(inArg.getTo()));
-      var actualAsync = service.getDividends(
-        inArg.getFigi(),
-        DateUtils.timestampToInstant(inArg.getFrom()),
-        DateUtils.timestampToInstant(inArg.getTo())).join();
 
-      assertEquals(Optional.of(expected.getDividendsList()), actualSync);
-      assertEquals(Optional.of(expected.getDividendsList()), actualAsync);
+      assertEquals(expected.getDividendsList(),  service.getDividendsSync(
+        inArg.getFigi(),
+        timestampToInstant(inArg.getFrom()),
+        timestampToInstant(inArg.getTo())));
+      assertEquals(expected.getDividendsList(), service.getDividends(
+        inArg.getFigi(),
+        timestampToInstant(inArg.getFrom()),
+        timestampToInstant(inArg.getTo())).join());
 
       verify(grpcService, times(2)).getDividends(eq(inArg), any());
     }
@@ -1358,7 +1359,7 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
           @Override
           public void getDividends(GetDividendsRequest request,
                                    StreamObserver<GetDividendsResponse> responseObserver) {
-            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND));
+            responseObserver.onError(new StatusRuntimeException(Status.NOT_FOUND.withDescription("50002")));
           }
         }));
       var service = mkClientBasedOnServer(grpcService);
@@ -1368,17 +1369,9 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .setFrom(Timestamp.newBuilder().setSeconds(1234567890).build())
         .setTo(Timestamp.newBuilder().setSeconds(1234567890).setNanos(111222333).build())
         .build();
-      var actualSync = service.getDividendsSync(
-        inArg.getFigi(),
-        DateUtils.timestampToInstant(inArg.getFrom()),
-        DateUtils.timestampToInstant(inArg.getTo()));
-      var actualAsync = service.getDividends(
-        inArg.getFigi(),
-        DateUtils.timestampToInstant(inArg.getFrom()),
-        DateUtils.timestampToInstant(inArg.getTo())).join();
 
-      assertEquals(Optional.<List<Dividend>>empty(), actualSync);
-      assertEquals(Optional.<List<Dividend>>empty(), actualAsync);
+      assertThrowsApiRuntimeException("50002", () -> service.getDividendsSync(inArg.getFigi(), timestampToInstant(inArg.getFrom()), timestampToInstant(inArg.getTo())));
+      assertThrowsAsyncApiRuntimeException("50002", () -> service.getDividends(inArg.getFigi(), timestampToInstant(inArg.getFrom()), timestampToInstant(inArg.getTo())).join());
 
       verify(grpcService, times(2)).getDividends(eq(inArg), any());
     }
@@ -1386,7 +1379,8 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
     @Test
     void get_shouldThrowIfToIsNotAfterFrom_Test() {
       var grpcService = mock(InstrumentsServiceGrpc.InstrumentsServiceImplBase.class, delegatesTo(
-        new InstrumentsServiceGrpc.InstrumentsServiceImplBase() {}));
+        new InstrumentsServiceGrpc.InstrumentsServiceImplBase() {
+        }));
       var service = mkClientBasedOnServer(grpcService);
 
       var now = Instant.now();
@@ -1397,11 +1391,9 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         nowMinusSecond));
       futureThrown.expect(CompletionException.class);
       futureThrown.expectCause(IsInstanceOf.instanceOf(IllegalArgumentException.class));
-      service.getDividends("figi", now, nowMinusSecond);
+      assertThrows(IllegalArgumentException.class, () -> service.getDividends("figi", now, nowMinusSecond));
 
       verify(grpcService, never()).getDividends(any(), any());
     }
-
   }
-
 }

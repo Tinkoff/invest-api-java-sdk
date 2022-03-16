@@ -19,16 +19,16 @@ public class Position {
   private final Money averagePositionPriceFifo;
   private final BigDecimal quantityLots;
 
-  Position(@Nonnull String figi,
-           @Nonnull String instrumentType,
-           @Nonnull BigDecimal quantity,
-           @Nonnull Money averagePositionPrice,
-           @Nonnull BigDecimal expectedYield,
-           @Nonnull Money currentNkd,
-           @Nonnull BigDecimal averagePositionPricePt,
-           @Nonnull Money currentPrice,
-           @Nonnull Money averagePositionPriceFifo,
-           @Nonnull BigDecimal quantityLots) {
+  private Position(@Nonnull String figi,
+                   @Nonnull String instrumentType,
+                   @Nonnull BigDecimal quantity,
+                   @Nonnull Money averagePositionPrice,
+                   @Nonnull BigDecimal expectedYield,
+                   @Nonnull Money currentNkd,
+                   @Nonnull BigDecimal averagePositionPricePt,
+                   @Nonnull Money currentPrice,
+                   @Nonnull Money averagePositionPriceFifo,
+                   @Nonnull BigDecimal quantityLots) {
     this.figi = figi;
     this.instrumentType = instrumentType;
     this.quantity = quantity;
@@ -109,8 +109,12 @@ public class Position {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     Position position = (Position) o;
     return figi.equals(position.figi) && instrumentType.equals(position.instrumentType) &&
       quantity.equals(position.quantity) && averagePositionPrice.equals(position.averagePositionPrice) &&
