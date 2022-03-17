@@ -2,6 +2,7 @@ package ru.tinkoff.piapi.core.utils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import io.smallrye.mutiny.subscription.MultiEmitter;
@@ -21,21 +22,35 @@ public class Helpers {
   private static final Map<String, HashMap<String, String>> errorsMap = new HashMap<>();
   private static final String DEFAULT_ERROR_ID = "70001";
 
+  static {
+    try {
+      var json = new File(Helpers.class.getClassLoader().getResource("errors.json").getFile());
+      errorsMap.putAll(new ObjectMapper().readValue(json, new TypeReference<Map<String, HashMap<String, String>>>() {
+      }));
+    } catch (IOException e) {
+      throw new RuntimeException("Не найден файл errors.json");
+    }
+  }
   public static <T> T unaryCall(Supplier<T> supplier) {
     try {
       return supplier.get();
-    } catch (StatusRuntimeException exception) {
-      var id = getErrorId(exception);
-      var description = getErrorDescription(id);
-      throw new ApiRuntimeException(description, id, exception);
+    } catch (Exception exception) {
+      throw apiRuntimeException(exception);
     }
   }
 
-  private static String getErrorId(StatusRuntimeException exception) {
-    if ("RESOURCE_EXHAUSTED".equals(exception.getStatus().getCode().name())) {
+  private static ApiRuntimeException apiRuntimeException(Throwable exception) {
+    var status = Status.fromThrowable(exception);
+    var id = getErrorId(status);
+    var description = getErrorDescription(id);
+    return new ApiRuntimeException(description, id, exception);
+  }
+
+  private static String getErrorId(Status status) {
+    if ("RESOURCE_EXHAUSTED".equals(status.getCode().name())) {
       return "80002";
     }
-    var error = exception.getStatus().getDescription();
+    var error = status.getDescription();
     return Objects.requireNonNullElse(error, DEFAULT_ERROR_ID);
   }
 
@@ -66,13 +81,7 @@ public class Helpers {
 
       @Override
       public void onError(Throwable t) {
-        var throwable = t;
-        if (t instanceof StatusRuntimeException) {
-          var statusRuntimeException = (StatusRuntimeException) t;
-          var id = getErrorId(statusRuntimeException);
-          var description = getErrorDescription(id);
-          throwable = new ApiRuntimeException(description, id, statusRuntimeException);
-        }
+        var throwable = apiRuntimeException(t);
         cf.completeExceptionally(throwable);
       }
 
@@ -120,17 +129,6 @@ public class Helpers {
   }
 
   private static String getErrorDescription(String id) {
-    if (errorsMap.isEmpty()) {
-      try {
-        var json = new File(Helpers.class.getClassLoader().getResource("errors.json").getFile());
-        errorsMap.putAll(new ObjectMapper().readValue(json, new TypeReference<Map<String, HashMap<String, String>>>() {
-        }));
-      } catch (IOException e) {
-        throw new RuntimeException("Не найден файл errors.json");
-      }
-    }
-
-    var errorData = errorsMap.get(id);
-    return errorData.get("description");
+    return errorsMap.get(id).get("description");
   }
 }
