@@ -5,12 +5,13 @@ import ru.tinkoff.piapi.core.exception.ReadonlyModeViolationException;
 import java.time.Instant;
 
 public class ValidationUtils {
-  public static final String TO_IS_NOT_AFTER_FROM_MESSAGE = "Окончание периода не может быть раньше начала.";
+  private static final String TO_IS_NOT_AFTER_FROM_MESSAGE = "Окончание периода не может быть раньше начала.";
+  private static final String WRONG_PAGE_MESSAGE = "Номерами страниц могут быть только положительные числа.";
 
 
   public static void checkPage(int page) {
     if (page < 0) {
-      throw new IllegalArgumentException("Номерами страниц могут быть только положительные числа.");
+      throw new IllegalArgumentException(WRONG_PAGE_MESSAGE);
     }
   }
 
