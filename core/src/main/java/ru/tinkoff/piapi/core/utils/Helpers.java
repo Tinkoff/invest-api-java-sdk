@@ -2,6 +2,7 @@ package ru.tinkoff.piapi.core.utils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.grpc.Metadata;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
@@ -21,6 +22,7 @@ public class Helpers {
 
   private static final Map<String, HashMap<String, String>> errorsMap = new HashMap<>();
   private static final String DEFAULT_ERROR_ID = "70001";
+  private static final String TRACKING_ID_HEADER = "x-tracking-id";
 
   static {
     try {
@@ -43,7 +45,17 @@ public class Helpers {
     var status = Status.fromThrowable(exception);
     var id = getErrorId(status);
     var description = getErrorDescription(id);
-    return new ApiRuntimeException(description, id, exception);
+    var trackingId = getTrackingId(exception);
+    return new ApiRuntimeException(description, id, exception, trackingId);
+  }
+
+  private static String getTrackingId(Throwable exception) {
+    if (!(exception instanceof StatusRuntimeException)) return null;
+
+    var trailers = ((StatusRuntimeException) exception).getTrailers();
+    if (trailers == null) return null;
+
+    return trailers.get(Metadata.Key.of(TRACKING_ID_HEADER, Metadata.ASCII_STRING_MARSHALLER));
   }
 
   private static String getErrorId(Status status) {
