@@ -100,7 +100,7 @@ public class InstrumentsService {
   @Nonnull
   public CompletableFuture<List<Coupon>> getBondCoupons(@Nonnull String figi,
                                                         @Nonnull Instant from,
-                                                        @Nonnull Instant to ) {
+                                                        @Nonnull Instant to) {
     checkFromTo(from, to);
 
     return unaryCall(() -> Helpers.<GetBondCouponsResponse>unaryAsyncCall(
@@ -172,8 +172,7 @@ public class InstrumentsService {
   @Nonnull
   public Bond getBondByTickerSync(@Nonnull String ticker,
                                   @Nonnull String classCode) {
-    return unaryCall(() ->
-      getInstrumentByTickerSync(ticker, classCode, request -> instrumentsBlockingStub.bondBy(request).getInstrument()));
+    return getInstrumentByTickerSync(ticker, classCode, request -> instrumentsBlockingStub.bondBy(request).getInstrument());
   }
 
   /**
@@ -184,7 +183,7 @@ public class InstrumentsService {
    */
   @Nonnull
   public Bond getBondByFigiSync(@Nonnull String figi) {
-    return unaryCall(() -> getInstrumentByFigiSync(figi, request -> instrumentsBlockingStub.bondBy(request).getInstrument()));
+    return getInstrumentByFigiSync(figi, request -> instrumentsBlockingStub.bondBy(request).getInstrument());
   }
 
   /**
@@ -194,11 +193,7 @@ public class InstrumentsService {
    */
   @Nonnull
   public List<Bond> getTradableBondsSync() {
-    return unaryCall(() -> instrumentsBlockingStub.bonds(
-        InstrumentsRequest.newBuilder()
-          .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_BASE)
-          .build())
-      .getInstrumentsList());
+    return getBondsSync(InstrumentStatus.INSTRUMENT_STATUS_BASE);
   }
 
   /**
@@ -208,9 +203,19 @@ public class InstrumentsService {
    */
   @Nonnull
   public List<Bond> getAllBondsSync() {
+    return getBondsSync(InstrumentStatus.INSTRUMENT_STATUS_ALL);
+  }
+
+  /**
+   * Получение (синхронное) списка облигаций.
+   *
+   * @param instrumentStatus статус инструмента. Значения INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL
+   * @return Список облигаций.
+   */
+  public List<Bond> getBondsSync(InstrumentStatus instrumentStatus) {
     return unaryCall(() -> instrumentsBlockingStub.bonds(
         InstrumentsRequest.newBuilder()
-          .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_ALL)
+          .setInstrumentStatus(instrumentStatus)
           .build())
       .getInstrumentsList());
   }
@@ -225,10 +230,10 @@ public class InstrumentsService {
   @Nonnull
   public Currency getCurrencyByTickerSync(@Nonnull String ticker,
                                           @Nonnull String classCode) {
-    return unaryCall(() -> getInstrumentByTickerSync(
+    return getInstrumentByTickerSync(
       ticker,
       classCode,
-      request -> instrumentsBlockingStub.currencyBy(request).getInstrument()));
+      request -> instrumentsBlockingStub.currencyBy(request).getInstrument());
   }
 
   /**
@@ -239,7 +244,21 @@ public class InstrumentsService {
    */
   @Nonnull
   public Currency getCurrencyByFigiSync(@Nonnull String figi) {
-    return unaryCall(() -> getInstrumentByFigiSync(figi, request -> instrumentsBlockingStub.currencyBy(request).getInstrument()));
+    return getInstrumentByFigiSync(figi, request -> instrumentsBlockingStub.currencyBy(request).getInstrument());
+  }
+
+  /**
+   * Получение (синхронное) списка валют.
+   *
+   * @param instrumentStatus статус инструмента. Значения INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL
+   * @return Список валют.
+   */
+  public List<Currency> getCurrenciesSync(InstrumentStatus instrumentStatus) {
+    return unaryCall(() -> instrumentsBlockingStub.currencies(
+        InstrumentsRequest.newBuilder()
+          .setInstrumentStatus(instrumentStatus)
+          .build())
+      .getInstrumentsList());
   }
 
   /**
@@ -249,25 +268,17 @@ public class InstrumentsService {
    */
   @Nonnull
   public List<Currency> getTradableCurrenciesSync() {
-    return unaryCall(() -> instrumentsBlockingStub.currencies(
-        InstrumentsRequest.newBuilder()
-          .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_BASE)
-          .build())
-      .getInstrumentsList());
+    return getCurrenciesSync(InstrumentStatus.INSTRUMENT_STATUS_BASE);
   }
 
   /**
-   * Получение (синхронное) списка всех вслют доступных в Тинькофф Инвестиции.
+   * Получение (синхронное) списка всех валют доступных в Тинькофф Инвестиции.
    *
    * @return Список валют.
    */
   @Nonnull
   public List<Currency> getAllCurrenciesSync() {
-    return unaryCall(() -> instrumentsBlockingStub.currencies(
-        InstrumentsRequest.newBuilder()
-          .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_ALL)
-          .build())
-      .getInstrumentsList());
+    return getCurrenciesSync(InstrumentStatus.INSTRUMENT_STATUS_ALL);
   }
 
   /**
@@ -280,7 +291,7 @@ public class InstrumentsService {
   @Nonnull
   public Etf getEtfByTickerSync(@Nonnull String ticker,
                                 @Nonnull String classCode) {
-    return unaryCall(() -> getInstrumentByTickerSync(ticker, classCode, request -> instrumentsBlockingStub.etfBy(request).getInstrument()));
+    return getInstrumentByTickerSync(ticker, classCode, request -> instrumentsBlockingStub.etfBy(request).getInstrument());
   }
 
   /**
@@ -291,7 +302,21 @@ public class InstrumentsService {
    */
   @Nonnull
   public Etf getEtfByFigiSync(@Nonnull String figi) {
-    return unaryCall(() -> getInstrumentByFigiSync(figi, request -> instrumentsBlockingStub.etfBy(request).getInstrument()));
+    return getInstrumentByFigiSync(figi, request -> instrumentsBlockingStub.etfBy(request).getInstrument());
+  }
+
+  /**
+   * Получение (синхронное) списка фондов.
+   *
+   * @param instrumentStatus статус инструмента. Значения INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL
+   * @return Список фондов.
+   */
+  public List<Etf> getEtfsSync(InstrumentStatus instrumentStatus) {
+    return unaryCall(() -> instrumentsBlockingStub.etfs(
+        InstrumentsRequest.newBuilder()
+          .setInstrumentStatus(instrumentStatus)
+          .build())
+      .getInstrumentsList());
   }
 
   /**
@@ -301,11 +326,7 @@ public class InstrumentsService {
    */
   @Nonnull
   public List<Etf> getTradableEtfsSync() {
-    return unaryCall(() -> instrumentsBlockingStub.etfs(
-        InstrumentsRequest.newBuilder()
-          .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_BASE)
-          .build())
-      .getInstrumentsList());
+    return getEtfsSync(InstrumentStatus.INSTRUMENT_STATUS_BASE);
   }
 
   /**
@@ -315,11 +336,7 @@ public class InstrumentsService {
    */
   @Nonnull
   public List<Etf> getAllEtfsSync() {
-    return unaryCall(() -> instrumentsBlockingStub.etfs(
-        InstrumentsRequest.newBuilder()
-          .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_ALL)
-          .build())
-      .getInstrumentsList());
+    return getEtfsSync(InstrumentStatus.INSTRUMENT_STATUS_ALL);
   }
 
   /**
@@ -332,10 +349,10 @@ public class InstrumentsService {
   @Nonnull
   public Future getFutureByTickerSync(@Nonnull String ticker,
                                       @Nonnull String classCode) {
-    return unaryCall(() -> getInstrumentByTickerSync(
+    return getInstrumentByTickerSync(
       ticker,
       classCode,
-      request -> instrumentsBlockingStub.futureBy(request).getInstrument()));
+      request -> instrumentsBlockingStub.futureBy(request).getInstrument());
   }
 
   /**
@@ -346,8 +363,21 @@ public class InstrumentsService {
    */
   @Nonnull
   public Future getFutureByFigiSync(@Nonnull String figi) {
-    return unaryCall(() ->
-      getInstrumentByFigiSync(figi, request -> instrumentsBlockingStub.futureBy(request).getInstrument()));
+    return getInstrumentByFigiSync(figi, request -> instrumentsBlockingStub.futureBy(request).getInstrument());
+  }
+
+  /**
+   * Получение (синхронное) списка фьючерсов.
+   *
+   * @param instrumentStatus статус инструмента. Значения INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL
+   * @return Список фьючерсов.
+   */
+  public List<Future> getFuturesSync(InstrumentStatus instrumentStatus) {
+    return unaryCall(() -> instrumentsBlockingStub.futures(
+        InstrumentsRequest.newBuilder()
+          .setInstrumentStatus(instrumentStatus)
+          .build())
+      .getInstrumentsList());
   }
 
   /**
@@ -357,11 +387,7 @@ public class InstrumentsService {
    */
   @Nonnull
   public List<Future> getTradableFuturesSync() {
-    return unaryCall(() -> instrumentsBlockingStub.futures(
-        InstrumentsRequest.newBuilder()
-          .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_BASE)
-          .build())
-      .getInstrumentsList());
+    return getFuturesSync(InstrumentStatus.INSTRUMENT_STATUS_BASE);
   }
 
   /**
@@ -371,11 +397,7 @@ public class InstrumentsService {
    */
   @Nonnull
   public List<Future> getAllFuturesSync() {
-    return unaryCall(() -> instrumentsBlockingStub.futures(
-        InstrumentsRequest.newBuilder()
-          .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_ALL)
-          .build())
-      .getInstrumentsList());
+    return getFuturesSync(InstrumentStatus.INSTRUMENT_STATUS_ALL);
   }
 
   /**
@@ -388,10 +410,10 @@ public class InstrumentsService {
   @Nonnull
   public Share getShareByTickerSync(@Nonnull String ticker,
                                     @Nonnull String classCode) {
-    return unaryCall(() -> getInstrumentByTickerSync(
+    return getInstrumentByTickerSync(
       ticker,
       classCode,
-      request -> instrumentsBlockingStub.shareBy(request).getInstrument()));
+      request -> instrumentsBlockingStub.shareBy(request).getInstrument());
   }
 
   /**
@@ -402,8 +424,22 @@ public class InstrumentsService {
    */
   @Nonnull
   public Share getShareByFigiSync(@Nonnull String figi) {
-    return unaryCall(() ->
-      getInstrumentByFigiSync(figi, request -> instrumentsBlockingStub.shareBy(request).getInstrument()));
+    return getInstrumentByFigiSync(figi, request -> instrumentsBlockingStub.shareBy(request).getInstrument());
+  }
+
+
+  /**
+   * Получение (синхронное) списка акций.
+   *
+   * @param instrumentStatus статус инструмента. Значения INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL
+   * @return Список акций.
+   */
+  public List<Share> getSharesSync(InstrumentStatus instrumentStatus) {
+    return unaryCall(() -> instrumentsBlockingStub.shares(
+        InstrumentsRequest.newBuilder()
+          .setInstrumentStatus(instrumentStatus)
+          .build())
+      .getInstrumentsList());
   }
 
   /**
@@ -413,11 +449,7 @@ public class InstrumentsService {
    */
   @Nonnull
   public List<Share> getTradableSharesSync() {
-    return unaryCall(() -> instrumentsBlockingStub.shares(
-        InstrumentsRequest.newBuilder()
-          .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_BASE)
-          .build())
-      .getInstrumentsList());
+    return getSharesSync(InstrumentStatus.INSTRUMENT_STATUS_BASE);
   }
 
   /**
@@ -427,11 +459,7 @@ public class InstrumentsService {
    */
   @Nonnull
   public List<Share> getAllSharesSync() {
-    return unaryCall(() -> instrumentsBlockingStub.shares(
-        InstrumentsRequest.newBuilder()
-          .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_ALL)
-          .build())
-      .getInstrumentsList());
+    return getSharesSync(InstrumentStatus.INSTRUMENT_STATUS_ALL);
   }
 
   /**
@@ -483,8 +511,7 @@ public class InstrumentsService {
   @Nonnull
   public Instrument getInstrumentByTickerSync(@Nonnull String ticker,
                                               @Nonnull String classCode) {
-    return unaryCall(() ->
-      getInstrumentByTickerSync(ticker, classCode, request -> instrumentsBlockingStub.getInstrumentBy(request).getInstrument()));
+    return getInstrumentByTickerSync(ticker, classCode, request -> instrumentsBlockingStub.getInstrumentBy(request).getInstrument());
   }
 
   /**
@@ -495,8 +522,7 @@ public class InstrumentsService {
    */
   @Nonnull
   public Instrument getInstrumentByFigiSync(@Nonnull String figi) {
-    return unaryCall(() ->
-      getInstrumentByFigiSync(figi, request -> instrumentsBlockingStub.getInstrumentBy(request).getInstrument()));
+    return getInstrumentByFigiSync(figi, request -> instrumentsBlockingStub.getInstrumentBy(request).getInstrument());
   }
 
   /**
@@ -536,14 +562,14 @@ public class InstrumentsService {
                                                                       @Nonnull Instant to) {
     checkFromTo(from, to);
 
-    return unaryCall(() -> Helpers.<TradingSchedulesResponse>unaryAsyncCall(
+    return Helpers.<TradingSchedulesResponse>unaryAsyncCall(
         observer -> instrumentsStub.tradingSchedules(
           TradingSchedulesRequest.newBuilder()
             .setFrom(DateUtils.instantToTimestamp(from))
             .setTo(DateUtils.instantToTimestamp(to))
             .build(),
           observer))
-      .thenApply(TradingSchedulesResponse::getExchangesList));
+      .thenApply(TradingSchedulesResponse::getExchangesList);
   }
 
   /**
@@ -598,19 +624,29 @@ public class InstrumentsService {
   }
 
   /**
+   * Получение (асинхронное) списка облигаций.
+   *
+   * @param instrumentStatus статус инструмента. Значения INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL
+   * @return Список облигаций.
+   */
+  public CompletableFuture<List<Bond>> getBonds(InstrumentStatus instrumentStatus) {
+    return Helpers.<BondsResponse>unaryAsyncCall(
+        observer -> instrumentsStub.bonds(
+          InstrumentsRequest.newBuilder()
+            .setInstrumentStatus(instrumentStatus)
+            .build(),
+          observer))
+      .thenApply(BondsResponse::getInstrumentsList);
+  }
+
+  /**
    * Получение (асинхронное) списка облигаций доступных для торговли через Tinkoff Invest API.
    *
    * @return Список облигаций.
    */
   @Nonnull
   public CompletableFuture<List<Bond>> getTradableBonds() {
-    return unaryCall(() -> Helpers.<BondsResponse>unaryAsyncCall(
-        observer -> instrumentsStub.bonds(
-          InstrumentsRequest.newBuilder()
-            .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_BASE)
-            .build(),
-          observer))
-      .thenApply(BondsResponse::getInstrumentsList));
+    return getBonds(InstrumentStatus.INSTRUMENT_STATUS_BASE);
   }
 
   /**
@@ -620,13 +656,7 @@ public class InstrumentsService {
    */
   @Nonnull
   public CompletableFuture<List<Bond>> getAllBonds() {
-    return unaryCall(() -> Helpers.<BondsResponse>unaryAsyncCall(
-        observer -> instrumentsStub.bonds(
-          InstrumentsRequest.newBuilder()
-            .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_ALL)
-            .build(),
-          observer))
-      .thenApply(BondsResponse::getInstrumentsList));
+    return getBonds(InstrumentStatus.INSTRUMENT_STATUS_ALL);
   }
 
   /**
@@ -658,19 +688,29 @@ public class InstrumentsService {
   }
 
   /**
+   * Получение (асинхронное) списка валют.
+   *
+   * @param instrumentStatus статус инструмента. Значения INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL
+   * @return Список валют.
+   */
+  public CompletableFuture<List<Currency>> getCurrencies(InstrumentStatus instrumentStatus) {
+    return Helpers.<CurrenciesResponse>unaryAsyncCall(
+        observer -> instrumentsStub.currencies(
+          InstrumentsRequest.newBuilder()
+            .setInstrumentStatus(instrumentStatus)
+            .build(),
+          observer))
+      .thenApply(CurrenciesResponse::getInstrumentsList);
+  }
+
+  /**
    * Получение (асинхронное) списка валют доступных для торговли через Tinkoff Invest API.
    *
    * @return Список валют.
    */
   @Nonnull
   public CompletableFuture<List<Currency>> getTradableCurrencies() {
-    return unaryCall(() -> Helpers.<CurrenciesResponse>unaryAsyncCall(
-        observer -> instrumentsStub.currencies(
-          InstrumentsRequest.newBuilder()
-            .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_BASE)
-            .build(),
-          observer))
-      .thenApply(CurrenciesResponse::getInstrumentsList));
+    return getCurrencies(InstrumentStatus.INSTRUMENT_STATUS_BASE);
   }
 
   /**
@@ -680,13 +720,7 @@ public class InstrumentsService {
    */
   @Nonnull
   public CompletableFuture<List<Currency>> getAllCurrencies() {
-    return unaryCall(() -> Helpers.<CurrenciesResponse>unaryAsyncCall(
-        observer -> instrumentsStub.currencies(
-          InstrumentsRequest.newBuilder()
-            .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_ALL)
-            .build(),
-          observer))
-      .thenApply(CurrenciesResponse::getInstrumentsList));
+    return getCurrencies(InstrumentStatus.INSTRUMENT_STATUS_ALL);
   }
 
   /**
@@ -714,19 +748,29 @@ public class InstrumentsService {
   }
 
   /**
+   * Получение (асинхронное) списка фондов.
+   *
+   * @param instrumentStatus статус инструмента. Значения INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL
+   * @return Список фондов.
+   */
+  public CompletableFuture<List<Etf>> getEtfs(InstrumentStatus instrumentStatus) {
+    return Helpers.<EtfsResponse>unaryAsyncCall(
+        observer -> instrumentsStub.etfs(
+          InstrumentsRequest.newBuilder()
+            .setInstrumentStatus(instrumentStatus)
+            .build(),
+          observer))
+      .thenApply(EtfsResponse::getInstrumentsList);
+  }
+
+  /**
    * Получение (асинхронное) списка фондов доступных для торговли через Tinkoff Invest API.
    *
    * @return Список фондов.
    */
   @Nonnull
   public CompletableFuture<List<Etf>> getTradableEtfs() {
-    return unaryCall(() -> Helpers.<EtfsResponse>unaryAsyncCall(
-        observer -> instrumentsStub.etfs(
-          InstrumentsRequest.newBuilder()
-            .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_BASE)
-            .build(),
-          observer))
-      .thenApply(EtfsResponse::getInstrumentsList));
+    return getEtfs(InstrumentStatus.INSTRUMENT_STATUS_BASE);
   }
 
   /**
@@ -736,13 +780,7 @@ public class InstrumentsService {
    */
   @Nonnull
   public CompletableFuture<List<Etf>> getAllEtfs() {
-    return unaryCall(() -> Helpers.<EtfsResponse>unaryAsyncCall(
-        observer -> instrumentsStub.etfs(
-          InstrumentsRequest.newBuilder()
-            .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_ALL)
-            .build(),
-          observer))
-      .thenApply(EtfsResponse::getInstrumentsList));
+    return getEtfs(InstrumentStatus.INSTRUMENT_STATUS_ALL);
   }
 
   /**
@@ -770,19 +808,29 @@ public class InstrumentsService {
   }
 
   /**
+   * Получение (асинхронное) списка фьючерсов.
+   *
+   * @param instrumentStatus статус инструмента. Значения INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL
+   * @return Список фьючерсов.
+   */
+  public CompletableFuture<List<Future>> getFutures(InstrumentStatus instrumentStatus) {
+    return Helpers.<FuturesResponse>unaryAsyncCall(
+        observer -> instrumentsStub.futures(
+          InstrumentsRequest.newBuilder()
+            .setInstrumentStatus(instrumentStatus)
+            .build(),
+          observer))
+      .thenApply(FuturesResponse::getInstrumentsList);
+  }
+
+  /**
    * Получение (асинхронное) списка фьючерсов доступных для торговли через Tinkoff Invest API.
    *
    * @return Список фьючерсов.
    */
   @Nonnull
   public CompletableFuture<List<Future>> getTradableFutures() {
-    return unaryCall(() -> Helpers.<FuturesResponse>unaryAsyncCall(
-        observer -> instrumentsStub.futures(
-          InstrumentsRequest.newBuilder()
-            .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_BASE)
-            .build(),
-          observer))
-      .thenApply(FuturesResponse::getInstrumentsList));
+    return getFutures(InstrumentStatus.INSTRUMENT_STATUS_BASE);
   }
 
   /**
@@ -792,13 +840,7 @@ public class InstrumentsService {
    */
   @Nonnull
   public CompletableFuture<List<Future>> getAllFutures() {
-    return unaryCall(() -> Helpers.<FuturesResponse>unaryAsyncCall(
-        observer -> instrumentsStub.futures(
-          InstrumentsRequest.newBuilder()
-            .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_ALL)
-            .build(),
-          observer))
-      .thenApply(FuturesResponse::getInstrumentsList));
+    return getFutures(InstrumentStatus.INSTRUMENT_STATUS_ALL);
   }
 
   /**
@@ -826,19 +868,29 @@ public class InstrumentsService {
   }
 
   /**
+   * Получение (асинхронное) списка акций.
+   *
+   * @param instrumentStatus статус инструмента. Значения INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL
+   * @return Список акций.
+   */
+  public CompletableFuture<List<Share>> getShares(InstrumentStatus instrumentStatus) {
+    return Helpers.<SharesResponse>unaryAsyncCall(
+        observer -> instrumentsStub.shares(
+          InstrumentsRequest.newBuilder()
+            .setInstrumentStatus(instrumentStatus)
+            .build(),
+          observer))
+      .thenApply(SharesResponse::getInstrumentsList);
+  }
+
+  /**
    * Получение (асинхронное) списка акций доступных для торговли через Tinkoff Invest API.
    *
    * @return Список акций.
    */
   @Nonnull
   public CompletableFuture<List<Share>> getTradableShares() {
-    return unaryCall(() -> Helpers.<SharesResponse>unaryAsyncCall(
-        observer -> instrumentsStub.shares(
-          InstrumentsRequest.newBuilder()
-            .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_BASE)
-            .build(),
-          observer))
-      .thenApply(SharesResponse::getInstrumentsList));
+    return getShares(InstrumentStatus.INSTRUMENT_STATUS_BASE);
   }
 
   /**
@@ -848,13 +900,7 @@ public class InstrumentsService {
    */
   @Nonnull
   public CompletableFuture<List<Share>> getAllShares() {
-    return unaryCall(() -> Helpers.<SharesResponse>unaryAsyncCall(
-        observer -> instrumentsStub.shares(
-          InstrumentsRequest.newBuilder()
-            .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_ALL)
-            .build(),
-          observer))
-      .thenApply(SharesResponse::getInstrumentsList));
+    return getShares(InstrumentStatus.INSTRUMENT_STATUS_ALL);
   }
 
   /**
@@ -871,7 +917,7 @@ public class InstrumentsService {
                                                                       @Nonnull Instant to) {
     checkFromTo(from, to);
 
-    return unaryCall(() -> Helpers.<GetAccruedInterestsResponse>unaryAsyncCall(
+    return Helpers.<GetAccruedInterestsResponse>unaryAsyncCall(
         observer -> instrumentsStub.getAccruedInterests(
           GetAccruedInterestsRequest.newBuilder()
             .setFigi(figi)
@@ -879,7 +925,7 @@ public class InstrumentsService {
             .setTo(DateUtils.instantToTimestamp(to))
             .build(),
           observer))
-      .thenApply(GetAccruedInterestsResponse::getAccruedInterestsList));
+      .thenApply(GetAccruedInterestsResponse::getAccruedInterestsList);
   }
 
   /**
@@ -890,12 +936,12 @@ public class InstrumentsService {
    */
   @Nonnull
   public CompletableFuture<GetFuturesMarginResponse> getFuturesMargin(@Nonnull String figi) {
-    return unaryCall(() -> Helpers.unaryAsyncCall(
+    return Helpers.unaryAsyncCall(
       observer -> instrumentsStub.getFuturesMargin(
         GetFuturesMarginRequest.newBuilder()
           .setFigi(figi)
           .build(),
-        observer)));
+        observer));
   }
 
   /**
@@ -936,7 +982,7 @@ public class InstrumentsService {
                                                         @Nonnull Instant to) {
     checkFromTo(from, to);
 
-    return unaryCall(() -> Helpers.<GetDividendsResponse>unaryAsyncCall(
+    return Helpers.<GetDividendsResponse>unaryAsyncCall(
         observer -> instrumentsStub.getDividends(
           GetDividendsRequest.newBuilder()
             .setFigi(figi)
@@ -944,27 +990,27 @@ public class InstrumentsService {
             .setTo(DateUtils.instantToTimestamp(to))
             .build(),
           observer))
-      .thenApply(GetDividendsResponse::getDividendsList));
+      .thenApply(GetDividendsResponse::getDividendsList);
   }
 
   private <T> T getInstrumentByTickerSync(@Nonnull String ticker,
                                           @Nonnull String classCode,
                                           Function<InstrumentRequest, T> getter) {
-    return getter.apply(
+    return unaryCall(() -> getter.apply(
       InstrumentRequest.newBuilder()
         .setIdType(InstrumentIdType.INSTRUMENT_ID_TYPE_TICKER)
         .setId(ticker)
         .setClassCode(classCode)
-        .build());
+        .build()));
   }
 
   private <T> T getInstrumentByFigiSync(@Nonnull String figi,
                                         Function<InstrumentRequest, T> getter) {
-    return getter.apply(
+    return unaryCall(() -> getter.apply(
       InstrumentRequest.newBuilder()
         .setIdType(InstrumentIdType.INSTRUMENT_ID_TYPE_FIGI)
         .setId(figi)
-        .build());
+        .build()));
   }
 
   private <T, R> CompletableFuture<T> getInstrumentByTicker(@Nonnull String ticker,
