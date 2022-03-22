@@ -1,4 +1,4 @@
-package ru.tinkoff.piapi.core;
+package ru.tinkoff.piapi.core.exception;
 
 public class ReadonlyModeViolationException extends RuntimeException {
   public ReadonlyModeViolationException() {

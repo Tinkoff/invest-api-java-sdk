@@ -1,15 +1,70 @@
 package ru.tinkoff.piapi.core.utils;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.grpc.Metadata;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import io.smallrye.mutiny.subscription.MultiEmitter;
+import ru.tinkoff.piapi.core.exception.ApiRuntimeException;
 
-import java.time.Instant;
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class Helpers {
 
-  public static final String TO_IS_NOT_AFTER_FROM_MESSAGE = "Окончание периода не может быть раньше начала.";
+  private static final Map<String, HashMap<String, String>> errorsMap = new HashMap<>();
+  private static final String DEFAULT_ERROR_ID = "70001";
+  private static final String TRACKING_ID_HEADER = "x-tracking-id";
+
+  static {
+    try {
+      var json = new File(Helpers.class.getClassLoader().getResource("errors.json").getFile());
+      errorsMap.putAll(new ObjectMapper().readValue(json, new TypeReference<Map<String, HashMap<String, String>>>() {
+      }));
+    } catch (IOException e) {
+      throw new RuntimeException("Не найден файл errors.json");
+    }
+  }
+  public static <T> T unaryCall(Supplier<T> supplier) {
+    try {
+      return supplier.get();
+    } catch (Exception exception) {
+      throw apiRuntimeException(exception);
+    }
+  }
+
+  private static ApiRuntimeException apiRuntimeException(Throwable exception) {
+    var status = Status.fromThrowable(exception);
+    var id = getErrorId(status);
+    var description = getErrorDescription(id);
+    var trackingId = getTrackingId(exception);
+    return new ApiRuntimeException(description, id, exception, trackingId);
+  }
+
+  private static String getTrackingId(Throwable exception) {
+    if (!(exception instanceof StatusRuntimeException)) return null;
+
+    var trailers = ((StatusRuntimeException) exception).getTrailers();
+    if (trailers == null) return null;
+
+    return trailers.get(Metadata.Key.of(TRACKING_ID_HEADER, Metadata.ASCII_STRING_MARSHALLER));
+  }
+
+  private static String getErrorId(Status status) {
+    if ("RESOURCE_EXHAUSTED".equals(status.getCode().name())) {
+      return "80002";
+    }
+    var error = status.getDescription();
+    return Objects.requireNonNullElse(error, DEFAULT_ERROR_ID);
+  }
 
   /**
    * Связывание асинхронного Unary-вызова с {@link CompletableFuture}.
@@ -18,8 +73,7 @@ public class Helpers {
    * @param <T>           Тип результата вызова.
    * @return {@link CompletableFuture} с результатом вызова.
    */
-  public static <T> CompletableFuture<T> wrapWithFuture(
-    Consumer<StreamObserver<T>> callPerformer) {
+  public static <T> CompletableFuture<T> unaryAsyncCall(Consumer<StreamObserver<T>> callPerformer) {
     var cf = new CompletableFuture<T>();
     callPerformer.accept(mkStreamObserverWithFuture(cf));
     return cf;
@@ -39,7 +93,8 @@ public class Helpers {
 
       @Override
       public void onError(Throwable t) {
-        cf.completeExceptionally(t);
+        var throwable = apiRuntimeException(t);
+        cf.completeExceptionally(throwable);
       }
 
       @Override
@@ -85,15 +140,7 @@ public class Helpers {
     return orderId.isBlank() ? orderId.trim() : orderId.substring(0, maxLength);
   }
 
-  /**
-   * Проверка того, что левая граница временного интервала находится перед правой.
-   *
-   * @param from Левая граница.
-   * @param to Правая граница.
-   * @return Флаг успешности проверки.
-   */
-  public static boolean areFromAndToValid(Instant from, Instant to) {
-    return from.isBefore(to);
+  private static String getErrorDescription(String id) {
+    return errorsMap.get(id).get("description");
   }
-
 }

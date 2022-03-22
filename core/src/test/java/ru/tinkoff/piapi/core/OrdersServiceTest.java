@@ -9,18 +9,38 @@ import org.junit.Rule;
 import org.junit.jupiter.api.Test;
 import org.junit.rules.ExpectedException;
 import org.reactivestreams.FlowAdapters;
-import ru.tinkoff.piapi.contract.v1.*;
+import ru.tinkoff.piapi.contract.v1.CancelOrderRequest;
+import ru.tinkoff.piapi.contract.v1.CancelOrderResponse;
+import ru.tinkoff.piapi.contract.v1.GetOrderStateRequest;
+import ru.tinkoff.piapi.contract.v1.GetOrdersRequest;
+import ru.tinkoff.piapi.contract.v1.GetOrdersResponse;
+import ru.tinkoff.piapi.contract.v1.OrderDirection;
+import ru.tinkoff.piapi.contract.v1.OrderState;
+import ru.tinkoff.piapi.contract.v1.OrderTrades;
+import ru.tinkoff.piapi.contract.v1.OrderType;
+import ru.tinkoff.piapi.contract.v1.OrdersServiceGrpc;
+import ru.tinkoff.piapi.contract.v1.OrdersStreamServiceGrpc;
+import ru.tinkoff.piapi.contract.v1.PostOrderRequest;
+import ru.tinkoff.piapi.contract.v1.PostOrderResponse;
+import ru.tinkoff.piapi.contract.v1.Quotation;
+import ru.tinkoff.piapi.contract.v1.TradesStreamRequest;
+import ru.tinkoff.piapi.contract.v1.TradesStreamResponse;
+import ru.tinkoff.piapi.core.exception.ReadonlyModeViolationException;
 import ru.tinkoff.piapi.core.utils.DateUtils;
 
 import java.util.List;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.AdditionalAnswers.delegatesTo;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 public class OrdersServiceTest extends GrpcClientTester<OrdersService> {
 
@@ -125,9 +145,9 @@ public class OrdersServiceTest extends GrpcClientTester<OrdersService> {
         "", OrderType.ORDER_TYPE_UNSPECIFIED, ""));
     futureThrown.expect(CompletionException.class);
     futureThrown.expectCause(IsInstanceOf.instanceOf(ReadonlyModeViolationException.class));
-    readonlyService.postOrder(
+    assertThrows(ReadonlyModeViolationException.class, () -> readonlyService.postOrder(
       "", 0, Quotation.getDefaultInstance(), OrderDirection.ORDER_DIRECTION_UNSPECIFIED,
-      "", OrderType.ORDER_TYPE_UNSPECIFIED, "");
+      "", OrderType.ORDER_TYPE_UNSPECIFIED, ""));
   }
 
   @Test
@@ -206,7 +226,7 @@ public class OrdersServiceTest extends GrpcClientTester<OrdersService> {
       () -> readonlyService.cancelOrderSync("", ""));
     futureThrown.expect(CompletionException.class);
     futureThrown.expectCause(IsInstanceOf.instanceOf(ReadonlyModeViolationException.class));
-    readonlyService.cancelOrder("", "");
+    assertThrows(ReadonlyModeViolationException.class, () -> readonlyService.cancelOrder("", ""));
   }
 
   @Test

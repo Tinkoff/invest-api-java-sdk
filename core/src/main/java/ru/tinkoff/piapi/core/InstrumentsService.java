@@ -1,19 +1,55 @@
 package ru.tinkoff.piapi.core;
 
-import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
-import ru.tinkoff.piapi.contract.v1.*;
+import ru.tinkoff.piapi.contract.v1.AccruedInterest;
+import ru.tinkoff.piapi.contract.v1.Bond;
+import ru.tinkoff.piapi.contract.v1.BondResponse;
+import ru.tinkoff.piapi.contract.v1.BondsResponse;
+import ru.tinkoff.piapi.contract.v1.Coupon;
+import ru.tinkoff.piapi.contract.v1.CurrenciesResponse;
+import ru.tinkoff.piapi.contract.v1.Currency;
+import ru.tinkoff.piapi.contract.v1.CurrencyResponse;
+import ru.tinkoff.piapi.contract.v1.Dividend;
+import ru.tinkoff.piapi.contract.v1.Etf;
+import ru.tinkoff.piapi.contract.v1.EtfResponse;
+import ru.tinkoff.piapi.contract.v1.EtfsResponse;
+import ru.tinkoff.piapi.contract.v1.Future;
+import ru.tinkoff.piapi.contract.v1.FutureResponse;
+import ru.tinkoff.piapi.contract.v1.FuturesResponse;
+import ru.tinkoff.piapi.contract.v1.GetAccruedInterestsRequest;
+import ru.tinkoff.piapi.contract.v1.GetAccruedInterestsResponse;
+import ru.tinkoff.piapi.contract.v1.GetBondCouponsRequest;
+import ru.tinkoff.piapi.contract.v1.GetBondCouponsResponse;
+import ru.tinkoff.piapi.contract.v1.GetDividendsRequest;
+import ru.tinkoff.piapi.contract.v1.GetDividendsResponse;
+import ru.tinkoff.piapi.contract.v1.GetFuturesMarginRequest;
+import ru.tinkoff.piapi.contract.v1.GetFuturesMarginResponse;
+import ru.tinkoff.piapi.contract.v1.Instrument;
+import ru.tinkoff.piapi.contract.v1.InstrumentIdType;
+import ru.tinkoff.piapi.contract.v1.InstrumentRequest;
+import ru.tinkoff.piapi.contract.v1.InstrumentResponse;
+import ru.tinkoff.piapi.contract.v1.InstrumentStatus;
+import ru.tinkoff.piapi.contract.v1.InstrumentsRequest;
+import ru.tinkoff.piapi.contract.v1.InstrumentsServiceGrpc.InstrumentsServiceBlockingStub;
+import ru.tinkoff.piapi.contract.v1.InstrumentsServiceGrpc.InstrumentsServiceStub;
+import ru.tinkoff.piapi.contract.v1.Share;
+import ru.tinkoff.piapi.contract.v1.ShareResponse;
+import ru.tinkoff.piapi.contract.v1.SharesResponse;
+import ru.tinkoff.piapi.contract.v1.TradingSchedule;
+import ru.tinkoff.piapi.contract.v1.TradingSchedulesRequest;
+import ru.tinkoff.piapi.contract.v1.TradingSchedulesResponse;
 import ru.tinkoff.piapi.core.utils.DateUtils;
 import ru.tinkoff.piapi.core.utils.Helpers;
 
 import javax.annotation.Nonnull;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+
+import static ru.tinkoff.piapi.core.utils.Helpers.unaryCall;
+import static ru.tinkoff.piapi.core.utils.ValidationUtils.checkFromTo;
 
 /**
  * Сервис предоставления справочной информации о ценных бумагах.
@@ -22,31 +58,61 @@ import java.util.function.Function;
  */
 public class InstrumentsService {
 
-  private final InstrumentsServiceGrpc.InstrumentsServiceBlockingStub instrumentsBlockingStub;
-  private final InstrumentsServiceGrpc.InstrumentsServiceStub instrumentsStub;
+  private final InstrumentsServiceBlockingStub instrumentsBlockingStub;
+  private final InstrumentsServiceStub instrumentsStub;
 
-  InstrumentsService(
-    @Nonnull InstrumentsServiceGrpc.InstrumentsServiceBlockingStub instrumentsBlockingStub,
-    @Nonnull InstrumentsServiceGrpc.InstrumentsServiceStub instrumentsStub) {
+  InstrumentsService(@Nonnull InstrumentsServiceBlockingStub instrumentsBlockingStub,
+                     @Nonnull InstrumentsServiceStub instrumentsStub) {
     this.instrumentsBlockingStub = instrumentsBlockingStub;
     this.instrumentsStub = instrumentsStub;
   }
 
-  private static <R> Optional<R> wrapPossibleNotFoundWithOptional(R response, Throwable ex) {
-    if (response != null) {
-      return Optional.of(response);
-    } else {
-      if (ex instanceof StatusRuntimeException && ((StatusRuntimeException) ex).getStatus() == Status.NOT_FOUND) {
-        return Optional.empty();
-      } else {
-        if (ex instanceof RuntimeException) {
-          throw (RuntimeException) ex;
-        } else {
-          throw new RuntimeException(ex);
-        }
-      }
-    }
+  /**
+   * Получение (синхронное) купонов по облигациям.
+   *
+   * @param figi Тикер облигации.
+   * @param from Начало периода по часовому поясу UTC.
+   * @param to   Окончание периода по часовому поясу UTC.
+   * @return информация о купонах облигации.
+   */
+  @Nonnull
+  public List<Coupon> getBondCouponsSync(@Nonnull String figi,
+                                         @Nonnull Instant from,
+                                         @Nonnull Instant to) {
+    checkFromTo(from, to);
+
+    return unaryCall(() -> instrumentsBlockingStub.getBondCoupons(
+      GetBondCouponsRequest.newBuilder()
+        .setFigi(figi)
+        .setFrom(DateUtils.instantToTimestamp(from))
+        .setTo(DateUtils.instantToTimestamp(to))
+        .build()).getEventsList());
   }
+
+  /**
+   * Получение (асинхронное) купонов по облигациям.
+   *
+   * @param figi Тикер облигации.
+   * @param from Начало периода по часовому поясу UTC.
+   * @param to   Окончание периода по часовому поясу UTC.
+   * @return информация о купонах облигации.
+   */
+  @Nonnull
+  public CompletableFuture<List<Coupon>> getBondCoupons(@Nonnull String figi,
+                                                        @Nonnull Instant from,
+                                                        @Nonnull Instant to ) {
+    checkFromTo(from, to);
+
+    return unaryCall(() -> Helpers.<GetBondCouponsResponse>unaryAsyncCall(
+        observer -> instrumentsStub.getBondCoupons(
+          GetBondCouponsRequest.newBuilder()
+            .setFigi(figi)
+            .setFrom(DateUtils.instantToTimestamp(from))
+            .setTo(DateUtils.instantToTimestamp(to))
+            .build(), observer))
+      .thenApply(GetBondCouponsResponse::getEventsList));
+  }
+
 
   /**
    * Получение (синхронное) расписания торгов <em>всех</em> торговых площадок.
@@ -58,19 +124,16 @@ public class InstrumentsService {
    * @return Расписания торгов.
    */
   @Nonnull
-  public List<TradingSchedule> getTradingSchedulesSync(
-    @Nonnull Instant from,
-    @Nonnull Instant to) {
-    if (Helpers.areFromAndToValid(from, to)) {
-      return instrumentsBlockingStub.tradingSchedules(
-          TradingSchedulesRequest.newBuilder()
-            .setFrom(DateUtils.instantToTimestamp(from))
-            .setTo(DateUtils.instantToTimestamp(to))
-            .build())
-        .getExchangesList();
-    } else {
-      throw new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE);
-    }
+  public List<TradingSchedule> getTradingSchedulesSync(@Nonnull Instant from,
+                                                       @Nonnull Instant to) {
+    checkFromTo(from, to);
+
+    return unaryCall(() -> instrumentsBlockingStub.tradingSchedules(
+        TradingSchedulesRequest.newBuilder()
+          .setFrom(DateUtils.instantToTimestamp(from))
+          .setTo(DateUtils.instantToTimestamp(to))
+          .build())
+      .getExchangesList());
   }
 
   /**
@@ -84,31 +147,19 @@ public class InstrumentsService {
    * @return Расписание торгов площадки (если таковая существует).
    */
   @Nonnull
-  public Optional<TradingSchedule> getTradingScheduleSync(
-    @Nonnull String exchange,
-    @Nonnull Instant from,
-    @Nonnull Instant to) {
-    if (Helpers.areFromAndToValid(from, to)) {
-      try {
-        return Optional.of(
-          instrumentsBlockingStub.tradingSchedules(
-              TradingSchedulesRequest.newBuilder()
-                .setExchange(exchange)
-                .setFrom(DateUtils.instantToTimestamp(from))
-                .setTo(DateUtils.instantToTimestamp(to))
-                .build())
-            .getExchangesList()
-            .get(0));
-      } catch (StatusRuntimeException ex) {
-        if (ex.getStatus() == Status.NOT_FOUND) {
-          return Optional.empty();
-        } else {
-          throw ex;
-        }
-      }
-    } else {
-      throw new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE);
-    }
+  public TradingSchedule getTradingScheduleSync(@Nonnull String exchange,
+                                                @Nonnull Instant from,
+                                                @Nonnull Instant to) {
+    checkFromTo(from, to);
+
+    return unaryCall(() -> instrumentsBlockingStub.tradingSchedules(
+        TradingSchedulesRequest.newBuilder()
+          .setExchange(exchange)
+          .setFrom(DateUtils.instantToTimestamp(from))
+          .setTo(DateUtils.instantToTimestamp(to))
+          .build())
+      .getExchangesList()
+      .get(0));
   }
 
   /**
@@ -119,13 +170,10 @@ public class InstrumentsService {
    * @return Облигация (если таковая есть).
    */
   @Nonnull
-  public Optional<Bond> getBondByTickerSync(
-    @Nonnull String ticker,
-    @Nonnull String classCode) {
-    return getInstrumentByTickerSync(
-      ticker,
-      classCode,
-      request -> instrumentsBlockingStub.bondBy(request).getInstrument());
+  public Bond getBondByTickerSync(@Nonnull String ticker,
+                                  @Nonnull String classCode) {
+    return unaryCall(() ->
+      getInstrumentByTickerSync(ticker, classCode, request -> instrumentsBlockingStub.bondBy(request).getInstrument()));
   }
 
   /**
@@ -135,10 +183,8 @@ public class InstrumentsService {
    * @return Облигация (если таковая есть).
    */
   @Nonnull
-  public Optional<Bond> getBondByFigiSync(@Nonnull String figi) {
-    return getInstrumentByFigiSync(
-      figi,
-      request -> instrumentsBlockingStub.bondBy(request).getInstrument());
+  public Bond getBondByFigiSync(@Nonnull String figi) {
+    return unaryCall(() -> getInstrumentByFigiSync(figi, request -> instrumentsBlockingStub.bondBy(request).getInstrument()));
   }
 
   /**
@@ -148,11 +194,11 @@ public class InstrumentsService {
    */
   @Nonnull
   public List<Bond> getTradableBondsSync() {
-    return instrumentsBlockingStub.bonds(
+    return unaryCall(() -> instrumentsBlockingStub.bonds(
         InstrumentsRequest.newBuilder()
           .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_BASE)
           .build())
-      .getInstrumentsList();
+      .getInstrumentsList());
   }
 
   /**
@@ -162,11 +208,11 @@ public class InstrumentsService {
    */
   @Nonnull
   public List<Bond> getAllBondsSync() {
-    return instrumentsBlockingStub.bonds(
+    return unaryCall(() -> instrumentsBlockingStub.bonds(
         InstrumentsRequest.newBuilder()
           .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_ALL)
           .build())
-      .getInstrumentsList();
+      .getInstrumentsList());
   }
 
   /**
@@ -177,13 +223,12 @@ public class InstrumentsService {
    * @return Валюта (если таковая есть).
    */
   @Nonnull
-  public Optional<Currency> getCurrencyByTickerSync(
-    @Nonnull String ticker,
-    @Nonnull String classCode) {
-    return getInstrumentByTickerSync(
+  public Currency getCurrencyByTickerSync(@Nonnull String ticker,
+                                          @Nonnull String classCode) {
+    return unaryCall(() -> getInstrumentByTickerSync(
       ticker,
       classCode,
-      request -> instrumentsBlockingStub.currencyBy(request).getInstrument());
+      request -> instrumentsBlockingStub.currencyBy(request).getInstrument()));
   }
 
   /**
@@ -193,10 +238,8 @@ public class InstrumentsService {
    * @return Валюта (если таковая есть).
    */
   @Nonnull
-  public Optional<Currency> getCurrencyByFigiSync(@Nonnull String figi) {
-    return getInstrumentByFigiSync(
-      figi,
-      request -> instrumentsBlockingStub.currencyBy(request).getInstrument());
+  public Currency getCurrencyByFigiSync(@Nonnull String figi) {
+    return unaryCall(() -> getInstrumentByFigiSync(figi, request -> instrumentsBlockingStub.currencyBy(request).getInstrument()));
   }
 
   /**
@@ -206,11 +249,11 @@ public class InstrumentsService {
    */
   @Nonnull
   public List<Currency> getTradableCurrenciesSync() {
-    return instrumentsBlockingStub.currencies(
+    return unaryCall(() -> instrumentsBlockingStub.currencies(
         InstrumentsRequest.newBuilder()
           .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_BASE)
           .build())
-      .getInstrumentsList();
+      .getInstrumentsList());
   }
 
   /**
@@ -220,11 +263,11 @@ public class InstrumentsService {
    */
   @Nonnull
   public List<Currency> getAllCurrenciesSync() {
-    return instrumentsBlockingStub.currencies(
+    return unaryCall(() -> instrumentsBlockingStub.currencies(
         InstrumentsRequest.newBuilder()
           .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_ALL)
           .build())
-      .getInstrumentsList();
+      .getInstrumentsList());
   }
 
   /**
@@ -235,13 +278,9 @@ public class InstrumentsService {
    * @return Фонд (если таковой есть).
    */
   @Nonnull
-  public Optional<Etf> getEtfByTickerSync(
-    @Nonnull String ticker,
-    @Nonnull String classCode) {
-    return getInstrumentByTickerSync(
-      ticker,
-      classCode,
-      request -> instrumentsBlockingStub.etfBy(request).getInstrument());
+  public Etf getEtfByTickerSync(@Nonnull String ticker,
+                                @Nonnull String classCode) {
+    return unaryCall(() -> getInstrumentByTickerSync(ticker, classCode, request -> instrumentsBlockingStub.etfBy(request).getInstrument()));
   }
 
   /**
@@ -251,10 +290,8 @@ public class InstrumentsService {
    * @return Фонд (если таковой есть).
    */
   @Nonnull
-  public Optional<Etf> getEtfByFigiSync(@Nonnull String figi) {
-    return getInstrumentByFigiSync(
-      figi,
-      request -> instrumentsBlockingStub.etfBy(request).getInstrument());
+  public Etf getEtfByFigiSync(@Nonnull String figi) {
+    return unaryCall(() -> getInstrumentByFigiSync(figi, request -> instrumentsBlockingStub.etfBy(request).getInstrument()));
   }
 
   /**
@@ -264,11 +301,11 @@ public class InstrumentsService {
    */
   @Nonnull
   public List<Etf> getTradableEtfsSync() {
-    return instrumentsBlockingStub.etfs(
+    return unaryCall(() -> instrumentsBlockingStub.etfs(
         InstrumentsRequest.newBuilder()
           .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_BASE)
           .build())
-      .getInstrumentsList();
+      .getInstrumentsList());
   }
 
   /**
@@ -278,11 +315,11 @@ public class InstrumentsService {
    */
   @Nonnull
   public List<Etf> getAllEtfsSync() {
-    return instrumentsBlockingStub.etfs(
+    return unaryCall(() -> instrumentsBlockingStub.etfs(
         InstrumentsRequest.newBuilder()
           .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_ALL)
           .build())
-      .getInstrumentsList();
+      .getInstrumentsList());
   }
 
   /**
@@ -293,13 +330,12 @@ public class InstrumentsService {
    * @return Фьючерс (если таковой есть).
    */
   @Nonnull
-  public Optional<Future> getFutureByTickerSync(
-    @Nonnull String ticker,
-    @Nonnull String classCode) {
-    return getInstrumentByTickerSync(
+  public Future getFutureByTickerSync(@Nonnull String ticker,
+                                      @Nonnull String classCode) {
+    return unaryCall(() -> getInstrumentByTickerSync(
       ticker,
       classCode,
-      request -> instrumentsBlockingStub.futureBy(request).getInstrument());
+      request -> instrumentsBlockingStub.futureBy(request).getInstrument()));
   }
 
   /**
@@ -309,10 +345,9 @@ public class InstrumentsService {
    * @return Фьючерс (если таковой есть).
    */
   @Nonnull
-  public Optional<Future> getFutureByFigiSync(@Nonnull String figi) {
-    return getInstrumentByFigiSync(
-      figi,
-      request -> instrumentsBlockingStub.futureBy(request).getInstrument());
+  public Future getFutureByFigiSync(@Nonnull String figi) {
+    return unaryCall(() ->
+      getInstrumentByFigiSync(figi, request -> instrumentsBlockingStub.futureBy(request).getInstrument()));
   }
 
   /**
@@ -322,11 +357,11 @@ public class InstrumentsService {
    */
   @Nonnull
   public List<Future> getTradableFuturesSync() {
-    return instrumentsBlockingStub.futures(
+    return unaryCall(() -> instrumentsBlockingStub.futures(
         InstrumentsRequest.newBuilder()
           .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_BASE)
           .build())
-      .getInstrumentsList();
+      .getInstrumentsList());
   }
 
   /**
@@ -336,11 +371,11 @@ public class InstrumentsService {
    */
   @Nonnull
   public List<Future> getAllFuturesSync() {
-    return instrumentsBlockingStub.futures(
+    return unaryCall(() -> instrumentsBlockingStub.futures(
         InstrumentsRequest.newBuilder()
           .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_ALL)
           .build())
-      .getInstrumentsList();
+      .getInstrumentsList());
   }
 
   /**
@@ -351,13 +386,12 @@ public class InstrumentsService {
    * @return Акция (если таковой есть).
    */
   @Nonnull
-  public Optional<Share> getShareByTickerSync(
-    @Nonnull String ticker,
-    @Nonnull String classCode) {
-    return getInstrumentByTickerSync(
+  public Share getShareByTickerSync(@Nonnull String ticker,
+                                    @Nonnull String classCode) {
+    return unaryCall(() -> getInstrumentByTickerSync(
       ticker,
       classCode,
-      request -> instrumentsBlockingStub.shareBy(request).getInstrument());
+      request -> instrumentsBlockingStub.shareBy(request).getInstrument()));
   }
 
   /**
@@ -367,10 +401,9 @@ public class InstrumentsService {
    * @return Акция (если таковой есть).
    */
   @Nonnull
-  public Optional<Share> getShareByFigiSync(@Nonnull String figi) {
-    return getInstrumentByFigiSync(
-      figi,
-      request -> instrumentsBlockingStub.shareBy(request).getInstrument());
+  public Share getShareByFigiSync(@Nonnull String figi) {
+    return unaryCall(() ->
+      getInstrumentByFigiSync(figi, request -> instrumentsBlockingStub.shareBy(request).getInstrument()));
   }
 
   /**
@@ -380,11 +413,11 @@ public class InstrumentsService {
    */
   @Nonnull
   public List<Share> getTradableSharesSync() {
-    return instrumentsBlockingStub.shares(
+    return unaryCall(() -> instrumentsBlockingStub.shares(
         InstrumentsRequest.newBuilder()
           .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_BASE)
           .build())
-      .getInstrumentsList();
+      .getInstrumentsList());
   }
 
   /**
@@ -394,11 +427,11 @@ public class InstrumentsService {
    */
   @Nonnull
   public List<Share> getAllSharesSync() {
-    return instrumentsBlockingStub.shares(
+    return unaryCall(() -> instrumentsBlockingStub.shares(
         InstrumentsRequest.newBuilder()
           .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_ALL)
           .build())
-      .getInstrumentsList();
+      .getInstrumentsList());
   }
 
   /**
@@ -410,30 +443,19 @@ public class InstrumentsService {
    * @return НКД по облигации (если есть).
    */
   @Nonnull
-  public Optional<List<AccruedInterest>> getAccruedInterestsSync(
-    @Nonnull String figi,
-    @Nonnull Instant from,
-    @Nonnull Instant to) {
-    if (Helpers.areFromAndToValid(from, to)) {
-      try {
-        return Optional.of(
-          instrumentsBlockingStub.getAccruedInterests(
-              GetAccruedInterestsRequest.newBuilder()
-                .setFigi(figi)
-                .setFrom(DateUtils.instantToTimestamp(from))
-                .setTo(DateUtils.instantToTimestamp(to))
-                .build())
-            .getAccruedInterestsList());
-      } catch (StatusRuntimeException ex) {
-        if (ex.getStatus() == Status.NOT_FOUND) {
-          return Optional.empty();
-        } else {
-          throw ex;
-        }
-      }
-    } else {
-      throw new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE);
-    }
+  public List<AccruedInterest> getAccruedInterestsSync(@Nonnull String figi,
+                                                       @Nonnull Instant from,
+                                                       @Nonnull Instant to) {
+    checkFromTo(from, to);
+
+    return unaryCall(() -> instrumentsBlockingStub.getAccruedInterests(
+        GetAccruedInterestsRequest.newBuilder()
+          .setFigi(figi)
+          .setFrom(DateUtils.instantToTimestamp(from))
+          .setTo(DateUtils.instantToTimestamp(to))
+          .build())
+      .getAccruedInterestsList());
+
   }
 
   /**
@@ -443,20 +465,12 @@ public class InstrumentsService {
    * @return Размер гарантийного обеспечения по фьючерсу (если есть).
    */
   @Nonnull
-  public Optional<GetFuturesMarginResponse> getFuturesMarginSync(@Nonnull String figi) {
-    try {
-      return Optional.of(
-        instrumentsBlockingStub.getFuturesMargin(
-          GetFuturesMarginRequest.newBuilder()
-            .setFigi(figi)
-            .build()));
-    } catch (StatusRuntimeException ex) {
-      if (ex.getStatus() == Status.NOT_FOUND) {
-        return Optional.empty();
-      } else {
-        throw ex;
-      }
-    }
+  public GetFuturesMarginResponse getFuturesMarginSync(@Nonnull String figi) {
+
+    return unaryCall(() -> instrumentsBlockingStub.getFuturesMargin(
+      GetFuturesMarginRequest.newBuilder()
+        .setFigi(figi)
+        .build()));
   }
 
   /**
@@ -467,13 +481,10 @@ public class InstrumentsService {
    * @return Основная информация об инструменте (если есть).
    */
   @Nonnull
-  public Optional<Instrument> getInstrumentByTickerSync(
-    @Nonnull String ticker,
-    @Nonnull String classCode) {
-    return getInstrumentByTickerSync(
-      ticker,
-      classCode,
-      request -> instrumentsBlockingStub.getInstrumentBy(request).getInstrument());
+  public Instrument getInstrumentByTickerSync(@Nonnull String ticker,
+                                              @Nonnull String classCode) {
+    return unaryCall(() ->
+      getInstrumentByTickerSync(ticker, classCode, request -> instrumentsBlockingStub.getInstrumentBy(request).getInstrument()));
   }
 
   /**
@@ -483,10 +494,9 @@ public class InstrumentsService {
    * @return Основная информация об инструменте (если есть).
    */
   @Nonnull
-  public Optional<Instrument> getInstrumentByFigiSync(@Nonnull String figi) {
-    return getInstrumentByFigiSync(
-      figi,
-      request -> instrumentsBlockingStub.getInstrumentBy(request).getInstrument());
+  public Instrument getInstrumentByFigiSync(@Nonnull String figi) {
+    return unaryCall(() ->
+      getInstrumentByFigiSync(figi, request -> instrumentsBlockingStub.getInstrumentBy(request).getInstrument()));
   }
 
   /**
@@ -494,34 +504,22 @@ public class InstrumentsService {
    *
    * @param figi FIGI инфструмента.
    * @param from Начало периода по часовому поясу UTC.
-   * @param to Конец периода по часовому поясу UTC.
+   * @param to   Конец периода по часовому поясу UTC.
    * @return События выплаты дивидендов по инструменту (если есть).
    */
   @Nonnull
-  public Optional<List<Dividend>> getDividendsSync(
-    @Nonnull String figi,
-    @Nonnull Instant from,
-    @Nonnull Instant to) {
-    if (Helpers.areFromAndToValid(from, to)) {
-      try {
-        return Optional.of(
-          instrumentsBlockingStub.getDividends(
-              GetDividendsRequest.newBuilder()
-                .setFigi(figi)
-                .setFrom(DateUtils.instantToTimestamp(from))
-                .setTo(DateUtils.instantToTimestamp(to))
-                .build())
-            .getDividendsList());
-      } catch (StatusRuntimeException ex) {
-        if (ex.getStatus() == Status.NOT_FOUND) {
-          return Optional.empty();
-        } else {
-          throw ex;
-        }
-      }
-    } else {
-      throw new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE);
-    }
+  public List<Dividend> getDividendsSync(@Nonnull String figi,
+                                         @Nonnull Instant from,
+                                         @Nonnull Instant to) {
+    checkFromTo(from, to);
+
+    return unaryCall(() -> instrumentsBlockingStub.getDividends(
+        GetDividendsRequest.newBuilder()
+          .setFigi(figi)
+          .setFrom(DateUtils.instantToTimestamp(from))
+          .setTo(DateUtils.instantToTimestamp(to))
+          .build())
+      .getDividendsList());
   }
 
   /**
@@ -534,21 +532,18 @@ public class InstrumentsService {
    * @return Расписания торгов.
    */
   @Nonnull
-  public CompletableFuture<List<TradingSchedule>> getTradingSchedules(
-    @Nonnull Instant from,
-    @Nonnull Instant to) {
-    if (Helpers.areFromAndToValid(from, to)) {
-      return Helpers.<TradingSchedulesResponse>wrapWithFuture(
-          observer -> instrumentsStub.tradingSchedules(
-            TradingSchedulesRequest.newBuilder()
-              .setFrom(DateUtils.instantToTimestamp(from))
-              .setTo(DateUtils.instantToTimestamp(to))
-              .build(),
-            observer))
-        .thenApply(TradingSchedulesResponse::getExchangesList);
-    } else {
-      return CompletableFuture.failedFuture(new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE));
-    }
+  public CompletableFuture<List<TradingSchedule>> getTradingSchedules(@Nonnull Instant from,
+                                                                      @Nonnull Instant to) {
+    checkFromTo(from, to);
+
+    return unaryCall(() -> Helpers.<TradingSchedulesResponse>unaryAsyncCall(
+        observer -> instrumentsStub.tradingSchedules(
+          TradingSchedulesRequest.newBuilder()
+            .setFrom(DateUtils.instantToTimestamp(from))
+            .setTo(DateUtils.instantToTimestamp(to))
+            .build(),
+          observer))
+      .thenApply(TradingSchedulesResponse::getExchangesList));
   }
 
   /**
@@ -562,24 +557,20 @@ public class InstrumentsService {
    * @return Расписание торгов площадки (если таковая существует).
    */
   @Nonnull
-  public CompletableFuture<Optional<TradingSchedule>> getTradingSchedule(
-    @Nonnull String exchange,
-    @Nonnull Instant from,
-    @Nonnull Instant to) {
-    if (Helpers.areFromAndToValid(from, to)) {
-      return Helpers.<TradingSchedulesResponse>wrapWithFuture(
-          observer -> instrumentsStub.tradingSchedules(
-            TradingSchedulesRequest.newBuilder()
-              .setExchange(exchange)
-              .setFrom(DateUtils.instantToTimestamp(from))
-              .setTo(DateUtils.instantToTimestamp(to))
-              .build(),
-            observer))
-        .handle(InstrumentsService::wrapPossibleNotFoundWithOptional)
-        .thenApply(x -> x.map(v -> v.getExchangesList().get(0)));
-    } else {
-      return CompletableFuture.failedFuture(new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE));
-    }
+  public CompletableFuture<TradingSchedule> getTradingSchedule(@Nonnull String exchange,
+                                                               @Nonnull Instant from,
+                                                               @Nonnull Instant to) {
+    checkFromTo(from, to);
+
+    return unaryCall(() -> Helpers.<TradingSchedulesResponse>unaryAsyncCall(
+        observer -> instrumentsStub.tradingSchedules(
+          TradingSchedulesRequest.newBuilder()
+            .setExchange(exchange)
+            .setFrom(DateUtils.instantToTimestamp(from))
+            .setTo(DateUtils.instantToTimestamp(to))
+            .build(),
+          observer))
+      .thenApply(x -> x.getExchangesList().get(0)));
   }
 
   /**
@@ -590,14 +581,9 @@ public class InstrumentsService {
    * @return Облигация (если таковая есть).
    */
   @Nonnull
-  public CompletableFuture<Optional<Bond>> getBondByTicker(
-    @Nonnull String ticker,
-    @Nonnull String classCode) {
-    return this.getInstrumentByTicker(
-      ticker,
-      classCode,
-      instrumentsStub::bondBy,
-      BondResponse::getInstrument);
+  public CompletableFuture<Bond> getBondByTicker(@Nonnull String ticker,
+                                                 @Nonnull String classCode) {
+    return getInstrumentByTicker(ticker, classCode, instrumentsStub::bondBy, BondResponse::getInstrument);
   }
 
   /**
@@ -607,11 +593,8 @@ public class InstrumentsService {
    * @return Облигация (если таковая есть).
    */
   @Nonnull
-  public CompletableFuture<Optional<Bond>> getBondByFigi(@Nonnull String figi) {
-    return this.getInstrumentByFigi(
-      figi,
-      instrumentsStub::bondBy,
-      BondResponse::getInstrument);
+  public CompletableFuture<Bond> getBondByFigi(@Nonnull String figi) {
+    return getInstrumentByFigi(figi, instrumentsStub::bondBy, BondResponse::getInstrument);
   }
 
   /**
@@ -621,13 +604,13 @@ public class InstrumentsService {
    */
   @Nonnull
   public CompletableFuture<List<Bond>> getTradableBonds() {
-    return Helpers.<BondsResponse>wrapWithFuture(
+    return unaryCall(() -> Helpers.<BondsResponse>unaryAsyncCall(
         observer -> instrumentsStub.bonds(
           InstrumentsRequest.newBuilder()
             .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_BASE)
             .build(),
           observer))
-      .thenApply(BondsResponse::getInstrumentsList);
+      .thenApply(BondsResponse::getInstrumentsList));
   }
 
   /**
@@ -637,13 +620,13 @@ public class InstrumentsService {
    */
   @Nonnull
   public CompletableFuture<List<Bond>> getAllBonds() {
-    return Helpers.<BondsResponse>wrapWithFuture(
+    return unaryCall(() -> Helpers.<BondsResponse>unaryAsyncCall(
         observer -> instrumentsStub.bonds(
           InstrumentsRequest.newBuilder()
             .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_ALL)
             .build(),
           observer))
-      .thenApply(BondsResponse::getInstrumentsList);
+      .thenApply(BondsResponse::getInstrumentsList));
   }
 
   /**
@@ -654,10 +637,9 @@ public class InstrumentsService {
    * @return Валюта (если таковая есть).
    */
   @Nonnull
-  public CompletableFuture<Optional<Currency>> getCurrencyByTicker(
-    @Nonnull String ticker,
-    @Nonnull String classCode) {
-    return this.getInstrumentByTicker(
+  public CompletableFuture<Currency> getCurrencyByTicker(@Nonnull String ticker,
+                                                         @Nonnull String classCode) {
+    return getInstrumentByTicker(
       ticker,
       classCode,
       instrumentsStub::currencyBy,
@@ -671,11 +653,8 @@ public class InstrumentsService {
    * @return Валюта (если таковая есть).
    */
   @Nonnull
-  public CompletableFuture<Optional<Currency>> getCurrencyByFigi(@Nonnull String figi) {
-    return this.getInstrumentByFigi(
-      figi,
-      instrumentsStub::currencyBy,
-      CurrencyResponse::getInstrument);
+  public CompletableFuture<Currency> getCurrencyByFigi(@Nonnull String figi) {
+    return getInstrumentByFigi(figi, instrumentsStub::currencyBy, CurrencyResponse::getInstrument);
   }
 
   /**
@@ -685,13 +664,13 @@ public class InstrumentsService {
    */
   @Nonnull
   public CompletableFuture<List<Currency>> getTradableCurrencies() {
-    return Helpers.<CurrenciesResponse>wrapWithFuture(
+    return unaryCall(() -> Helpers.<CurrenciesResponse>unaryAsyncCall(
         observer -> instrumentsStub.currencies(
           InstrumentsRequest.newBuilder()
             .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_BASE)
             .build(),
           observer))
-      .thenApply(CurrenciesResponse::getInstrumentsList);
+      .thenApply(CurrenciesResponse::getInstrumentsList));
   }
 
   /**
@@ -701,13 +680,13 @@ public class InstrumentsService {
    */
   @Nonnull
   public CompletableFuture<List<Currency>> getAllCurrencies() {
-    return Helpers.<CurrenciesResponse>wrapWithFuture(
+    return unaryCall(() -> Helpers.<CurrenciesResponse>unaryAsyncCall(
         observer -> instrumentsStub.currencies(
           InstrumentsRequest.newBuilder()
             .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_ALL)
             .build(),
           observer))
-      .thenApply(CurrenciesResponse::getInstrumentsList);
+      .thenApply(CurrenciesResponse::getInstrumentsList));
   }
 
   /**
@@ -718,14 +697,9 @@ public class InstrumentsService {
    * @return Фонд (если таковой есть).
    */
   @Nonnull
-  public CompletableFuture<Optional<Etf>> getEtfByTicker(
-    @Nonnull String ticker,
-    @Nonnull String classCode) {
-    return this.getInstrumentByTicker(
-      ticker,
-      classCode,
-      instrumentsStub::etfBy,
-      EtfResponse::getInstrument);
+  public CompletableFuture<Etf> getEtfByTicker(@Nonnull String ticker,
+                                               @Nonnull String classCode) {
+    return getInstrumentByTicker(ticker, classCode, instrumentsStub::etfBy, EtfResponse::getInstrument);
   }
 
   /**
@@ -735,11 +709,8 @@ public class InstrumentsService {
    * @return Фонд (если таковой есть).
    */
   @Nonnull
-  public CompletableFuture<Optional<Etf>> getEtfByFigi(@Nonnull String figi) {
-    return this.getInstrumentByFigi(
-      figi,
-      instrumentsStub::etfBy,
-      EtfResponse::getInstrument);
+  public CompletableFuture<Etf> getEtfByFigi(@Nonnull String figi) {
+    return getInstrumentByFigi(figi, instrumentsStub::etfBy, EtfResponse::getInstrument);
   }
 
   /**
@@ -749,13 +720,13 @@ public class InstrumentsService {
    */
   @Nonnull
   public CompletableFuture<List<Etf>> getTradableEtfs() {
-    return Helpers.<EtfsResponse>wrapWithFuture(
+    return unaryCall(() -> Helpers.<EtfsResponse>unaryAsyncCall(
         observer -> instrumentsStub.etfs(
           InstrumentsRequest.newBuilder()
             .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_BASE)
             .build(),
           observer))
-      .thenApply(EtfsResponse::getInstrumentsList);
+      .thenApply(EtfsResponse::getInstrumentsList));
   }
 
   /**
@@ -765,13 +736,13 @@ public class InstrumentsService {
    */
   @Nonnull
   public CompletableFuture<List<Etf>> getAllEtfs() {
-    return Helpers.<EtfsResponse>wrapWithFuture(
+    return unaryCall(() -> Helpers.<EtfsResponse>unaryAsyncCall(
         observer -> instrumentsStub.etfs(
           InstrumentsRequest.newBuilder()
             .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_ALL)
             .build(),
           observer))
-      .thenApply(EtfsResponse::getInstrumentsList);
+      .thenApply(EtfsResponse::getInstrumentsList));
   }
 
   /**
@@ -782,14 +753,9 @@ public class InstrumentsService {
    * @return Фьючерс (если таковой есть).
    */
   @Nonnull
-  public CompletableFuture<Optional<Future>> getFutureByTicker(
-    @Nonnull String ticker,
-    @Nonnull String classCode) {
-    return this.getInstrumentByTicker(
-      ticker,
-      classCode,
-      instrumentsStub::futureBy,
-      FutureResponse::getInstrument);
+  public CompletableFuture<Future> getFutureByTicker(@Nonnull String ticker,
+                                                     @Nonnull String classCode) {
+    return getInstrumentByTicker(ticker, classCode, instrumentsStub::futureBy, FutureResponse::getInstrument);
   }
 
   /**
@@ -799,11 +765,8 @@ public class InstrumentsService {
    * @return Фьючерс (если таковой есть).
    */
   @Nonnull
-  public CompletableFuture<Optional<Future>> getFutureByFigi(@Nonnull String figi) {
-    return this.getInstrumentByFigi(
-      figi,
-      instrumentsStub::futureBy,
-      FutureResponse::getInstrument);
+  public CompletableFuture<Future> getFutureByFigi(@Nonnull String figi) {
+    return getInstrumentByFigi(figi, instrumentsStub::futureBy, FutureResponse::getInstrument);
   }
 
   /**
@@ -813,13 +776,13 @@ public class InstrumentsService {
    */
   @Nonnull
   public CompletableFuture<List<Future>> getTradableFutures() {
-    return Helpers.<FuturesResponse>wrapWithFuture(
+    return unaryCall(() -> Helpers.<FuturesResponse>unaryAsyncCall(
         observer -> instrumentsStub.futures(
           InstrumentsRequest.newBuilder()
             .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_BASE)
             .build(),
           observer))
-      .thenApply(FuturesResponse::getInstrumentsList);
+      .thenApply(FuturesResponse::getInstrumentsList));
   }
 
   /**
@@ -829,13 +792,13 @@ public class InstrumentsService {
    */
   @Nonnull
   public CompletableFuture<List<Future>> getAllFutures() {
-    return Helpers.<FuturesResponse>wrapWithFuture(
+    return unaryCall(() -> Helpers.<FuturesResponse>unaryAsyncCall(
         observer -> instrumentsStub.futures(
           InstrumentsRequest.newBuilder()
             .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_ALL)
             .build(),
           observer))
-      .thenApply(FuturesResponse::getInstrumentsList);
+      .thenApply(FuturesResponse::getInstrumentsList));
   }
 
   /**
@@ -846,14 +809,9 @@ public class InstrumentsService {
    * @return Акция (если таковой есть).
    */
   @Nonnull
-  public CompletableFuture<Optional<Share>> getShareByTicker(
-    @Nonnull String ticker,
-    @Nonnull String classCode) {
-    return this.getInstrumentByTicker(
-      ticker,
-      classCode,
-      instrumentsStub::shareBy,
-      ShareResponse::getInstrument);
+  public CompletableFuture<Share> getShareByTicker(@Nonnull String ticker,
+                                                   @Nonnull String classCode) {
+    return getInstrumentByTicker(ticker, classCode, instrumentsStub::shareBy, ShareResponse::getInstrument);
   }
 
   /**
@@ -863,11 +821,8 @@ public class InstrumentsService {
    * @return Акция (если таковой есть).
    */
   @Nonnull
-  public CompletableFuture<Optional<Share>> getShareByFigi(@Nonnull String figi) {
-    return this.getInstrumentByFigi(
-      figi,
-      instrumentsStub::shareBy,
-      ShareResponse::getInstrument);
+  public CompletableFuture<Share> getShareByFigi(@Nonnull String figi) {
+    return getInstrumentByFigi(figi, instrumentsStub::shareBy, ShareResponse::getInstrument);
   }
 
   /**
@@ -877,13 +832,13 @@ public class InstrumentsService {
    */
   @Nonnull
   public CompletableFuture<List<Share>> getTradableShares() {
-    return Helpers.<SharesResponse>wrapWithFuture(
+    return unaryCall(() -> Helpers.<SharesResponse>unaryAsyncCall(
         observer -> instrumentsStub.shares(
           InstrumentsRequest.newBuilder()
             .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_BASE)
             .build(),
           observer))
-      .thenApply(SharesResponse::getInstrumentsList);
+      .thenApply(SharesResponse::getInstrumentsList));
   }
 
   /**
@@ -893,13 +848,13 @@ public class InstrumentsService {
    */
   @Nonnull
   public CompletableFuture<List<Share>> getAllShares() {
-    return Helpers.<SharesResponse>wrapWithFuture(
+    return unaryCall(() -> Helpers.<SharesResponse>unaryAsyncCall(
         observer -> instrumentsStub.shares(
           InstrumentsRequest.newBuilder()
             .setInstrumentStatus(InstrumentStatus.INSTRUMENT_STATUS_ALL)
             .build(),
           observer))
-      .thenApply(SharesResponse::getInstrumentsList);
+      .thenApply(SharesResponse::getInstrumentsList));
   }
 
   /**
@@ -911,24 +866,20 @@ public class InstrumentsService {
    * @return НКД по облигации (если есть).
    */
   @Nonnull
-  public CompletableFuture<Optional<List<AccruedInterest>>> getAccruedInterests(
-    @Nonnull String figi,
-    @Nonnull Instant from,
-    @Nonnull Instant to) {
-    if (Helpers.areFromAndToValid(from, to)) {
-      return Helpers.<GetAccruedInterestsResponse>wrapWithFuture(
-          observer -> instrumentsStub.getAccruedInterests(
-            GetAccruedInterestsRequest.newBuilder()
-              .setFigi(figi)
-              .setFrom(DateUtils.instantToTimestamp(from))
-              .setTo(DateUtils.instantToTimestamp(to))
-              .build(),
-            observer))
-        .handle(InstrumentsService::wrapPossibleNotFoundWithOptional)
-        .thenApply(x -> x.map(GetAccruedInterestsResponse::getAccruedInterestsList));
-    } else {
-      return CompletableFuture.failedFuture(new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE));
-    }
+  public CompletableFuture<List<AccruedInterest>> getAccruedInterests(@Nonnull String figi,
+                                                                      @Nonnull Instant from,
+                                                                      @Nonnull Instant to) {
+    checkFromTo(from, to);
+
+    return unaryCall(() -> Helpers.<GetAccruedInterestsResponse>unaryAsyncCall(
+        observer -> instrumentsStub.getAccruedInterests(
+          GetAccruedInterestsRequest.newBuilder()
+            .setFigi(figi)
+            .setFrom(DateUtils.instantToTimestamp(from))
+            .setTo(DateUtils.instantToTimestamp(to))
+            .build(),
+          observer))
+      .thenApply(GetAccruedInterestsResponse::getAccruedInterestsList));
   }
 
   /**
@@ -938,14 +889,13 @@ public class InstrumentsService {
    * @return Размер гарантийного обеспечения по фьючерсу (если есть).
    */
   @Nonnull
-  public CompletableFuture<Optional<GetFuturesMarginResponse>> getFuturesMargin(@Nonnull String figi) {
-    return Helpers.<GetFuturesMarginResponse>wrapWithFuture(
-        observer -> instrumentsStub.getFuturesMargin(
-          GetFuturesMarginRequest.newBuilder()
-            .setFigi(figi)
-            .build(),
-          observer))
-      .handle(InstrumentsService::wrapPossibleNotFoundWithOptional);
+  public CompletableFuture<GetFuturesMarginResponse> getFuturesMargin(@Nonnull String figi) {
+    return unaryCall(() -> Helpers.unaryAsyncCall(
+      observer -> instrumentsStub.getFuturesMargin(
+        GetFuturesMarginRequest.newBuilder()
+          .setFigi(figi)
+          .build(),
+        observer)));
   }
 
   /**
@@ -956,14 +906,9 @@ public class InstrumentsService {
    * @return Основная информация об инструменте (если есть).
    */
   @Nonnull
-  public CompletableFuture<Optional<Instrument>> getInstrumentByTicker(
-    @Nonnull String ticker,
-    @Nonnull String classCode) {
-    return getInstrumentByTicker(
-      ticker,
-      classCode,
-      instrumentsStub::getInstrumentBy,
-      InstrumentResponse::getInstrument);
+  public CompletableFuture<Instrument> getInstrumentByTicker(@Nonnull String ticker,
+                                                             @Nonnull String classCode) {
+    return getInstrumentByTicker(ticker, classCode, instrumentsStub::getInstrumentBy, InstrumentResponse::getInstrument);
   }
 
   /**
@@ -973,11 +918,8 @@ public class InstrumentsService {
    * @return Основная информация об инструменте (если есть).
    */
   @Nonnull
-  public CompletableFuture<Optional<Instrument>> getInstrumentByFigi(@Nonnull String figi) {
-    return getInstrumentByFigi(
-      figi,
-      instrumentsStub::getInstrumentBy,
-      InstrumentResponse::getInstrument);
+  public CompletableFuture<Instrument> getInstrumentByFigi(@Nonnull String figi) {
+    return getInstrumentByFigi(figi, instrumentsStub::getInstrumentBy, InstrumentResponse::getInstrument);
   }
 
   /**
@@ -985,76 +927,51 @@ public class InstrumentsService {
    *
    * @param figi FIGI инфструмента.
    * @param from Начало периода по часовому поясу UTC.
-   * @param to Конец периода по часовому поясу UTC.
+   * @param to   Конец периода по часовому поясу UTC.
    * @return События выплаты дивидендов по инструменту (если есть).
    */
   @Nonnull
-  public CompletableFuture<Optional<List<Dividend>>> getDividends(
-    @Nonnull String figi,
-    @Nonnull Instant from,
-    @Nonnull Instant to) {
-    if (Helpers.areFromAndToValid(from, to)) {
-      return Helpers.<GetDividendsResponse>wrapWithFuture(
-          observer -> instrumentsStub.getDividends(
-            GetDividendsRequest.newBuilder()
-              .setFigi(figi)
-              .setFrom(DateUtils.instantToTimestamp(from))
-              .setTo(DateUtils.instantToTimestamp(to))
-              .build(),
-            observer))
-        .handle(InstrumentsService::wrapPossibleNotFoundWithOptional)
-        .thenApply(x -> x.map(GetDividendsResponse::getDividendsList));
-    } else {
-      return CompletableFuture.failedFuture(new IllegalArgumentException(Helpers.TO_IS_NOT_AFTER_FROM_MESSAGE));
-    }
+  public CompletableFuture<List<Dividend>> getDividends(@Nonnull String figi,
+                                                        @Nonnull Instant from,
+                                                        @Nonnull Instant to) {
+    checkFromTo(from, to);
+
+    return unaryCall(() -> Helpers.<GetDividendsResponse>unaryAsyncCall(
+        observer -> instrumentsStub.getDividends(
+          GetDividendsRequest.newBuilder()
+            .setFigi(figi)
+            .setFrom(DateUtils.instantToTimestamp(from))
+            .setTo(DateUtils.instantToTimestamp(to))
+            .build(),
+          observer))
+      .thenApply(GetDividendsResponse::getDividendsList));
   }
 
-  private <T> Optional<T> getInstrumentByTickerSync(
-    @Nonnull String ticker,
-    @Nonnull String classCode,
-    Function<InstrumentRequest, T> getter) {
-    try {
-      return Optional.of(
-        getter.apply(
-          InstrumentRequest.newBuilder()
-            .setIdType(InstrumentIdType.INSTRUMENT_ID_TYPE_TICKER)
-            .setId(ticker)
-            .setClassCode(classCode)
-            .build()));
-    } catch (StatusRuntimeException ex) {
-      if (ex.getStatus() == Status.NOT_FOUND) {
-        return Optional.empty();
-      } else {
-        throw ex;
-      }
-    }
+  private <T> T getInstrumentByTickerSync(@Nonnull String ticker,
+                                          @Nonnull String classCode,
+                                          Function<InstrumentRequest, T> getter) {
+    return getter.apply(
+      InstrumentRequest.newBuilder()
+        .setIdType(InstrumentIdType.INSTRUMENT_ID_TYPE_TICKER)
+        .setId(ticker)
+        .setClassCode(classCode)
+        .build());
   }
 
-  private <T> Optional<T> getInstrumentByFigiSync(
-    @Nonnull String figi,
-    Function<InstrumentRequest, T> getter) {
-    try {
-      return Optional.of(
-        getter.apply(
-          InstrumentRequest.newBuilder()
-            .setIdType(InstrumentIdType.INSTRUMENT_ID_TYPE_FIGI)
-            .setId(figi)
-            .build()));
-    } catch (StatusRuntimeException ex) {
-      if (ex.getStatus() == Status.NOT_FOUND) {
-        return Optional.empty();
-      } else {
-        throw ex;
-      }
-    }
+  private <T> T getInstrumentByFigiSync(@Nonnull String figi,
+                                        Function<InstrumentRequest, T> getter) {
+    return getter.apply(
+      InstrumentRequest.newBuilder()
+        .setIdType(InstrumentIdType.INSTRUMENT_ID_TYPE_FIGI)
+        .setId(figi)
+        .build());
   }
 
-  private <T, R> CompletableFuture<Optional<T>> getInstrumentByTicker(
-    @Nonnull String ticker,
-    @Nonnull String classCode,
-    BiConsumer<InstrumentRequest, StreamObserver<R>> call,
-    Function<R, T> extractor) {
-    return Helpers.<R>wrapWithFuture(
+  private <T, R> CompletableFuture<T> getInstrumentByTicker(@Nonnull String ticker,
+                                                            @Nonnull String classCode,
+                                                            BiConsumer<InstrumentRequest, StreamObserver<R>> call,
+                                                            Function<R, T> extractor) {
+    return Helpers.<R>unaryAsyncCall(
         observer -> call.accept(
           InstrumentRequest.newBuilder()
             .setIdType(InstrumentIdType.INSTRUMENT_ID_TYPE_TICKER)
@@ -1062,23 +979,19 @@ public class InstrumentsService {
             .setClassCode(classCode)
             .build(),
           observer))
-      .handle(InstrumentsService::wrapPossibleNotFoundWithOptional)
-      .thenApply(x -> x.map(extractor));
+      .thenApply(extractor);
   }
 
-  private <T, R> CompletableFuture<Optional<T>> getInstrumentByFigi(
-    @Nonnull String figi,
-    BiConsumer<InstrumentRequest, StreamObserver<R>> call,
-    Function<R, T> extractor) {
-    return Helpers.<R>wrapWithFuture(
+  private <T, R> CompletableFuture<T> getInstrumentByFigi(@Nonnull String figi,
+                                                          BiConsumer<InstrumentRequest, StreamObserver<R>> call,
+                                                          Function<R, T> extractor) {
+    return Helpers.<R>unaryAsyncCall(
         observer -> call.accept(
           InstrumentRequest.newBuilder()
             .setIdType(InstrumentIdType.INSTRUMENT_ID_TYPE_FIGI)
             .setId(figi)
             .build(),
           observer))
-      .handle(InstrumentsService::wrapPossibleNotFoundWithOptional)
-      .thenApply(x -> x.map(extractor));
+      .thenApply(extractor);
   }
-
 }

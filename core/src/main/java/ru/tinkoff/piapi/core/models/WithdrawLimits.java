@@ -15,9 +15,9 @@ public class WithdrawLimits {
   private final List<Money> blocked;
   private final List<Money> blockedGuarantee;
 
-  WithdrawLimits(@Nonnull List<Money> money,
-                 @Nonnull List<Money> blocked,
-                 @Nonnull List<Money> blockedGuarantee) {
+  private WithdrawLimits(@Nonnull List<Money> money,
+                         @Nonnull List<Money> blocked,
+                         @Nonnull List<Money> blockedGuarantee) {
     this.money = money;
     this.blocked = blocked;
     this.blockedGuarantee = blockedGuarantee;
@@ -63,8 +63,12 @@ public class WithdrawLimits {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     WithdrawLimits that = (WithdrawLimits) o;
     return money.equals(that.money) && blocked.equals(that.blocked) && blockedGuarantee.equals(that.blockedGuarantee);
   }

@@ -12,16 +12,16 @@ public class Money {
   private final Currency currency;
   private final BigDecimal value;
 
+  private Money(@Nonnull Currency currency, @Nonnull BigDecimal value) {
+    this.currency = currency;
+    this.value = value;
+  }
+
   public static Money fromResponse(@Nonnull MoneyValue moneyValue) {
     return new Money(
       Currency.getInstance(moneyValue.getCurrency()),
       MapperUtils.moneyValueToBigDecimal(moneyValue)
     );
-  }
-
-  Money(@Nonnull Currency currency, @Nonnull BigDecimal value) {
-    this.currency = currency;
-    this.value = value;
   }
 
   @Nonnull
@@ -36,8 +36,12 @@ public class Money {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     Money money = (Money) o;
     return currency.equals(money.currency) && value.equals(money.value);
   }

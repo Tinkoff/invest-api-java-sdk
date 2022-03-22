@@ -10,6 +10,12 @@ public class SecurityPosition {
   private final long blocked;
   private final long balance;
 
+  private SecurityPosition(@Nonnull String figi, long blocked, long balance) {
+    this.figi = figi;
+    this.blocked = blocked;
+    this.balance = balance;
+  }
+
   @Nonnull
   public static SecurityPosition fromResponse(@Nonnull PositionsSecurities positionsSecurities) {
     return new SecurityPosition(
@@ -17,12 +23,6 @@ public class SecurityPosition {
       positionsSecurities.getBlocked(),
       positionsSecurities.getBalance()
     );
-  }
-
-  SecurityPosition(@Nonnull String figi, long blocked, long balance) {
-    this.figi = figi;
-    this.blocked = blocked;
-    this.balance = balance;
   }
 
   @Nonnull
@@ -40,8 +40,12 @@ public class SecurityPosition {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     SecurityPosition that = (SecurityPosition) o;
     return blocked == that.blocked && balance == that.balance && figi.equals(that.figi);
   }

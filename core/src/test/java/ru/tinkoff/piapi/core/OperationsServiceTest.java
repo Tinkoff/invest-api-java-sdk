@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.rules.ExpectedException;
 import ru.tinkoff.piapi.contract.v1.*;
+import ru.tinkoff.piapi.core.exception.ReadonlyModeViolationException;
 import ru.tinkoff.piapi.core.models.Portfolio;
 import ru.tinkoff.piapi.core.models.Positions;
 import ru.tinkoff.piapi.core.models.WithdrawLimits;
@@ -120,7 +121,6 @@ public class OperationsServiceTest extends GrpcClientTester<OperationsService> {
         someMoment));
       futureThrown.expect(CompletionException.class);
       futureThrown.expectCause(IsInstanceOf.instanceOf(IllegalArgumentException.class));
-      service.getAllOperations(accountId, someMomentPlusMinute, someMoment);
 
       verify(grpcService, never()).getOperations(any(), any());
     }
@@ -177,7 +177,6 @@ public class OperationsServiceTest extends GrpcClientTester<OperationsService> {
         someMoment));
       futureThrown.expect(CompletionException.class);
       futureThrown.expectCause(IsInstanceOf.instanceOf(IllegalArgumentException.class));
-      service.getExecutedOperations(accountId, someMomentPlusMinute, someMoment);
 
       verify(grpcService, never()).getOperations(any(), any());
     }
@@ -234,7 +233,6 @@ public class OperationsServiceTest extends GrpcClientTester<OperationsService> {
         someMoment));
       futureThrown.expect(CompletionException.class);
       futureThrown.expectCause(IsInstanceOf.instanceOf(IllegalArgumentException.class));
-      service.getCancelledOperations(accountId, someMomentPlusMinute, someMoment);
 
       verify(grpcService, never()).getOperations(any(), any());
     }
@@ -294,7 +292,6 @@ public class OperationsServiceTest extends GrpcClientTester<OperationsService> {
         figi));
       futureThrown.expect(CompletionException.class);
       futureThrown.expectCause(IsInstanceOf.instanceOf(IllegalArgumentException.class));
-      service.getAllOperations(accountId, someMomentPlusMinute, someMoment, figi);
 
       verify(grpcService, never()).getOperations(any(), any());
     }
@@ -355,7 +352,6 @@ public class OperationsServiceTest extends GrpcClientTester<OperationsService> {
         figi));
       futureThrown.expect(CompletionException.class);
       futureThrown.expectCause(IsInstanceOf.instanceOf(IllegalArgumentException.class));
-      service.getExecutedOperations(accountId, someMomentPlusMinute, someMoment, figi);
 
       verify(grpcService, never()).getOperations(any(), any());
     }
@@ -416,7 +412,6 @@ public class OperationsServiceTest extends GrpcClientTester<OperationsService> {
         figi));
       futureThrown.expect(CompletionException.class);
       futureThrown.expectCause(IsInstanceOf.instanceOf(IllegalArgumentException.class));
-      service.getCancelledOperations(accountId, someMomentPlusMinute, someMoment, figi);
 
       verify(grpcService, never()).getOperations(any(), any());
     }
@@ -509,11 +504,11 @@ public class OperationsServiceTest extends GrpcClientTester<OperationsService> {
 
       var someMoment = Instant.now();
       var someMomentPlusMinute = someMoment.plusSeconds(60);
-      var actualSync = service.requestBrokerReportSync(accountId, someMoment, someMomentPlusMinute);
-      var actualAsync = service.requestBrokerReport(accountId, someMoment, someMomentPlusMinute).join();
+      var actualSync = service.getBrokerReportSync(accountId, someMoment, someMomentPlusMinute);
+      var actualAsync = service.getBrokerReport(accountId, someMoment, someMomentPlusMinute).join();
 
-      assertEquals(expected.getGenerateBrokerReportResponse().getTaskId(), actualSync);
-      assertEquals(expected.getGenerateBrokerReportResponse().getTaskId(), actualAsync);
+      assertEquals(expected.getGenerateBrokerReportResponse().getTaskId(), actualSync.getGenerateBrokerReportResponse().getTaskId());
+      assertEquals(expected.getGenerateBrokerReportResponse().getTaskId(), actualAsync.getGenerateBrokerReportResponse().getTaskId());
 
       var inArg = BrokerReportRequest.newBuilder()
         .setGenerateBrokerReportRequest(
@@ -536,13 +531,12 @@ public class OperationsServiceTest extends GrpcClientTester<OperationsService> {
       var someMoment = Instant.now();
       var someMomentPlusMinute = someMoment.plusSeconds(60);
 
-      assertThrows(IllegalArgumentException.class, () -> service.requestBrokerReportSync(
+      assertThrows(IllegalArgumentException.class, () -> service.getBrokerReportSync(
         accountId,
         someMomentPlusMinute,
         someMoment));
       futureThrown.expect(CompletionException.class);
       futureThrown.expectCause(IsInstanceOf.instanceOf(IllegalArgumentException.class));
-      service.requestBrokerReport(accountId, someMomentPlusMinute, someMoment);
 
       verify(grpcService, never()).getBrokerReport(any(), any());
     }
@@ -596,7 +590,6 @@ public class OperationsServiceTest extends GrpcClientTester<OperationsService> {
       assertThrows(IllegalArgumentException.class, () -> service.getBrokerReportSync(taskId, -1));
       futureThrown.expect(CompletionException.class);
       futureThrown.expectCause(IsInstanceOf.instanceOf(IllegalArgumentException.class));
-      service.getBrokerReport(taskId, -1);
 
       verify(grpcService, never()).getBrokerReport(any(), any());
     }

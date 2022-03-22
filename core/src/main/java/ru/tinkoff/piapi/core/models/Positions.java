@@ -25,7 +25,7 @@ public class Positions {
     );
   }
 
-  Positions(@Nonnull List<Money> money,
+  private Positions(@Nonnull List<Money> money,
             @Nonnull List<Money> blocked,
             @Nonnull List<SecurityPosition> securities,
             boolean limitsLoadingInProgress,

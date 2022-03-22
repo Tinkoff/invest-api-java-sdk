@@ -8,6 +8,7 @@ import org.junit.Rule;
 import org.junit.jupiter.api.Test;
 import org.junit.rules.ExpectedException;
 import ru.tinkoff.piapi.contract.v1.*;
+import ru.tinkoff.piapi.core.exception.ReadonlyModeViolationException;
 import ru.tinkoff.piapi.core.utils.DateUtils;
 
 import java.time.Instant;
@@ -223,9 +224,9 @@ public class StopOrdersServiceTest extends GrpcClientTester<StopOrdersService> {
     );
     futureThrown.expect(CompletionException.class);
     futureThrown.expectCause(IsInstanceOf.instanceOf(ReadonlyModeViolationException.class));
-    readonlyService.postStopOrderGoodTillCancel(
-        "", 0, Quotation.getDefaultInstance(), Quotation.getDefaultInstance(),
-        StopOrderDirection.STOP_ORDER_DIRECTION_UNSPECIFIED, "", StopOrderType.STOP_ORDER_TYPE_UNSPECIFIED);
+    assertThrows(ReadonlyModeViolationException.class, () -> readonlyService.postStopOrderGoodTillCancel(
+      "", 0, Quotation.getDefaultInstance(), Quotation.getDefaultInstance(),
+      StopOrderDirection.STOP_ORDER_DIRECTION_UNSPECIFIED, "", StopOrderType.STOP_ORDER_TYPE_UNSPECIFIED));
   }
 
   @Test
@@ -241,10 +242,10 @@ public class StopOrdersServiceTest extends GrpcClientTester<StopOrdersService> {
         Instant.EPOCH));
     futureThrown.expect(CompletionException.class);
     futureThrown.expectCause(IsInstanceOf.instanceOf(ReadonlyModeViolationException.class));
-    readonlyService.postStopOrderGoodTillDate(
-        "", 0, Quotation.getDefaultInstance(), Quotation.getDefaultInstance(),
-        StopOrderDirection.STOP_ORDER_DIRECTION_UNSPECIFIED, "", StopOrderType.STOP_ORDER_TYPE_UNSPECIFIED,
-        Instant.EPOCH);
+    assertThrows(ReadonlyModeViolationException.class, () -> readonlyService.postStopOrderGoodTillDate(
+      "", 0, Quotation.getDefaultInstance(), Quotation.getDefaultInstance(),
+      StopOrderDirection.STOP_ORDER_DIRECTION_UNSPECIFIED, "", StopOrderType.STOP_ORDER_TYPE_UNSPECIFIED,
+      Instant.EPOCH));
   }
 
   @Test
@@ -257,6 +258,6 @@ public class StopOrdersServiceTest extends GrpcClientTester<StopOrdersService> {
       () -> readonlyService.cancelStopOrderSync("", ""));
     futureThrown.expect(CompletionException.class);
     futureThrown.expectCause(IsInstanceOf.instanceOf(ReadonlyModeViolationException.class));
-    readonlyService.cancelStopOrder("", "");
+    assertThrows(ReadonlyModeViolationException.class, () -> readonlyService.cancelStopOrder("", ""));
   }
 }

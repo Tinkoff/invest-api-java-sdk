@@ -24,7 +24,7 @@ public class HelpersTest {
   void wrapWithFuture_Test() {
     var expected = "sample";
 
-    var future = Helpers.<String>wrapWithFuture(observer -> {
+    var future = Helpers.<String>unaryAsyncCall(observer -> {
       observer.onNext(expected);
       observer.onCompleted();
     });
