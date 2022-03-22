@@ -5,7 +5,7 @@
     <groupId>ru.tinkoff.piapi</groupId>
     <artifactId>java-sdk</artifactId>
     <packaging>pom</packaging>
-    <version>1.0-M4</version>
+    <version>1.0-SNAPSHOT</version>
 
     <name>Tinkoff Invest API Java SDK</name>
     <description>Java SDK for Tinkoff Invest API</description>
@@ -32,7 +32,7 @@
         <url>https://github.com/Tinkoff/invest-api-java-sdk</url>
         <connection>scm:git:ssh://git@github.com/Tinkoff/invest-api-java-sdk.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/Tinkoff/invest-api-java-sdk.git</developerConnection>
-        <tag>v1.0-M4</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <properties>
