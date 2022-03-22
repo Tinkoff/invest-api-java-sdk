@@ -10,7 +10,6 @@ import io.smallrye.mutiny.subscription.MultiEmitter;
 import ru.tinkoff.piapi.core.exception.ApiRuntimeException;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,6 +37,7 @@ public class Helpers {
       throw new RuntimeException("Не найден файл errors.json");
     }
   }
+
   public static <T> T unaryCall(Supplier<T> supplier) {
     try {
       return supplier.get();
@@ -55,10 +55,14 @@ public class Helpers {
   }
 
   private static String getTrackingId(Throwable exception) {
-    if (!(exception instanceof StatusRuntimeException)) return null;
+    if (!(exception instanceof StatusRuntimeException)) {
+      return null;
+    }
 
     var trailers = ((StatusRuntimeException) exception).getTrailers();
-    if (trailers == null) return null;
+    if (trailers == null) {
+      return null;
+    }
 
     return trailers.get(Metadata.Key.of(TRACKING_ID_HEADER, Metadata.ASCII_STRING_MARSHALLER));
   }
