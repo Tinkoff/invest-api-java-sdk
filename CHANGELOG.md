@@ -1,19 +1,18 @@
 # История изменений Invest API Java SDK v1.0
 
 Invest API Java SDK v1.0 требует требует JDK 11 и выше.
-## v1.0-M5
-
-### Основное
-
-Добавлены обертки для GetBondCoupons, GetDividendsForeignIssuer, GetBrokerReport.
-
-Обработка ошибок в unary методах
 
 ## v1.0-M4
 
 ### Основное
 
 Новое API для работы со стримами.
+
+Обработка ошибок в unary методах.
+
+Обновлены контракты
+
+Новые методы GetBondCoupons, GetDividendsForeignIssuer, GetBrokerReport
 
 ## v1.0-M3
 
