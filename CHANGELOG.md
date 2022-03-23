@@ -2,6 +2,12 @@
 
 Invest API Java SDK v1.0 требует требует JDK 11 и выше.
 
+## v1.0-M5
+
+Новые методы для получения инструментов по InstrumentStatus
+
+Исправлен баг с запуском 1.0-M4 версии (файл errors.json не найден)
+
 ## v1.0-M4
 
 ### Основное
@@ -14,7 +20,6 @@ Invest API Java SDK v1.0 требует требует JDK 11 и выше.
 
 Новые методы GetBondCoupons, GetDividendsForeignIssuer, GetBrokerReport
 
-Новые методы для получения инструментов по InstrumentStatus
 
 ## v1.0-M3
 
