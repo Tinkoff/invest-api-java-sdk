@@ -6,6 +6,7 @@ import ru.tinkoff.piapi.core.utils.MapperUtils;
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
 import java.util.Currency;
+import java.util.Locale;
 import java.util.Objects;
 
 public class Money {
@@ -19,7 +20,7 @@ public class Money {
 
   public static Money fromResponse(@Nonnull MoneyValue moneyValue) {
     return new Money(
-      Currency.getInstance(moneyValue.getCurrency()),
+      Currency.getInstance(moneyValue.getCurrency().toUpperCase(Locale.ROOT)),
       MapperUtils.moneyValueToBigDecimal(moneyValue)
     );
   }
