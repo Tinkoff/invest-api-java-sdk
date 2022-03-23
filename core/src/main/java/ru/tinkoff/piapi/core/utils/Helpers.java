@@ -9,8 +9,8 @@ import io.grpc.stub.StreamObserver;
 import io.smallrye.mutiny.subscription.MultiEmitter;
 import ru.tinkoff.piapi.core.exception.ApiRuntimeException;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -26,13 +26,18 @@ public class Helpers {
 
   static {
     try {
-      var json = new File(Helpers.class.getClassLoader().getResource("errors.json").getFile());
+      var resourceAsStream = Helpers.class.getClassLoader().getResourceAsStream("errors.json");
+      if (resourceAsStream == null) {
+        throw new RuntimeException("Не найден файл errors.json");
+      }
+      var json = new String(resourceAsStream.readAllBytes(), StandardCharsets.UTF_8);
       errorsMap.putAll(new ObjectMapper().readValue(json, new TypeReference<Map<String, HashMap<String, String>>>() {
       }));
     } catch (IOException e) {
       throw new RuntimeException("Не найден файл errors.json");
     }
   }
+
   public static <T> T unaryCall(Supplier<T> supplier) {
     try {
       return supplier.get();
@@ -50,10 +55,14 @@ public class Helpers {
   }
 
   private static String getTrackingId(Throwable exception) {
-    if (!(exception instanceof StatusRuntimeException)) return null;
+    if (!(exception instanceof StatusRuntimeException)) {
+      return null;
+    }
 
     var trailers = ((StatusRuntimeException) exception).getTrailers();
-    if (trailers == null) return null;
+    if (trailers == null) {
+      return null;
+    }
 
     return trailers.get(Metadata.Key.of(TRACKING_ID_HEADER, Metadata.ASCII_STRING_MARSHALLER));
   }

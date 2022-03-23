@@ -50,7 +50,6 @@ import ru.tinkoff.piapi.contract.v1.TradingSchedulesResponse;
 import ru.tinkoff.piapi.core.exception.ApiRuntimeException;
 
 import java.time.Instant;
-import java.util.Optional;
 import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -209,7 +208,6 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
     @Test
     void getOneSchedule_shouldReturnNoneInCaseOfNotFoundStatus_Test() {
       var exchange = "MOEX";
-      var expected = TradingSchedule.getDefaultInstance();
       var grpcService = mock(InstrumentsServiceGrpc.InstrumentsServiceImplBase.class, delegatesTo(
         new InstrumentsServiceGrpc.InstrumentsServiceImplBase() {
           @Override
@@ -405,6 +403,64 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
       verify(grpcService, times(2)).bonds(eq(inArg), any());
     }
 
+    @Test
+    void getByInstrumentStatus_all_Test() {
+      var expected = BondsResponse.newBuilder()
+        .addInstruments(Bond.newBuilder().setFigi("figi").build())
+        .build();
+      var grpcService = mock(InstrumentsServiceGrpc.InstrumentsServiceImplBase.class, delegatesTo(
+        new InstrumentsServiceGrpc.InstrumentsServiceImplBase() {
+          @Override
+          public void bonds(InstrumentsRequest request,
+                            StreamObserver<BondsResponse> responseObserver) {
+            responseObserver.onNext(expected);
+            responseObserver.onCompleted();
+          }
+        }));
+      var service = mkClientBasedOnServer(grpcService);
+
+      var instrumentStatus = InstrumentStatus.INSTRUMENT_STATUS_ALL;
+      var inArg = InstrumentsRequest.newBuilder()
+        .setInstrumentStatus(instrumentStatus)
+        .build();
+      var actualSync = service.getBondsSync(instrumentStatus);
+      var actualAsync = service.getBonds(instrumentStatus).join();
+
+      assertIterableEquals(expected.getInstrumentsList(), actualSync);
+      assertIterableEquals(expected.getInstrumentsList(), actualAsync);
+
+      verify(grpcService, times(2)).bonds(eq(inArg), any());
+    }
+
+    @Test
+    void getByInstrumentStatus_base_Test() {
+      var expected = BondsResponse.newBuilder()
+        .addInstruments(Bond.newBuilder().setFigi("figi").build())
+        .build();
+      var grpcService = mock(InstrumentsServiceGrpc.InstrumentsServiceImplBase.class, delegatesTo(
+        new InstrumentsServiceGrpc.InstrumentsServiceImplBase() {
+          @Override
+          public void bonds(InstrumentsRequest request,
+                            StreamObserver<BondsResponse> responseObserver) {
+            responseObserver.onNext(expected);
+            responseObserver.onCompleted();
+          }
+        }));
+      var service = mkClientBasedOnServer(grpcService);
+
+      var instrumentStatus = InstrumentStatus.INSTRUMENT_STATUS_BASE;
+      var inArg = InstrumentsRequest.newBuilder()
+        .setInstrumentStatus(instrumentStatus)
+        .build();
+      var actualSync = service.getBondsSync(instrumentStatus);
+      var actualAsync = service.getBonds(instrumentStatus).join();
+
+      assertIterableEquals(expected.getInstrumentsList(), actualSync);
+      assertIterableEquals(expected.getInstrumentsList(), actualAsync);
+
+      verify(grpcService, times(2)).bonds(eq(inArg), any());
+    }
+
   }
 
   @Nested
@@ -565,6 +621,64 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .build();
       var actualSync = service.getAllCurrenciesSync();
       var actualAsync = service.getAllCurrencies().join();
+
+      assertIterableEquals(expected.getInstrumentsList(), actualSync);
+      assertIterableEquals(expected.getInstrumentsList(), actualAsync);
+
+      verify(grpcService, times(2)).currencies(eq(inArg), any());
+    }
+
+    @Test
+    void getByInstrumentStatus_all_Test() {
+      var expected = CurrenciesResponse.newBuilder()
+        .addInstruments(Currency.newBuilder().setFigi("figi").build())
+        .build();
+      var grpcService = mock(InstrumentsServiceGrpc.InstrumentsServiceImplBase.class, delegatesTo(
+        new InstrumentsServiceGrpc.InstrumentsServiceImplBase() {
+          @Override
+          public void currencies(InstrumentsRequest request,
+                                 StreamObserver<CurrenciesResponse> responseObserver) {
+            responseObserver.onNext(expected);
+            responseObserver.onCompleted();
+          }
+        }));
+      var service = mkClientBasedOnServer(grpcService);
+
+      var instrumentStatus = InstrumentStatus.INSTRUMENT_STATUS_ALL;
+      var inArg = InstrumentsRequest.newBuilder()
+        .setInstrumentStatus(instrumentStatus)
+        .build();
+      var actualSync = service.getCurrenciesSync(instrumentStatus);
+      var actualAsync = service.getCurrencies(instrumentStatus).join();
+
+      assertIterableEquals(expected.getInstrumentsList(), actualSync);
+      assertIterableEquals(expected.getInstrumentsList(), actualAsync);
+
+      verify(grpcService, times(2)).currencies(eq(inArg), any());
+    }
+
+    @Test
+    void getByInstrumentStatus_base_Test() {
+      var expected = CurrenciesResponse.newBuilder()
+        .addInstruments(Currency.newBuilder().setFigi("figi").build())
+        .build();
+      var grpcService = mock(InstrumentsServiceGrpc.InstrumentsServiceImplBase.class, delegatesTo(
+        new InstrumentsServiceGrpc.InstrumentsServiceImplBase() {
+          @Override
+          public void currencies(InstrumentsRequest request,
+                                 StreamObserver<CurrenciesResponse> responseObserver) {
+            responseObserver.onNext(expected);
+            responseObserver.onCompleted();
+          }
+        }));
+      var service = mkClientBasedOnServer(grpcService);
+
+      var instrumentStatus = InstrumentStatus.INSTRUMENT_STATUS_BASE;
+      var inArg = InstrumentsRequest.newBuilder()
+        .setInstrumentStatus(instrumentStatus)
+        .build();
+      var actualSync = service.getCurrenciesSync(instrumentStatus);
+      var actualAsync = service.getCurrencies(instrumentStatus).join();
 
       assertIterableEquals(expected.getInstrumentsList(), actualSync);
       assertIterableEquals(expected.getInstrumentsList(), actualAsync);
@@ -735,6 +849,64 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
       verify(grpcService, times(2)).etfs(eq(inArg), any());
     }
 
+    @Test
+    void getByInstrumentStatus_all_test() {
+      var expected = EtfsResponse.newBuilder()
+        .addInstruments(Etf.newBuilder().setFigi("figi").build())
+        .build();
+      var grpcService = mock(InstrumentsServiceGrpc.InstrumentsServiceImplBase.class, delegatesTo(
+        new InstrumentsServiceGrpc.InstrumentsServiceImplBase() {
+          @Override
+          public void etfs(InstrumentsRequest request,
+                           StreamObserver<EtfsResponse> responseObserver) {
+            responseObserver.onNext(expected);
+            responseObserver.onCompleted();
+          }
+        }));
+      var service = mkClientBasedOnServer(grpcService);
+
+      var instrumentStatus = InstrumentStatus.INSTRUMENT_STATUS_ALL;
+      var inArg = InstrumentsRequest.newBuilder()
+        .setInstrumentStatus(instrumentStatus)
+        .build();
+      var actualSync = service.getEtfsSync(instrumentStatus);
+      var actualAsync = service.getEtfs(instrumentStatus).join();
+
+      assertIterableEquals(expected.getInstrumentsList(), actualSync);
+      assertIterableEquals(expected.getInstrumentsList(), actualAsync);
+
+      verify(grpcService, times(2)).etfs(eq(inArg), any());
+    }
+
+    @Test
+    void getByInstrumentStatus_base_test() {
+      var expected = EtfsResponse.newBuilder()
+        .addInstruments(Etf.newBuilder().setFigi("figi").build())
+        .build();
+      var grpcService = mock(InstrumentsServiceGrpc.InstrumentsServiceImplBase.class, delegatesTo(
+        new InstrumentsServiceGrpc.InstrumentsServiceImplBase() {
+          @Override
+          public void etfs(InstrumentsRequest request,
+                           StreamObserver<EtfsResponse> responseObserver) {
+            responseObserver.onNext(expected);
+            responseObserver.onCompleted();
+          }
+        }));
+      var service = mkClientBasedOnServer(grpcService);
+
+      var instrumentStatus = InstrumentStatus.INSTRUMENT_STATUS_BASE;
+      var inArg = InstrumentsRequest.newBuilder()
+        .setInstrumentStatus(instrumentStatus)
+        .build();
+      var actualSync = service.getEtfsSync(instrumentStatus);
+      var actualAsync = service.getEtfs(instrumentStatus).join();
+
+      assertIterableEquals(expected.getInstrumentsList(), actualSync);
+      assertIterableEquals(expected.getInstrumentsList(), actualAsync);
+
+      verify(grpcService, times(2)).etfs(eq(inArg), any());
+    }
+
   }
 
   @Nested
@@ -898,6 +1070,64 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
       verify(grpcService, times(2)).futures(eq(inArg), any());
     }
 
+    @Test
+    void getByInstrumentStatus_all_Test() {
+      var expected = FuturesResponse.newBuilder()
+        .addInstruments(Future.newBuilder().setFigi("figi").build())
+        .build();
+      var grpcService = mock(InstrumentsServiceGrpc.InstrumentsServiceImplBase.class, delegatesTo(
+        new InstrumentsServiceGrpc.InstrumentsServiceImplBase() {
+          @Override
+          public void futures(InstrumentsRequest request,
+                              StreamObserver<FuturesResponse> responseObserver) {
+            responseObserver.onNext(expected);
+            responseObserver.onCompleted();
+          }
+        }));
+      var service = mkClientBasedOnServer(grpcService);
+
+      var instrumentStatus = InstrumentStatus.INSTRUMENT_STATUS_ALL;
+      var inArg = InstrumentsRequest.newBuilder()
+        .setInstrumentStatus(instrumentStatus)
+        .build();
+      var actualSync = service.getFuturesSync(instrumentStatus);
+      var actualAsync = service.getFutures(instrumentStatus).join();
+
+      assertIterableEquals(expected.getInstrumentsList(), actualSync);
+      assertIterableEquals(expected.getInstrumentsList(), actualAsync);
+
+      verify(grpcService, times(2)).futures(eq(inArg), any());
+    }
+
+    @Test
+    void getByInstrumentStatus_base_Test() {
+      var expected = FuturesResponse.newBuilder()
+        .addInstruments(Future.newBuilder().setFigi("figi").build())
+        .build();
+      var grpcService = mock(InstrumentsServiceGrpc.InstrumentsServiceImplBase.class, delegatesTo(
+        new InstrumentsServiceGrpc.InstrumentsServiceImplBase() {
+          @Override
+          public void futures(InstrumentsRequest request,
+                              StreamObserver<FuturesResponse> responseObserver) {
+            responseObserver.onNext(expected);
+            responseObserver.onCompleted();
+          }
+        }));
+      var service = mkClientBasedOnServer(grpcService);
+
+      var instrumentStatus = InstrumentStatus.INSTRUMENT_STATUS_BASE;
+      var inArg = InstrumentsRequest.newBuilder()
+        .setInstrumentStatus(instrumentStatus)
+        .build();
+      var actualSync = service.getFuturesSync(instrumentStatus);
+      var actualAsync = service.getFutures(instrumentStatus).join();
+
+      assertIterableEquals(expected.getInstrumentsList(), actualSync);
+      assertIterableEquals(expected.getInstrumentsList(), actualAsync);
+
+      verify(grpcService, times(2)).futures(eq(inArg), any());
+    }
+
   }
 
   @Nested
@@ -1026,6 +1256,64 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
         .build();
       var actualSync = service.getTradableSharesSync();
       var actualAsync = service.getTradableShares().join();
+
+      assertIterableEquals(expected.getInstrumentsList(), actualSync);
+      assertIterableEquals(expected.getInstrumentsList(), actualAsync);
+
+      verify(grpcService, times(2)).shares(eq(inArg), any());
+    }
+
+    @Test
+    void getByInstrumentStatus_all_Test() {
+      var expected = SharesResponse.newBuilder()
+        .addInstruments(Share.newBuilder().setFigi("figi").build())
+        .build();
+      var grpcService = mock(InstrumentsServiceGrpc.InstrumentsServiceImplBase.class, delegatesTo(
+        new InstrumentsServiceGrpc.InstrumentsServiceImplBase() {
+          @Override
+          public void shares(InstrumentsRequest request,
+                             StreamObserver<SharesResponse> responseObserver) {
+            responseObserver.onNext(expected);
+            responseObserver.onCompleted();
+          }
+        }));
+      var service = mkClientBasedOnServer(grpcService);
+
+      var instrumentStatus = InstrumentStatus.INSTRUMENT_STATUS_ALL;
+      var inArg = InstrumentsRequest.newBuilder()
+        .setInstrumentStatus(instrumentStatus)
+        .build();
+      var actualSync = service.getSharesSync(instrumentStatus);
+      var actualAsync = service.getShares(instrumentStatus).join();
+
+      assertIterableEquals(expected.getInstrumentsList(), actualSync);
+      assertIterableEquals(expected.getInstrumentsList(), actualAsync);
+
+      verify(grpcService, times(2)).shares(eq(inArg), any());
+    }
+
+    @Test
+    void getByInstrumentStatus_base_Test() {
+      var expected = SharesResponse.newBuilder()
+        .addInstruments(Share.newBuilder().setFigi("figi").build())
+        .build();
+      var grpcService = mock(InstrumentsServiceGrpc.InstrumentsServiceImplBase.class, delegatesTo(
+        new InstrumentsServiceGrpc.InstrumentsServiceImplBase() {
+          @Override
+          public void shares(InstrumentsRequest request,
+                             StreamObserver<SharesResponse> responseObserver) {
+            responseObserver.onNext(expected);
+            responseObserver.onCompleted();
+          }
+        }));
+      var service = mkClientBasedOnServer(grpcService);
+
+      var instrumentStatus = InstrumentStatus.INSTRUMENT_STATUS_BASE;
+      var inArg = InstrumentsRequest.newBuilder()
+        .setInstrumentStatus(instrumentStatus)
+        .build();
+      var actualSync = service.getSharesSync(instrumentStatus);
+      var actualAsync = service.getShares(instrumentStatus).join();
 
       assertIterableEquals(expected.getInstrumentsList(), actualSync);
       assertIterableEquals(expected.getInstrumentsList(), actualAsync);

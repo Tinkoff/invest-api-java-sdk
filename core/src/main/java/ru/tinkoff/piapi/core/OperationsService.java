@@ -412,6 +412,7 @@ public class OperationsService {
    * @param accountId Идентификатор счёта.
    * @param from      Начало периода (по UTC).
    * @param to        Окончание периода (по UTC).
+   * @param figi      FIGI-идентификатор инструмента.
    * @return Список операций.
    */
   @Nonnull
@@ -440,6 +441,7 @@ public class OperationsService {
    * @param accountId Идентификатор счёта.
    * @param from      Начало периода (по UTC).
    * @param to        Окончание периода (по UTC).
+   * @param figi      FIGI-идентификатор инструмента.
    * @return Список операций.
    */
   @Nonnull
@@ -469,6 +471,7 @@ public class OperationsService {
    * @param accountId Идентификатор счёта.
    * @param from      Начало периода (по UTC).
    * @param to        Окончание периода (по UTC).
+   * @param figi      FIGI-идентификатор инструмента.
    * @return Список операций.
    */
   @Nonnull
