@@ -9,6 +9,8 @@ import ru.tinkoff.piapi.contract.v1.GetCandlesRequest;
 import ru.tinkoff.piapi.contract.v1.GetCandlesResponse;
 import ru.tinkoff.piapi.contract.v1.GetLastPricesRequest;
 import ru.tinkoff.piapi.contract.v1.GetLastPricesResponse;
+import ru.tinkoff.piapi.contract.v1.GetLastTradesRequest;
+import ru.tinkoff.piapi.contract.v1.GetLastTradesResponse;
 import ru.tinkoff.piapi.contract.v1.GetOrderBookRequest;
 import ru.tinkoff.piapi.contract.v1.GetOrderBookResponse;
 import ru.tinkoff.piapi.contract.v1.GetTradingStatusRequest;
@@ -16,7 +18,8 @@ import ru.tinkoff.piapi.contract.v1.GetTradingStatusResponse;
 import ru.tinkoff.piapi.contract.v1.HistoricCandle;
 import ru.tinkoff.piapi.contract.v1.LastPrice;
 import ru.tinkoff.piapi.contract.v1.MarketDataServiceGrpc;
-import ru.tinkoff.piapi.contract.v1.MarketDataStreamServiceGrpc;
+import ru.tinkoff.piapi.contract.v1.Trade;
+import ru.tinkoff.piapi.contract.v1.TradeDirection;
 import ru.tinkoff.piapi.core.utils.DateUtils;
 
 import java.util.List;
@@ -70,6 +73,39 @@ public class MarketDataServiceTest extends GrpcClientTester<MarketDataService> {
     assertIterableEquals(expected.getCandlesList(), actualAsync);
 
     verify(grpcService, times(2)).getCandles(eq(inArg), any());
+  }
+
+  @Test
+  void getLastTrades_Test() {
+    var figi = "ny_figi";
+    var expected = GetLastTradesResponse.newBuilder()
+      .addTrades(Trade.newBuilder().setFigi(figi).setDirection(TradeDirection.TRADE_DIRECTION_BUY).setQuantity(1).build())
+      .build();
+    var grpcService = mock(MarketDataServiceGrpc.MarketDataServiceImplBase.class, delegatesTo(
+      new MarketDataServiceGrpc.MarketDataServiceImplBase() {
+
+        @Override
+        public void getLastTrades(GetLastTradesRequest request, StreamObserver<GetLastTradesResponse> responseObserver) {
+          responseObserver.onNext(expected);
+          responseObserver.onCompleted();
+        }
+      }));
+    var service = mkClientBasedOnServer(grpcService);
+
+    var inArg = GetLastTradesRequest.newBuilder()
+      .setFigi(figi)
+      .setFrom(Timestamp.newBuilder().setSeconds(1234567890).build())
+      .setTo(Timestamp.newBuilder().setSeconds(1234567890).setNanos(111222333).build())
+      .build();
+    var actualSync = service.getLastTradesSync(inArg.getFigi(), DateUtils.timestampToInstant(inArg.getFrom()),
+      DateUtils.timestampToInstant(inArg.getTo()));
+    var actualAsync = service.getLastTrades(inArg.getFigi(), DateUtils.timestampToInstant(inArg.getFrom()),
+      DateUtils.timestampToInstant(inArg.getTo())).join();
+
+    assertIterableEquals(expected.getTradesList(), actualSync);
+    assertIterableEquals(expected.getTradesList(), actualAsync);
+
+    verify(grpcService, times(2)).getLastTrades(eq(inArg), any());
   }
 
   @Test

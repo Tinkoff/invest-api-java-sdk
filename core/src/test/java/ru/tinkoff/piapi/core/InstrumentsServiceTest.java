@@ -13,6 +13,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.rules.ExpectedException;
 import ru.tinkoff.piapi.contract.v1.AccruedInterest;
+import ru.tinkoff.piapi.contract.v1.Asset;
+import ru.tinkoff.piapi.contract.v1.AssetFull;
+import ru.tinkoff.piapi.contract.v1.AssetRequest;
+import ru.tinkoff.piapi.contract.v1.AssetResponse;
+import ru.tinkoff.piapi.contract.v1.AssetType;
+import ru.tinkoff.piapi.contract.v1.AssetsRequest;
+import ru.tinkoff.piapi.contract.v1.AssetsResponse;
 import ru.tinkoff.piapi.contract.v1.Bond;
 import ru.tinkoff.piapi.contract.v1.BondResponse;
 import ru.tinkoff.piapi.contract.v1.BondsResponse;
@@ -1603,6 +1610,59 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
 
   }
 
+  @Nested
+  class GetAssetsTest {
+
+    @Test
+    void getAssets_Test() {
+      var expected = AssetsResponse.newBuilder()
+        .addAssets(Asset.newBuilder().setUid("uid").setType(AssetType.ASSET_TYPE_CURRENCY).build())
+        .build();
+      var grpcService = mock(InstrumentsServiceGrpc.InstrumentsServiceImplBase.class, delegatesTo(
+        new InstrumentsServiceGrpc.InstrumentsServiceImplBase() {
+          @Override
+          public void getAssets(AssetsRequest request, StreamObserver<AssetsResponse> responseObserver) {
+            responseObserver.onNext(expected);
+            responseObserver.onCompleted();
+          }
+        }));
+      var service = mkClientBasedOnServer(grpcService);
+
+      var inArg = AssetsRequest.getDefaultInstance();
+      var actualSync = service.getAssetsSync();
+      var actualAsync = service.getAssets().join();
+
+      assertIterableEquals(expected.getAssetsList(), actualSync);
+      assertIterableEquals(expected.getAssetsList(), actualAsync);
+
+      verify(grpcService, times(2)).getAssets(eq(inArg), any());
+    }
+
+    @Test
+    void getAssetBy_Test() {
+      var expected = AssetResponse.newBuilder()
+        .setAsset(AssetFull.newBuilder().setUid("uid").setType(AssetType.ASSET_TYPE_CURRENCY).build())
+        .build();
+      var grpcService = mock(InstrumentsServiceGrpc.InstrumentsServiceImplBase.class, delegatesTo(
+        new InstrumentsServiceGrpc.InstrumentsServiceImplBase() {
+          @Override
+          public void getAssetBy(AssetRequest request, StreamObserver<AssetResponse> responseObserver) {
+            responseObserver.onNext(expected);
+            responseObserver.onCompleted();
+          }
+        }));
+      var service = mkClientBasedOnServer(grpcService);
+
+      var inArg = AssetRequest.newBuilder().setId("uid").build();
+      var actualSync = service.getAssetBySync("uid");
+      var actualAsync = service.getAssetBy("uid").join();
+
+      assertEquals(expected.getAsset(), actualSync);
+      assertEquals(expected.getAsset(), actualAsync);
+
+      verify(grpcService, times(2)).getAssetBy(eq(inArg), any());
+    }
+  }
   @Nested
   class GetDividendsTest {
 
