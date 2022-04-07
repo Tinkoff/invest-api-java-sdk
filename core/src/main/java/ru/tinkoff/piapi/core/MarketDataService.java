@@ -39,6 +39,14 @@ public class MarketDataService {
   }
 
 
+  /**
+   * Получение (синхронное) списка обезличенных сделок по инструменту.
+   *
+   * @param figi      FIGI-идентификатор инструмента.
+   * @param from      Начало периода (по UTC).
+   * @param to        Окончание периода (по UTC).
+   * @return Список обезличенных сделок по инструменту.
+   */
   @Nonnull
   public List<Trade> getLastTradesSync(@Nonnull String figi,
                                        @Nonnull Instant from,
@@ -54,10 +62,16 @@ public class MarketDataService {
       .getTradesList());
   }
 
+  /**
+   * Получение (синхронное) списка обезличенных сделок по инструменту за последний час.
+   *
+   * @param figi      FIGI-идентификатор инструмента.
+   * @return Список обезличенных сделок по инструменту.
+   */
   @Nonnull
   public List<Trade> getLastTradesSync(@Nonnull String figi) {
     var to = Instant.now();
-    var from = Instant.now().minus(60, ChronoUnit.MINUTES);
+    var from = to.minus(60, ChronoUnit.MINUTES);
     return getLastTradesSync(figi, from, to);
   }
 
@@ -123,6 +137,14 @@ public class MarketDataService {
       .thenApply(GetCandlesResponse::getCandlesList);
   }
 
+  /**
+   * Получение (асинхронное) списка обезличенных сделок по инструменту.
+   *
+   * @param figi      FIGI-идентификатор инструмента.
+   * @param from      Начало периода (по UTC).
+   * @param to        Окончание периода (по UTC).
+   * @return Список обезличенных сделок по инструменту.
+   */
   @Nonnull
   public CompletableFuture<List<Trade>> getLastTrades(@Nonnull String figi,
                                                       @Nonnull Instant from,
@@ -140,10 +162,16 @@ public class MarketDataService {
       .thenApply(GetLastTradesResponse::getTradesList);
   }
 
+  /**
+   * Получение (асинхронное) списка обезличенных сделок по инструменту за последний час.
+   *
+   * @param figi      FIGI-идентификатор инструмента.
+   * @return Список обезличенных сделок по инструменту.
+   */
   @Nonnull
   public CompletableFuture<List<Trade>> getLastTrades(@Nonnull String figi) {
     var to = Instant.now();
-    var from = Instant.now().minus(60, ChronoUnit.MINUTES);
+    var from = to.minus(60, ChronoUnit.MINUTES);
     return getLastTrades(figi, from, to);
   }
 
