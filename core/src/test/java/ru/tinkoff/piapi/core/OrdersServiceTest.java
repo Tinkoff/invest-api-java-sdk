@@ -3,12 +3,10 @@ package ru.tinkoff.piapi.core;
 import com.google.protobuf.Timestamp;
 import io.grpc.Channel;
 import io.grpc.stub.StreamObserver;
-import io.smallrye.mutiny.Multi;
 import org.hamcrest.core.IsInstanceOf;
 import org.junit.Rule;
 import org.junit.jupiter.api.Test;
 import org.junit.rules.ExpectedException;
-import org.reactivestreams.FlowAdapters;
 import ru.tinkoff.piapi.contract.v1.CancelOrderRequest;
 import ru.tinkoff.piapi.contract.v1.CancelOrderResponse;
 import ru.tinkoff.piapi.contract.v1.GetOrderStateRequest;
@@ -16,21 +14,15 @@ import ru.tinkoff.piapi.contract.v1.GetOrdersRequest;
 import ru.tinkoff.piapi.contract.v1.GetOrdersResponse;
 import ru.tinkoff.piapi.contract.v1.OrderDirection;
 import ru.tinkoff.piapi.contract.v1.OrderState;
-import ru.tinkoff.piapi.contract.v1.OrderTrades;
 import ru.tinkoff.piapi.contract.v1.OrderType;
 import ru.tinkoff.piapi.contract.v1.OrdersServiceGrpc;
-import ru.tinkoff.piapi.contract.v1.OrdersStreamServiceGrpc;
 import ru.tinkoff.piapi.contract.v1.PostOrderRequest;
 import ru.tinkoff.piapi.contract.v1.PostOrderResponse;
 import ru.tinkoff.piapi.contract.v1.Quotation;
-import ru.tinkoff.piapi.contract.v1.TradesStreamRequest;
-import ru.tinkoff.piapi.contract.v1.TradesStreamResponse;
 import ru.tinkoff.piapi.core.exception.ReadonlyModeViolationException;
 import ru.tinkoff.piapi.core.utils.DateUtils;
 
-import java.util.List;
 import java.util.concurrent.CompletionException;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
@@ -50,44 +42,11 @@ public class OrdersServiceTest extends GrpcClientTester<OrdersService> {
   @Override
   protected OrdersService createClient(Channel channel) {
     return new OrdersService(
-      OrdersStreamServiceGrpc.newStub(channel),
       OrdersServiceGrpc.newBlockingStub(channel),
       OrdersServiceGrpc.newStub(channel),
       false);
   }
 
-  @Test
-  void tradeStream_Test() {
-    var expected = List.of(
-      TradesStreamResponse.newBuilder().setOrderTrades(OrderTrades.newBuilder().setOrderId("order1").build()).build(),
-      TradesStreamResponse.newBuilder().setOrderTrades(OrderTrades.newBuilder().setOrderId("order2").build()).build(),
-      TradesStreamResponse.newBuilder().setOrderTrades(OrderTrades.newBuilder().setOrderId("order3").build()).build()
-    );
-    var grpcService = mock(OrdersStreamServiceGrpc.OrdersStreamServiceImplBase.class, delegatesTo(
-      new OrdersStreamServiceGrpc.OrdersStreamServiceImplBase() {
-        @Override
-        public void tradesStream(TradesStreamRequest request,
-                                 StreamObserver<TradesStreamResponse> responseObserver) {
-          for (var item : expected) {
-            responseObserver.onNext(item);
-          }
-          responseObserver.onCompleted();
-        }
-      }));
-    var service = mkClientBasedOnServer(grpcService);
-
-    var actual = Multi.createFrom()
-      .publisher(FlowAdapters.toPublisher(service.ordersStream()))
-      .subscribe()
-      .asStream()
-      .collect(Collectors.toList());
-
-    assertIterableEquals(expected, actual);
-
-    var inArg = TradesStreamRequest.newBuilder()
-      .build();
-    verify(grpcService).tradesStream(eq(inArg), any());
-  }
 
   @Test
   void postOrder_Test() {
@@ -133,7 +92,6 @@ public class OrdersServiceTest extends GrpcClientTester<OrdersService> {
     var readonlyService = mkClientBasedOnServer(
       grpcService,
       channel -> new OrdersService(
-        OrdersStreamServiceGrpc.newStub(channel),
         OrdersServiceGrpc.newBlockingStub(channel),
         OrdersServiceGrpc.newStub(channel),
         true));
@@ -216,7 +174,6 @@ public class OrdersServiceTest extends GrpcClientTester<OrdersService> {
     var readonlyService = mkClientBasedOnServer(
       grpcService,
       channel -> new OrdersService(
-        OrdersStreamServiceGrpc.newStub(channel),
         OrdersServiceGrpc.newBlockingStub(channel),
         OrdersServiceGrpc.newStub(channel),
         true));

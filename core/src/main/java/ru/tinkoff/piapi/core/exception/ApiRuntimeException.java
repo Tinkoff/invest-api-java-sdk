@@ -7,7 +7,7 @@ public class ApiRuntimeException extends RuntimeException {
   private final String trackingId;
 
   public ApiRuntimeException(String message, String code, Throwable throwable, String trackingId) {
-    super(code + " " + message + ". tracking_id " + trackingId);
+    super(code + " " + message + " tracking_id " + trackingId);
     this.code = code;
     this.throwable = throwable;
     this.trackingId = trackingId;

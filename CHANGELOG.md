@@ -2,6 +2,14 @@
 
 Invest API Java SDK v1.0 требует требует JDK 11 и выше.
 
+## v1.0-M6
+
+Новые методы для получения активов -  InstrumentsService.GetAssets, InstrumentsService.GetAssetBy
+
+Новый метод получения последних сделок по инструменту. MarketDataService.GetLastTrades
+
+Убраны deprecated методы для стримов
+
 ## v1.0-M5
 
 Новые методы для получения инструментов по InstrumentStatus

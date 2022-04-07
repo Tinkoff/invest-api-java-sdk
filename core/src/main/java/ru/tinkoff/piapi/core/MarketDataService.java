@@ -1,71 +1,78 @@
 package ru.tinkoff.piapi.core;
 
-import io.smallrye.mutiny.Multi;
-import io.smallrye.mutiny.subscription.BackPressureStrategy;
-import org.reactivestreams.FlowAdapters;
 import ru.tinkoff.piapi.contract.v1.CandleInterval;
 import ru.tinkoff.piapi.contract.v1.GetCandlesRequest;
 import ru.tinkoff.piapi.contract.v1.GetCandlesResponse;
 import ru.tinkoff.piapi.contract.v1.GetLastPricesRequest;
 import ru.tinkoff.piapi.contract.v1.GetLastPricesResponse;
+import ru.tinkoff.piapi.contract.v1.GetLastTradesRequest;
+import ru.tinkoff.piapi.contract.v1.GetLastTradesResponse;
 import ru.tinkoff.piapi.contract.v1.GetOrderBookRequest;
 import ru.tinkoff.piapi.contract.v1.GetOrderBookResponse;
 import ru.tinkoff.piapi.contract.v1.GetTradingStatusRequest;
 import ru.tinkoff.piapi.contract.v1.GetTradingStatusResponse;
 import ru.tinkoff.piapi.contract.v1.HistoricCandle;
 import ru.tinkoff.piapi.contract.v1.LastPrice;
-import ru.tinkoff.piapi.contract.v1.MarketDataRequest;
-import ru.tinkoff.piapi.contract.v1.MarketDataResponse;
-import ru.tinkoff.piapi.core.stream.MarketDataSubscriptionService;
+import ru.tinkoff.piapi.contract.v1.Trade;
 import ru.tinkoff.piapi.core.utils.DateUtils;
 import ru.tinkoff.piapi.core.utils.Helpers;
 
 import javax.annotation.Nonnull;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Flow.Publisher;
 
 import static ru.tinkoff.piapi.contract.v1.MarketDataServiceGrpc.MarketDataServiceBlockingStub;
 import static ru.tinkoff.piapi.contract.v1.MarketDataServiceGrpc.MarketDataServiceStub;
-import static ru.tinkoff.piapi.contract.v1.MarketDataStreamServiceGrpc.MarketDataStreamServiceStub;
 import static ru.tinkoff.piapi.core.utils.Helpers.unaryCall;
+import static ru.tinkoff.piapi.core.utils.ValidationUtils.checkFromTo;
 
 public class MarketDataService {
-  private final MarketDataStreamServiceStub marketDataStreamStub;
   private final MarketDataServiceBlockingStub marketDataBlockingStub;
   private final MarketDataServiceStub marketDataStub;
 
-  MarketDataService(@Nonnull MarketDataStreamServiceStub marketDataStreamStub,
-                    @Nonnull MarketDataServiceBlockingStub marketDataBlockingStub,
+  MarketDataService(@Nonnull MarketDataServiceBlockingStub marketDataBlockingStub,
                     @Nonnull MarketDataServiceStub marketDataStub) {
-    this.marketDataStreamStub = marketDataStreamStub;
     this.marketDataBlockingStub = marketDataBlockingStub;
     this.marketDataStub = marketDataStub;
   }
 
+
   /**
-   * Deprecated. Используйте {@link MarketDataSubscriptionService}
+   * Получение (синхронное) списка обезличенных сделок по инструменту.
+   *
+   * @param figi      FIGI-идентификатор инструмента.
+   * @param from      Начало периода (по UTC).
+   * @param to        Окончание периода (по UTC).
+   * @return Список обезличенных сделок по инструменту.
    */
-  @Deprecated(forRemoval = true)
   @Nonnull
-  public Publisher<MarketDataResponse> marketDataStream(@Nonnull Publisher<MarketDataRequest> requestsPublisher) {
-    var mutinyPublisher = Multi.createFrom().<MarketDataResponse>emitter(
-      emitter -> {
-        var requestsSubscriber = marketDataStreamStub.marketDataStream(
-          Helpers.wrapEmitterWithStreamObserver(emitter));
+  public List<Trade> getLastTradesSync(@Nonnull String figi,
+                                       @Nonnull Instant from,
+                                       @Nonnull Instant to) {
+    checkFromTo(from, to);
 
-        Multi.createFrom()
-          .publisher(FlowAdapters.toPublisher(requestsPublisher))
-          .subscribe()
-          .with(
-            requestsSubscriber::onNext,
-            requestsSubscriber::onError,
-            requestsSubscriber::onCompleted);
-      },
-      BackPressureStrategy.BUFFER);
+    return unaryCall(() -> marketDataBlockingStub.getLastTrades(
+        GetLastTradesRequest.newBuilder()
+          .setFigi(figi)
+          .setFrom(DateUtils.instantToTimestamp(from))
+          .setTo(DateUtils.instantToTimestamp(to))
+          .build())
+      .getTradesList());
+  }
 
-    return FlowAdapters.toFlowPublisher(mutinyPublisher);
+  /**
+   * Получение (синхронное) списка обезличенных сделок по инструменту за последний час.
+   *
+   * @param figi      FIGI-идентификатор инструмента.
+   * @return Список обезличенных сделок по инструменту.
+   */
+  @Nonnull
+  public List<Trade> getLastTradesSync(@Nonnull String figi) {
+    var to = Instant.now();
+    var from = to.minus(60, ChronoUnit.MINUTES);
+    return getLastTradesSync(figi, from, to);
   }
 
   @Nonnull
@@ -73,6 +80,8 @@ public class MarketDataService {
                                              @Nonnull Instant from,
                                              @Nonnull Instant to,
                                              @Nonnull CandleInterval interval) {
+    checkFromTo(from, to);
+
     return unaryCall(() -> marketDataBlockingStub.getCandles(
         GetCandlesRequest.newBuilder()
           .setFigi(figi)
@@ -114,6 +123,8 @@ public class MarketDataService {
                                                             @Nonnull Instant from,
                                                             @Nonnull Instant to,
                                                             @Nonnull CandleInterval interval) {
+    checkFromTo(from, to);
+
     return Helpers.<GetCandlesResponse>unaryAsyncCall(
         observer -> marketDataStub.getCandles(
           GetCandlesRequest.newBuilder()
@@ -124,6 +135,44 @@ public class MarketDataService {
             .build(),
           observer))
       .thenApply(GetCandlesResponse::getCandlesList);
+  }
+
+  /**
+   * Получение (асинхронное) списка обезличенных сделок по инструменту.
+   *
+   * @param figi      FIGI-идентификатор инструмента.
+   * @param from      Начало периода (по UTC).
+   * @param to        Окончание периода (по UTC).
+   * @return Список обезличенных сделок по инструменту.
+   */
+  @Nonnull
+  public CompletableFuture<List<Trade>> getLastTrades(@Nonnull String figi,
+                                                      @Nonnull Instant from,
+                                                      @Nonnull Instant to) {
+    checkFromTo(from, to);
+
+    return Helpers.<GetLastTradesResponse>unaryAsyncCall(
+        observer -> marketDataStub.getLastTrades(
+          GetLastTradesRequest.newBuilder()
+            .setFigi(figi)
+            .setFrom(DateUtils.instantToTimestamp(from))
+            .setTo(DateUtils.instantToTimestamp(to))
+            .build(),
+          observer))
+      .thenApply(GetLastTradesResponse::getTradesList);
+  }
+
+  /**
+   * Получение (асинхронное) списка обезличенных сделок по инструменту за последний час.
+   *
+   * @param figi      FIGI-идентификатор инструмента.
+   * @return Список обезличенных сделок по инструменту.
+   */
+  @Nonnull
+  public CompletableFuture<List<Trade>> getLastTrades(@Nonnull String figi) {
+    var to = Instant.now();
+    var from = to.minus(60, ChronoUnit.MINUTES);
+    return getLastTrades(figi, from, to);
   }
 
   @Nonnull

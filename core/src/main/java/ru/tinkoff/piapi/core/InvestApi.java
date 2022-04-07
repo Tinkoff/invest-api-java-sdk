@@ -64,7 +64,6 @@ public class InvestApi {
       InstrumentsServiceGrpc.newBlockingStub(channel),
       InstrumentsServiceGrpc.newStub(channel));
     this.marketDataService = new MarketDataService(
-      MarketDataStreamServiceGrpc.newStub(channel),
       MarketDataServiceGrpc.newBlockingStub(channel),
       MarketDataServiceGrpc.newStub(channel));
     this.marketDataStreamService = new MarketDataStreamService(MarketDataStreamServiceGrpc.newStub(channel));
@@ -90,7 +89,6 @@ public class InvestApi {
         StopOrdersServiceGrpc.newStub(channel),
         readonlyMode);
       this.ordersService = new OrdersService(
-        OrdersStreamServiceGrpc.newStub(channel),
         OrdersServiceGrpc.newBlockingStub(channel),
         OrdersServiceGrpc.newStub(channel),
         readonlyMode);
