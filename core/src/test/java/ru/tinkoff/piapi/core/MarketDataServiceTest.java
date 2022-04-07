@@ -3,88 +3,40 @@ package ru.tinkoff.piapi.core;
 import com.google.protobuf.Timestamp;
 import io.grpc.Channel;
 import io.grpc.stub.StreamObserver;
-import io.smallrye.mutiny.Multi;
 import org.junit.jupiter.api.Test;
-import org.reactivestreams.FlowAdapters;
-import ru.tinkoff.piapi.contract.v1.*;
+import ru.tinkoff.piapi.contract.v1.CandleInterval;
+import ru.tinkoff.piapi.contract.v1.GetCandlesRequest;
+import ru.tinkoff.piapi.contract.v1.GetCandlesResponse;
+import ru.tinkoff.piapi.contract.v1.GetLastPricesRequest;
+import ru.tinkoff.piapi.contract.v1.GetLastPricesResponse;
+import ru.tinkoff.piapi.contract.v1.GetOrderBookRequest;
+import ru.tinkoff.piapi.contract.v1.GetOrderBookResponse;
+import ru.tinkoff.piapi.contract.v1.GetTradingStatusRequest;
+import ru.tinkoff.piapi.contract.v1.GetTradingStatusResponse;
+import ru.tinkoff.piapi.contract.v1.HistoricCandle;
+import ru.tinkoff.piapi.contract.v1.LastPrice;
+import ru.tinkoff.piapi.contract.v1.MarketDataServiceGrpc;
+import ru.tinkoff.piapi.contract.v1.MarketDataStreamServiceGrpc;
 import ru.tinkoff.piapi.core.utils.DateUtils;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.mockito.AdditionalAnswers.delegatesTo;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 public class MarketDataServiceTest extends GrpcClientTester<MarketDataService> {
 
   @Override
   protected MarketDataService createClient(Channel channel) {
     return new MarketDataService(
-      MarketDataStreamServiceGrpc.newStub(channel),
       MarketDataServiceGrpc.newBlockingStub(channel),
       MarketDataServiceGrpc.newStub(channel));
-  }
-
-  @Test
-  void getPositions_Test() {
-    var request = FlowAdapters.toFlowPublisher(
-      Multi.createFrom().<MarketDataRequest>emitter(emitter -> {
-        emitter.emit(
-          MarketDataRequest.newBuilder().setSubscribeInfoRequest(SubscribeInfoRequest.getDefaultInstance()).build());
-        emitter.emit(
-          MarketDataRequest.newBuilder().setSubscribeCandlesRequest(SubscribeCandlesRequest.getDefaultInstance())
-            .build());
-        emitter.emit(
-          MarketDataRequest.newBuilder().setSubscribeOrderBookRequest(SubscribeOrderBookRequest.getDefaultInstance())
-            .build());
-        emitter.complete();
-      }));
-    var expected = List.of(
-      MarketDataResponse.newBuilder().setTradingStatus(TradingStatus.getDefaultInstance()).build(),
-      MarketDataResponse.newBuilder().setCandle(Candle.getDefaultInstance()).build(),
-      MarketDataResponse.newBuilder().setOrderbook(OrderBook.getDefaultInstance()).build()
-    );
-    var grpcService = mock(MarketDataStreamServiceGrpc.MarketDataStreamServiceImplBase.class, delegatesTo(
-      new MarketDataStreamServiceGrpc.MarketDataStreamServiceImplBase() {
-        @Override
-        public StreamObserver<MarketDataRequest> marketDataStream(
-          StreamObserver<MarketDataResponse> responseObserver) {
-          return new StreamObserver<>() {
-            final AtomicInteger i = new AtomicInteger();
-
-            @Override
-            public void onNext(MarketDataRequest value) {
-              responseObserver.onNext(expected.get(i.getAndIncrement()));
-            }
-
-            @Override
-            public void onError(Throwable t) {
-              responseObserver.onError(t);
-            }
-
-            @Override
-            public void onCompleted() {
-              responseObserver.onCompleted();
-            }
-          };
-        }
-      }));
-    var service = mkClientBasedOnServer(grpcService);
-
-    var actual = Multi.createFrom()
-      .publisher(FlowAdapters.toPublisher(service.marketDataStream(request)))
-      .subscribe()
-      .asStream()
-      .collect(Collectors.toList());
-
-    assertIterableEquals(expected, actual);
-
-    verify(grpcService).marketDataStream(any());
   }
 
   @Test

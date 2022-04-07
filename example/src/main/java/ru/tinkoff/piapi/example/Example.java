@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.tinkoff.piapi.contract.v1.*;
 import ru.tinkoff.piapi.core.InvestApi;
+import ru.tinkoff.piapi.core.exception.ApiRuntimeException;
 import ru.tinkoff.piapi.core.models.FuturePosition;
 import ru.tinkoff.piapi.core.models.Money;
 import ru.tinkoff.piapi.core.models.SecurityPosition;
@@ -235,6 +236,7 @@ public class Example {
     getOrderbookExample(api);
     getLastPricesExample(api);
     getTradingStatusExample(api);
+    getLastTradesExample(api);
   }
 
   private static void getBrokerReportExample(InvestApi api) {
@@ -485,18 +487,43 @@ public class Example {
 
     //Проверяем вывод ошибки в лог
     //Проверяем, что будет ошибка 50002. Об ошибках и причинах их возникновения - https://tinkoff.github.io/investAPI/errors/
-    var bondFigi = "BBG00RPRPX12"; //инструмент с типом bond
-    api.getInstrumentsService().getCurrencyByFigiSync(bondFigi);
+    var bondFigi = bonds.get(0).getFigi(); //инструмент с типом bond
+    try {
+      api.getInstrumentsService().getCurrencyByFigiSync(bondFigi);
+    } catch (ApiRuntimeException e) {
+      log.info(e.toString());
+    }
 
     //Получаем информацию о купонах облигации
-    var bondCoupons = api.getInstrumentsService().getBondCouponsSync(bondFigi, Instant.now().minus(1, ChronoUnit.YEARS), Instant.now());
+    var bondCoupons = api.getInstrumentsService().getBondCouponsSync(bondFigi, Instant.now().minus(30, ChronoUnit.DAYS), Instant.now());
     for (Coupon bondCoupon : bondCoupons) {
       var couponDate = bondCoupon.getCouponDate();
       var couponType = bondCoupon.getCouponType().getDescriptorForType();
       var payment = moneyValueToBigDecimal(bondCoupon.getPayOneBond());
       log.info("выплаты по купонам. дата: {}, тип: {}, выплата на 1 облигацию: {}", couponDate, couponType, payment);
     }
+
+    //Получаем список активов
+    var assets = api.getInstrumentsService().getAssetsSync().stream().limit(5).collect(Collectors.toList());
+    for (Asset asset : assets) {
+      log.info("актив. uid : {}, имя: {}, тип: {}", asset.getUid(), asset.getName(), asset.getType());
+    }
+
+    //Получаем подробную информацию о активе
+    var uid = assets.get(0).getUid();
+    var assetBy = api.getInstrumentsService().getAssetBySync(uid);
+    log.info("подробная информация об активе. описание: {}, статус: {}, бренд: {}", assetBy.getDescription(), assetBy.getStatus(), assetBy.getBrand().getInfo());
+
   }
+
+  private static void getLastTradesExample(InvestApi api) {
+
+    //Получаем и печатаем последние трейды
+    var figi = randomFigi(api, 1).get(0);
+    var lastTrades = api.getMarketDataService().getLastTradesSync(figi);
+    log.info("последние трейды. количество: {}", lastTrades.size());
+  }
+
 
   private static void getTradingStatusExample(InvestApi api) {
 

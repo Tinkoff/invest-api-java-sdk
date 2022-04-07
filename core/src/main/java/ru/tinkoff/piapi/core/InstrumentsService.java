@@ -2,6 +2,12 @@ package ru.tinkoff.piapi.core;
 
 import io.grpc.stub.StreamObserver;
 import ru.tinkoff.piapi.contract.v1.AccruedInterest;
+import ru.tinkoff.piapi.contract.v1.Asset;
+import ru.tinkoff.piapi.contract.v1.AssetFull;
+import ru.tinkoff.piapi.contract.v1.AssetRequest;
+import ru.tinkoff.piapi.contract.v1.AssetResponse;
+import ru.tinkoff.piapi.contract.v1.AssetsRequest;
+import ru.tinkoff.piapi.contract.v1.AssetsResponse;
 import ru.tinkoff.piapi.contract.v1.Bond;
 import ru.tinkoff.piapi.contract.v1.BondResponse;
 import ru.tinkoff.piapi.contract.v1.BondsResponse;
@@ -546,6 +552,50 @@ public class InstrumentsService {
           .setTo(DateUtils.instantToTimestamp(to))
           .build())
       .getDividendsList());
+  }
+
+  /**
+   * Получение (синхронное) списка активов.
+   *
+   * @return Список активов.
+   */
+  @Nonnull
+  public List<Asset> getAssetsSync() {
+    return unaryCall(() -> instrumentsBlockingStub.getAssets(AssetsRequest.getDefaultInstance()).getAssetsList());
+  }
+
+
+  /**
+   * Получение (асинхронное) списка активов.
+   *
+   * @return Список активов.
+   */
+  @Nonnull
+  public CompletableFuture<List<Asset>> getAssets() {
+    return Helpers.<AssetsResponse>unaryAsyncCall(
+        observer -> instrumentsStub.getAssets(AssetsRequest.getDefaultInstance(), observer))
+      .thenApply(AssetsResponse::getAssetsList);
+  }
+
+  /**
+   * Получение (синхронное) актива по его идентификатору.
+   *
+   * @return Данные по активу.
+   */
+  @Nonnull
+  public AssetFull getAssetBySync(String uid) {
+    return unaryCall(() -> instrumentsBlockingStub.getAssetBy(AssetRequest.newBuilder().setId(uid).build()).getAsset());
+  }
+
+  /**
+   * Получение (асинхронное) актива по его идентификатору.
+   *
+   * @return Данные по активу.
+   */
+  @Nonnull
+  public CompletableFuture<AssetFull> getAssetBy(String uid) {
+    return Helpers.<AssetResponse>unaryAsyncCall(observer -> instrumentsStub.getAssetBy(AssetRequest.newBuilder().setId(uid).build(), observer))
+      .thenApply(AssetResponse::getAsset);
   }
 
   /**

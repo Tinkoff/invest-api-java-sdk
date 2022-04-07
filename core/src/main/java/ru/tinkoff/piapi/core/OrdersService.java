@@ -1,8 +1,5 @@
 package ru.tinkoff.piapi.core;
 
-import io.smallrye.mutiny.Multi;
-import io.smallrye.mutiny.subscription.BackPressureStrategy;
-import org.reactivestreams.FlowAdapters;
 import ru.tinkoff.piapi.contract.v1.CancelOrderRequest;
 import ru.tinkoff.piapi.contract.v1.CancelOrderResponse;
 import ru.tinkoff.piapi.contract.v1.GetOrderStateRequest;
@@ -13,13 +10,9 @@ import ru.tinkoff.piapi.contract.v1.OrderState;
 import ru.tinkoff.piapi.contract.v1.OrderType;
 import ru.tinkoff.piapi.contract.v1.OrdersServiceGrpc.OrdersServiceBlockingStub;
 import ru.tinkoff.piapi.contract.v1.OrdersServiceGrpc.OrdersServiceStub;
-import ru.tinkoff.piapi.contract.v1.OrdersStreamServiceGrpc.OrdersStreamServiceStub;
 import ru.tinkoff.piapi.contract.v1.PostOrderRequest;
 import ru.tinkoff.piapi.contract.v1.PostOrderResponse;
 import ru.tinkoff.piapi.contract.v1.Quotation;
-import ru.tinkoff.piapi.contract.v1.TradesStreamRequest;
-import ru.tinkoff.piapi.contract.v1.TradesStreamResponse;
-import ru.tinkoff.piapi.core.stream.OrdersStreamService;
 import ru.tinkoff.piapi.core.utils.DateUtils;
 import ru.tinkoff.piapi.core.utils.Helpers;
 
@@ -27,54 +20,23 @@ import javax.annotation.Nonnull;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Flow.Publisher;
-import java.util.function.Consumer;
 
 import static ru.tinkoff.piapi.core.utils.Helpers.unaryCall;
 import static ru.tinkoff.piapi.core.utils.ValidationUtils.checkReadonly;
 
 public class OrdersService {
-  private final OrdersStreamServiceStub ordersStreamStub;
   private final OrdersServiceBlockingStub ordersBlockingStub;
   private final OrdersServiceStub ordersStub;
   private final boolean readonlyMode;
 
-  OrdersService(@Nonnull OrdersStreamServiceStub ordersStreamStub,
-                @Nonnull OrdersServiceBlockingStub ordersBlockingStub,
+  OrdersService(@Nonnull OrdersServiceBlockingStub ordersBlockingStub,
                 @Nonnull OrdersServiceStub ordersStub,
                 boolean readonlyMode) {
-    this.ordersStreamStub = ordersStreamStub;
     this.ordersBlockingStub = ordersBlockingStub;
     this.ordersStub = ordersStub;
     this.readonlyMode = readonlyMode;
   }
 
-
-  /**
-   * Deprecated. Используйте {@link OrdersStreamService}
-   */
-  @Nonnull
-  public Publisher<TradesStreamResponse> ordersStream() {
-    var mutinyPublisher = Multi.createFrom().<TradesStreamResponse>emitter(
-      emitter -> ordersStreamStub.tradesStream(
-        TradesStreamRequest.newBuilder().build(),
-        Helpers.wrapEmitterWithStreamObserver(emitter)),
-      BackPressureStrategy.BUFFER);
-
-    return FlowAdapters.toFlowPublisher(mutinyPublisher);
-  }
-
-  /**
-   * Deprecated. Используйте {@link OrdersStreamService}
-   */
-  public void subscribeTradesStream(Consumer<TradesStreamResponse> consumer) {
-    Multi.createFrom()
-      .safePublisher(
-        FlowAdapters.toPublisher(ordersStream()))
-      .subscribe()
-      .asIterable()
-      .forEach(consumer);
-  }
 
   @Nonnull
   public PostOrderResponse postOrderSync(@Nonnull String figi,
