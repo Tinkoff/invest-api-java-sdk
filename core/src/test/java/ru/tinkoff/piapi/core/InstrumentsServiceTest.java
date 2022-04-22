@@ -27,9 +27,14 @@ import ru.tinkoff.piapi.contract.v1.CurrenciesResponse;
 import ru.tinkoff.piapi.contract.v1.Currency;
 import ru.tinkoff.piapi.contract.v1.CurrencyResponse;
 import ru.tinkoff.piapi.contract.v1.Dividend;
+import ru.tinkoff.piapi.contract.v1.EditFavoritesActionType;
+import ru.tinkoff.piapi.contract.v1.EditFavoritesRequest;
+import ru.tinkoff.piapi.contract.v1.EditFavoritesRequestInstrument;
+import ru.tinkoff.piapi.contract.v1.EditFavoritesResponse;
 import ru.tinkoff.piapi.contract.v1.Etf;
 import ru.tinkoff.piapi.contract.v1.EtfResponse;
 import ru.tinkoff.piapi.contract.v1.EtfsResponse;
+import ru.tinkoff.piapi.contract.v1.FavoriteInstrument;
 import ru.tinkoff.piapi.contract.v1.Future;
 import ru.tinkoff.piapi.contract.v1.FutureResponse;
 import ru.tinkoff.piapi.contract.v1.FuturesResponse;
@@ -37,6 +42,8 @@ import ru.tinkoff.piapi.contract.v1.GetAccruedInterestsRequest;
 import ru.tinkoff.piapi.contract.v1.GetAccruedInterestsResponse;
 import ru.tinkoff.piapi.contract.v1.GetDividendsRequest;
 import ru.tinkoff.piapi.contract.v1.GetDividendsResponse;
+import ru.tinkoff.piapi.contract.v1.GetFavoritesRequest;
+import ru.tinkoff.piapi.contract.v1.GetFavoritesResponse;
 import ru.tinkoff.piapi.contract.v1.GetFuturesMarginRequest;
 import ru.tinkoff.piapi.contract.v1.GetFuturesMarginResponse;
 import ru.tinkoff.piapi.contract.v1.Instrument;
@@ -57,6 +64,7 @@ import ru.tinkoff.piapi.contract.v1.TradingSchedulesResponse;
 import ru.tinkoff.piapi.core.exception.ApiRuntimeException;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -95,6 +103,85 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
     assertEquals(code, ((ApiRuntimeException) throwable).getCode());
   }
 
+  @Nested
+  class FavoritesTest {
+
+    @Test
+    void getFavoritesTest() {
+      var instrument = FavoriteInstrument.newBuilder().setFigi("fav_figi").build();
+      var expected = GetFavoritesResponse.newBuilder().addFavoriteInstruments(instrument).build();
+      var grpcService = mock(InstrumentsServiceGrpc.InstrumentsServiceImplBase.class, delegatesTo(
+        new InstrumentsServiceGrpc.InstrumentsServiceImplBase() {
+          @Override
+          public void getFavorites(GetFavoritesRequest request, StreamObserver<GetFavoritesResponse> responseObserver) {
+            responseObserver.onNext(expected);
+            responseObserver.onCompleted();
+          }
+        }));
+      var service = mkClientBasedOnServer(grpcService);
+
+      var actualSync = service.getFavoritesSync();
+      var actualAsync = service.getFavorites().join();
+
+      assertIterableEquals(expected.getFavoriteInstrumentsList(), actualSync);
+      assertIterableEquals(expected.getFavoriteInstrumentsList(), actualAsync);
+
+      verify(grpcService, times(2)).getFavorites(any(), any());
+    }
+
+    @Test
+    void addFavoritesTest() {
+      var instrument = FavoriteInstrument.newBuilder().setFigi("fav_figi").build();
+      var expected = EditFavoritesResponse
+        .newBuilder()
+        .addFavoriteInstruments(instrument)
+        .build();
+      var grpcService = mock(InstrumentsServiceGrpc.InstrumentsServiceImplBase.class, delegatesTo(
+        new InstrumentsServiceGrpc.InstrumentsServiceImplBase() {
+          @Override
+          public void editFavorites(EditFavoritesRequest request, StreamObserver<EditFavoritesResponse> responseObserver) {
+            responseObserver.onNext(expected);
+            responseObserver.onCompleted();
+          }
+        }));
+      var service = mkClientBasedOnServer(grpcService);
+
+      var actualSync = service.addFavoritesSync(List.of("fav_figi"));
+      var actualAsync = service.addFavorites(List.of("fav_figi")).join();
+
+      assertIterableEquals(expected.getFavoriteInstrumentsList(), actualSync);
+      assertIterableEquals(expected.getFavoriteInstrumentsList(), actualAsync);
+
+      verify(grpcService, times(2)).editFavorites(any(), any());
+    }
+
+    @Test
+    void delFavoritesTest() {
+      var instrument = FavoriteInstrument.newBuilder().setFigi("fav_figi").build();
+      var expected = EditFavoritesResponse
+        .newBuilder()
+        .addFavoriteInstruments(instrument)
+        .build();
+      var grpcService = mock(InstrumentsServiceGrpc.InstrumentsServiceImplBase.class, delegatesTo(
+        new InstrumentsServiceGrpc.InstrumentsServiceImplBase() {
+          @Override
+          public void editFavorites(EditFavoritesRequest request, StreamObserver<EditFavoritesResponse> responseObserver) {
+            responseObserver.onNext(expected);
+            responseObserver.onCompleted();
+          }
+        }));
+      var service = mkClientBasedOnServer(grpcService);
+
+      var actualSync = service.deleteFavoritesSync(List.of("fav_figi"));
+      var actualAsync = service.deleteFavorites(List.of("fav_figi")).join();
+
+      assertIterableEquals(expected.getFavoriteInstrumentsList(), actualSync);
+      assertIterableEquals(expected.getFavoriteInstrumentsList(), actualAsync);
+
+      verify(grpcService, times(2)).editFavorites(any(), any());
+    }
+
+  }
   @Nested
   class GetTradingSchedulesTest {
 

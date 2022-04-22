@@ -16,9 +16,14 @@ import ru.tinkoff.piapi.contract.v1.CurrenciesResponse;
 import ru.tinkoff.piapi.contract.v1.Currency;
 import ru.tinkoff.piapi.contract.v1.CurrencyResponse;
 import ru.tinkoff.piapi.contract.v1.Dividend;
+import ru.tinkoff.piapi.contract.v1.EditFavoritesActionType;
+import ru.tinkoff.piapi.contract.v1.EditFavoritesRequest;
+import ru.tinkoff.piapi.contract.v1.EditFavoritesRequestInstrument;
+import ru.tinkoff.piapi.contract.v1.EditFavoritesResponse;
 import ru.tinkoff.piapi.contract.v1.Etf;
 import ru.tinkoff.piapi.contract.v1.EtfResponse;
 import ru.tinkoff.piapi.contract.v1.EtfsResponse;
+import ru.tinkoff.piapi.contract.v1.FavoriteInstrument;
 import ru.tinkoff.piapi.contract.v1.Future;
 import ru.tinkoff.piapi.contract.v1.FutureResponse;
 import ru.tinkoff.piapi.contract.v1.FuturesResponse;
@@ -28,6 +33,8 @@ import ru.tinkoff.piapi.contract.v1.GetBondCouponsRequest;
 import ru.tinkoff.piapi.contract.v1.GetBondCouponsResponse;
 import ru.tinkoff.piapi.contract.v1.GetDividendsRequest;
 import ru.tinkoff.piapi.contract.v1.GetDividendsResponse;
+import ru.tinkoff.piapi.contract.v1.GetFavoritesRequest;
+import ru.tinkoff.piapi.contract.v1.GetFavoritesResponse;
 import ru.tinkoff.piapi.contract.v1.GetFuturesMarginRequest;
 import ru.tinkoff.piapi.contract.v1.GetFuturesMarginResponse;
 import ru.tinkoff.piapi.contract.v1.Instrument;
@@ -1089,5 +1096,101 @@ public class InstrumentsService {
             .build(),
           observer))
       .thenApply(extractor);
+  }
+
+  /**
+   * Получение (асинхронное) списка избранных инструментов.
+   *
+   * @return Список избранных инструментов.
+   */
+  public CompletableFuture<List<FavoriteInstrument>> getFavorites() {
+    return Helpers.<GetFavoritesResponse>unaryAsyncCall(
+        observer -> instrumentsStub.getFavorites(
+          GetFavoritesRequest.getDefaultInstance(),
+          observer))
+      .thenApply(GetFavoritesResponse::getFavoriteInstrumentsList);
+  }
+
+  /**
+   * Получение (синхронное) списка избранных инструментов.
+   *
+   * @return Список избранных инструментов.
+   */
+  public List<FavoriteInstrument> getFavoritesSync() {
+    return unaryCall(() -> instrumentsBlockingStub.getFavorites(GetFavoritesRequest.getDefaultInstance()).getFavoriteInstrumentsList());
+  }
+
+  /**
+   * Редактирование (асинхронное) списка избранных инструментов.
+   *
+   * @param figiList список FIGI инструментов.
+   * @param actionType Тип действия со списком избранных инструментов
+   * @return Список избранных инструментов.
+   */
+  public CompletableFuture<List<FavoriteInstrument>> editFavorites(Iterable<String> figiList, EditFavoritesActionType actionType) {
+    var builder = EditFavoritesRequest.newBuilder().setActionType(actionType);
+    for (String figi : figiList) {
+      var instrument = EditFavoritesRequestInstrument.newBuilder().setFigi(figi).build();
+      builder.addInstruments(instrument);
+    }
+    return Helpers.<EditFavoritesResponse>unaryAsyncCall(
+        observer -> instrumentsStub.editFavorites(builder.build(),observer))
+      .thenApply(EditFavoritesResponse::getFavoriteInstrumentsList);
+  }
+
+  /**
+   * Добавление (асинхронное) в список избранных инструментов.
+   *
+   * @param figiList список FIGI инструментов.
+   * @return Список избранных инструментов.
+   */
+  public CompletableFuture<List<FavoriteInstrument>> addFavorites(Iterable<String> figiList) {
+    return editFavorites(figiList, EditFavoritesActionType.EDIT_FAVORITES_ACTION_TYPE_ADD);
+  }
+
+  /**
+   * Удаление (асинхронное) из списка избранных инструментов.
+   *
+   * @param figiList список FIGI инструментов.
+   * @return Список избранных инструментов.
+   */
+  public CompletableFuture<List<FavoriteInstrument>> deleteFavorites(Iterable<String> figiList) {
+    return editFavorites(figiList, EditFavoritesActionType.EDIT_FAVORITES_ACTION_TYPE_DEL);
+  }
+
+  /**
+   * Редактирование (синхронное) списка избранных инструментов.
+   *
+   * @param figiList список FIGI инструментов.
+   * @param actionType Тип действия со списком избранных инструментов
+   * @return Список избранных инструментов.
+   */
+  public List<FavoriteInstrument> editFavoritesSync(Iterable<String> figiList, EditFavoritesActionType actionType) {
+    var builder = EditFavoritesRequest.newBuilder().setActionType(actionType);
+    for (String figi : figiList) {
+      var instrument = EditFavoritesRequestInstrument.newBuilder().setFigi(figi).build();
+      builder.addInstruments(instrument);
+    }
+    return unaryCall(() -> instrumentsBlockingStub.editFavorites(builder.build()).getFavoriteInstrumentsList());
+  }
+
+  /**
+   * Добавление (синхронное) в список избранных инструментов.
+   *
+   * @param figiList список FIGI инструментов.
+   * @return Список избранных инструментов.
+   */
+  public List<FavoriteInstrument> addFavoritesSync(Iterable<String> figiList) {
+    return editFavoritesSync(figiList, EditFavoritesActionType.EDIT_FAVORITES_ACTION_TYPE_ADD);
+  }
+
+  /**
+   * Удаление (синхронное) из списка избранных инструментов.
+   *
+   * @param figiList список FIGI инструментов.
+   * @return Список избранных инструментов.
+   */
+  public List<FavoriteInstrument> deleteFavoritesSync(Iterable<String> figiList) {
+    return editFavoritesSync(figiList, EditFavoritesActionType.EDIT_FAVORITES_ACTION_TYPE_DEL);
   }
 }

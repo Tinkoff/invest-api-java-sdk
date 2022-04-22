@@ -514,6 +514,12 @@ public class Example {
     var assetBy = api.getInstrumentsService().getAssetBySync(uid);
     log.info("подробная информация об активе. описание: {}, статус: {}, бренд: {}", assetBy.getDescription(), assetBy.getStatus(), assetBy.getBrand().getInfo());
 
+    //Добавление избранных инструментов
+    var instruments = currencies.stream().map(Currency::getFigi).collect(Collectors.toList());
+    var favoriteInstruments = api.getInstrumentsService().addFavoritesSync(instruments);
+
+    //Удаление из списка избранных инструментов
+    favoriteInstruments = api.getInstrumentsService().deleteFavoritesSync(List.of(currencies.get(0).getFigi()));
   }
 
   private static void getLastTradesExample(InvestApi api) {

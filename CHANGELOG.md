@@ -2,6 +2,14 @@
 
 Invest API Java SDK v1.0 требует требует JDK 11 и выше.
 
+## v1.0-M7
+
+Новые методы для работы с избранными инструментами - InstrumentsService.GetFavorites, InstrumentsService.EditFavorites
+
+Добавлена возможность указать счет в tradesStream, по которому нужно получать сделки. Если счет не указан - будут получены сделки по всем счетам
+
+Версия библиотеки jackson-databind была исправлена из-за критической уязвимости CVE-2020-36518
+
 ## v1.0-M6
 
 Новые методы для получения активов -  InstrumentsService.GetAssets, InstrumentsService.GetAssetBy
