@@ -26,7 +26,7 @@ public class InvestApiTest {
 
   @Test
   void creationAlwaysUsesPassedChannel() {
-    var channel = InvestApi.defaultChannel("token");
+    var channel = InvestApi.defaultChannel("token", null);
 
     var api = InvestApi.create(channel);
     assertSame(channel, api.getChannel(), "Simple creation doesn't use passed Channel.");
@@ -40,7 +40,7 @@ public class InvestApiTest {
 
   @Test
   void simpleCreationProducesNotReadonlyNorSandbox() {
-    var channel = InvestApi.defaultChannel("token");
+    var channel = InvestApi.defaultChannel("token", null);
 
     var api = InvestApi.create(channel);
     assertFalse(api.isReadonlyMode(), "Simple creation produces readonly mode.");
@@ -49,7 +49,7 @@ public class InvestApiTest {
 
   @Test
   void readonlyCreationProducesReadonlyOnly() {
-    var channel = InvestApi.defaultChannel("token");
+    var channel = InvestApi.defaultChannel("token", null);
 
     var readonlyApi = InvestApi.createReadonly(channel);
     assertTrue(readonlyApi.isReadonlyMode(), "Readonly creation doesn't produce readonly mode.");
@@ -58,7 +58,7 @@ public class InvestApiTest {
 
   @Test
   void sandboxCreationProducesSandboxOnly() {
-    var channel = InvestApi.defaultChannel("token");
+    var channel = InvestApi.defaultChannel("token", null);
 
     var sandboxApi = InvestApi.createSandbox(channel);
     assertFalse(sandboxApi.isReadonlyMode(), "Sandbox creation produces readonly mode.");
@@ -67,7 +67,7 @@ public class InvestApiTest {
 
   @Test
   void ordersServiceIsDisallowedInSandboxMode() {
-    var channel = InvestApi.defaultChannel("token");
+    var channel = InvestApi.defaultChannel("token", null);
 
     var sandboxApi = InvestApi.createSandbox(channel);
     assertThrows(IllegalStateException.class, sandboxApi::getOrdersService);
@@ -75,7 +75,7 @@ public class InvestApiTest {
 
   @Test
   void stopOrdersServiceIsDisallowedInSandboxMode() {
-    var channel = InvestApi.defaultChannel("token");
+    var channel = InvestApi.defaultChannel("token", null);
 
     var sandboxApi = InvestApi.createSandbox(channel);
     assertThrows(IllegalStateException.class, sandboxApi::getStopOrdersService);
@@ -83,7 +83,7 @@ public class InvestApiTest {
 
   @Test
   void operationsServiceIsDisallowedInSandboxMode() {
-    var channel = InvestApi.defaultChannel("token");
+    var channel = InvestApi.defaultChannel("token", null);
 
     var sandboxApi = InvestApi.createSandbox(channel);
     assertThrows(IllegalStateException.class, sandboxApi::getOperationsService);
@@ -91,7 +91,7 @@ public class InvestApiTest {
 
   @Test
   void userServiceIsDisallowedInSandboxMode() {
-    var channel = InvestApi.defaultChannel("token");
+    var channel = InvestApi.defaultChannel("token", null);
 
     var sandboxApi = InvestApi.createSandbox(channel);
     assertThrows(IllegalStateException.class, sandboxApi::getUserService);
@@ -99,7 +99,7 @@ public class InvestApiTest {
 
   @Test
   void sandboxServiceIsAllowedInSandboxModeOnly() {
-    var channel = InvestApi.defaultChannel("token");
+    var channel = InvestApi.defaultChannel("token", null);
 
     var api = InvestApi.create(channel);
     assertThrows(IllegalStateException.class, api::getSandboxService);
@@ -109,7 +109,7 @@ public class InvestApiTest {
 
   @Test
   void instrumentsServiceIsAlwaysAllowed() {
-    var channel = InvestApi.defaultChannel("token");
+    var channel = InvestApi.defaultChannel("token", null);
 
     var api = InvestApi.create(channel);
     assertDoesNotThrow(api::getInstrumentsService);
@@ -121,7 +121,7 @@ public class InvestApiTest {
 
   @Test
   void marketDataServiceIsAlwaysAllowed() {
-    var channel = InvestApi.defaultChannel("token");
+    var channel = InvestApi.defaultChannel("token", null);
 
     var api = InvestApi.create(channel);
     assertDoesNotThrow(api::getMarketDataService);
