@@ -153,7 +153,7 @@ public class InvestApi {
    * @return Экземпляр API для реальной торговли.
    */
   @Nonnull
-  public static InvestApi create(@Nonnull String token, @Nullable String appName) {
+  public static InvestApi create(@Nonnull String token, @Nonnull String appName) {
     return new InvestApi(defaultChannel(token, appName), false, false);
   }
 
@@ -196,7 +196,7 @@ public class InvestApi {
    * @return Экземпляр API для реальной торговли.
    */
   @Nonnull
-  public static InvestApi createReadonly(@Nonnull String token, @Nullable String appName) {
+  public static InvestApi createReadonly(@Nonnull String token, @Nonnull String appName) {
     return new InvestApi(defaultChannel(token, appName), false, true);
   }
 
@@ -241,7 +241,7 @@ public class InvestApi {
    * @return Экземпляр API "песочницы".
    */
   @Nonnull
-  public static InvestApi createSandbox(@Nonnull String token, @Nullable String appName) {
+  public static InvestApi createSandbox(@Nonnull String token, @Nonnull String appName) {
     return new InvestApi(defaultChannel(token, appName), true, false);
   }
 
