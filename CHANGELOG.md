@@ -2,6 +2,10 @@
 
 Invest API Java SDK v1.0 требует требует JDK 11 и выше.
 
+## v1.0-M8
+
+Добавлена возможность указать appName
+
 ## v1.0-M7
 
 Новые методы для работы с избранными инструментами - InstrumentsService.GetFavorites, InstrumentsService.EditFavorites

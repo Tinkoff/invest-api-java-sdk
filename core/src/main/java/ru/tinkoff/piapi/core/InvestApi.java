@@ -1,16 +1,32 @@
 package ru.tinkoff.piapi.core;
 
-import io.grpc.*;
+import io.grpc.CallOptions;
+import io.grpc.Channel;
+import io.grpc.ClientCall;
+import io.grpc.ClientInterceptor;
+import io.grpc.ForwardingClientCall;
+import io.grpc.ForwardingClientCallListener;
+import io.grpc.Metadata;
+import io.grpc.MethodDescriptor;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.netty.channel.ChannelOption;
 import io.grpc.stub.MetadataUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.tinkoff.piapi.contract.v1.*;
+import ru.tinkoff.piapi.contract.v1.InstrumentsServiceGrpc;
+import ru.tinkoff.piapi.contract.v1.MarketDataServiceGrpc;
+import ru.tinkoff.piapi.contract.v1.MarketDataStreamServiceGrpc;
+import ru.tinkoff.piapi.contract.v1.OperationsServiceGrpc;
+import ru.tinkoff.piapi.contract.v1.OrdersServiceGrpc;
+import ru.tinkoff.piapi.contract.v1.OrdersStreamServiceGrpc;
+import ru.tinkoff.piapi.contract.v1.SandboxServiceGrpc;
+import ru.tinkoff.piapi.contract.v1.StopOrdersServiceGrpc;
+import ru.tinkoff.piapi.contract.v1.UsersServiceGrpc;
 import ru.tinkoff.piapi.core.stream.MarketDataStreamService;
 import ru.tinkoff.piapi.core.stream.OrdersStreamService;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Properties;
@@ -28,6 +44,7 @@ public class InvestApi {
   private static final String targetPath = "target";
   private static final String connectionTimeoutPath = "connection-timeout";
   private static final String requestTimeoutPath = "request-timeout";
+  private static final String defaultAppName = "tinkoff.invest-api-java-sdk";
   private static final String target;
   private static final Duration connectionTimeout;
   private static final Duration requestTimeout;
@@ -122,7 +139,22 @@ public class InvestApi {
    */
   @Nonnull
   public static InvestApi create(@Nonnull String token) {
-    return new InvestApi(defaultChannel(token), false, false);
+    return new InvestApi(defaultChannel(token, null), false, false);
+  }
+
+  /**
+   * Создаёт экземпляр API для реальной торговли с использованием
+   * готовой конфигурации GRPC-соединения.
+   * <p>
+   *
+   * @param token Токен для торговли.
+   * @param appName Application name для сбора статистики.
+   *                Подробности в <a href="https://tinkoff.github.io/investAPI/grpc/#appname">документации</a>.
+   * @return Экземпляр API для реальной торговли.
+   */
+  @Nonnull
+  public static InvestApi create(@Nonnull String token, @Nonnull String appName) {
+    return new InvestApi(defaultChannel(token, appName), false, false);
   }
 
   /**
@@ -150,7 +182,22 @@ public class InvestApi {
    */
   @Nonnull
   public static InvestApi createReadonly(@Nonnull String token) {
-    return new InvestApi(defaultChannel(token), false, true);
+    return new InvestApi(defaultChannel(token, null), false, true);
+  }
+
+  /**
+   * Создаёт экземпляр API в режиме "только для чтения"
+   * с использованием готовой конфигурации GRPC-соединения.
+   * <p>
+   *
+   * @param token Токен для торговли.
+   * @param appName Application name для сбора статистики.
+   *                Подробности в <a href="https://tinkoff.github.io/investAPI/grpc/#appname">документации</a>.
+   * @return Экземпляр API для реальной торговли.
+   */
+  @Nonnull
+  public static InvestApi createReadonly(@Nonnull String token, @Nonnull String appName) {
+    return new InvestApi(defaultChannel(token, appName), false, true);
   }
 
   /**
@@ -179,13 +226,30 @@ public class InvestApi {
    */
   @Nonnull
   public static InvestApi createSandbox(@Nonnull String token) {
-    return new InvestApi(defaultChannel(token), true, false);
+    return new InvestApi(defaultChannel(token, null), true, false);
+  }
+
+  /**
+   * Создаёт экземпляр API для работы в "песочнице" с использованием
+   * готовой конфигурации GRPC-соединения.
+   * Подробности про appName в <a href="https://tinkoff.github.io/investAPI/grpc/#appname">документации</a>.
+   * <p>
+   *
+   * @param token Токен для торговли.
+   * @param appName Application name для сбора статистики.
+   *                Подробности в <a href="https://tinkoff.github.io/investAPI/grpc/#appname">документации</a>.
+   * @return Экземпляр API "песочницы".
+   */
+  @Nonnull
+  public static InvestApi createSandbox(@Nonnull String token, @Nonnull String appName) {
+    return new InvestApi(defaultChannel(token, appName), true, false);
   }
 
   @Nonnull
-  public static Channel defaultChannel(String token) {
+  public static Channel defaultChannel(String token, String appName) {
     var headers = new Metadata();
     addAuthHeader(headers, token);
+    addAppNameHeader(headers, appName);
 
     return NettyChannelBuilder
       .forTarget(target)
@@ -200,6 +264,11 @@ public class InvestApi {
       .useTransportSecurity()
       .keepAliveTimeout(60, TimeUnit.SECONDS)
       .build();
+  }
+
+  public static void addAppNameHeader(@Nonnull Metadata metadata, @Nullable String appName) {
+    var key = Metadata.Key.of("x-app-name", Metadata.ASCII_STRING_MARSHALLER);
+    metadata.put(key, appName == null ? defaultAppName : appName);
   }
 
   public static void addAuthHeader(@Nonnull Metadata metadata, @Nonnull String token) {
