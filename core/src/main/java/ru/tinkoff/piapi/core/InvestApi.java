@@ -41,25 +41,14 @@ import java.util.concurrent.TimeUnit;
 public class InvestApi {
 
   private static final String configResourceName = "config.properties";
-  private static final String targetPath = "target";
-  private static final String connectionTimeoutPath = "connection-timeout";
-  private static final String requestTimeoutPath = "request-timeout";
   private static final String defaultAppName = "tinkoff.invest-api-java-sdk";
-  private static final String target;
-  private static final Duration connectionTimeout;
-  private static final Duration requestTimeout;
+  private static final Properties props;
 
   static {
-    var props = loadProps();
-    var packageName = InvestApi.class.getPackageName();
-    target = props.getProperty(String.format("%s.%s", packageName, targetPath));
-    connectionTimeout = Duration.parse(props.getProperty(String.format("%s.%s", packageName, connectionTimeoutPath)));
-    requestTimeout = Duration.parse(props.getProperty(String.format("%s.%s", packageName, requestTimeoutPath)));
+    props = loadProps();
   }
 
   private final Channel channel;
-  private final boolean sandboxMode;
-  private final boolean readonlyMode;
   private final UsersService userService;
   private final OperationsService operationsService;
   private final InstrumentsService instrumentsService;
@@ -69,14 +58,11 @@ public class InvestApi {
   private final MarketDataService marketDataService;
   private final MarketDataStreamService marketDataStreamService;
   private final SandboxService sandboxService;
+  private final boolean readonlyMode;
 
-  private InvestApi(@Nonnull Channel channel, boolean sandboxMode, boolean readonlyMode) {
-    assert !(sandboxMode && readonlyMode) :
-      "Нельзя одновременно установить режимы \"песочница\" и \"только для чтения\" ";
-
-    this.channel = channel;
-    this.sandboxMode = sandboxMode;
+  private InvestApi(@Nonnull Channel channel, boolean readonlyMode) {
     this.readonlyMode = readonlyMode;
+    this.channel = channel;
     this.instrumentsService = new InstrumentsService(
       InstrumentsServiceGrpc.newBlockingStub(channel),
       InstrumentsServiceGrpc.newStub(channel));
@@ -85,33 +71,24 @@ public class InvestApi {
       MarketDataServiceGrpc.newStub(channel));
     this.marketDataStreamService = new MarketDataStreamService(MarketDataStreamServiceGrpc.newStub(channel));
     this.ordersStreamService = new OrdersStreamService(OrdersStreamServiceGrpc.newStub(channel));
-    if (sandboxMode) {
-      this.sandboxService = new SandboxService(
-        SandboxServiceGrpc.newBlockingStub(channel),
-        SandboxServiceGrpc.newStub(channel));
+    this.userService = new UsersService(
+      UsersServiceGrpc.newBlockingStub(channel),
+      UsersServiceGrpc.newStub(channel));
+    this.operationsService = new OperationsService(
+      OperationsServiceGrpc.newBlockingStub(channel),
+      OperationsServiceGrpc.newStub(channel));
+    this.stopOrdersService = new StopOrdersService(
+      StopOrdersServiceGrpc.newBlockingStub(channel),
+      StopOrdersServiceGrpc.newStub(channel),
+      readonlyMode);
+    this.ordersService = new OrdersService(
+      OrdersServiceGrpc.newBlockingStub(channel),
+      OrdersServiceGrpc.newStub(channel),
+      readonlyMode);
 
-      this.userService = null;
-      this.operationsService = null;
-      this.stopOrdersService = null;
-      this.ordersService = null;
-    } else {
-      this.userService = new UsersService(
-        UsersServiceGrpc.newBlockingStub(channel),
-        UsersServiceGrpc.newStub(channel));
-      this.operationsService = new OperationsService(
-        OperationsServiceGrpc.newBlockingStub(channel),
-        OperationsServiceGrpc.newStub(channel));
-      this.stopOrdersService = new StopOrdersService(
-        StopOrdersServiceGrpc.newBlockingStub(channel),
-        StopOrdersServiceGrpc.newStub(channel),
-        readonlyMode);
-      this.ordersService = new OrdersService(
-        OrdersServiceGrpc.newBlockingStub(channel),
-        OrdersServiceGrpc.newStub(channel),
-        readonlyMode);
-
-      this.sandboxService = null;
-    }
+    this.sandboxService = new SandboxService(
+      SandboxServiceGrpc.newBlockingStub(channel),
+      SandboxServiceGrpc.newStub(channel));
   }
 
   /**
@@ -126,7 +103,7 @@ public class InvestApi {
    */
   @Nonnull
   public static InvestApi create(@Nonnull Channel channel) {
-    return new InvestApi(channel, false, false);
+    return new InvestApi(channel, false);
   }
 
   /**
@@ -139,7 +116,7 @@ public class InvestApi {
    */
   @Nonnull
   public static InvestApi create(@Nonnull String token) {
-    return new InvestApi(defaultChannel(token, null), false, false);
+    return new InvestApi(defaultChannel(token, null), false);
   }
 
   /**
@@ -154,7 +131,7 @@ public class InvestApi {
    */
   @Nonnull
   public static InvestApi create(@Nonnull String token, @Nonnull String appName) {
-    return new InvestApi(defaultChannel(token, appName), false, false);
+    return new InvestApi(defaultChannel(token, appName), false);
   }
 
   /**
@@ -169,7 +146,7 @@ public class InvestApi {
    */
   @Nonnull
   public static InvestApi createReadonly(@Nonnull Channel channel) {
-    return new InvestApi(channel, false, true);
+    return new InvestApi(channel, true);
   }
 
   /**
@@ -182,7 +159,7 @@ public class InvestApi {
    */
   @Nonnull
   public static InvestApi createReadonly(@Nonnull String token) {
-    return new InvestApi(defaultChannel(token, null), false, true);
+    return new InvestApi(defaultChannel(token, null), true);
   }
 
   /**
@@ -197,7 +174,7 @@ public class InvestApi {
    */
   @Nonnull
   public static InvestApi createReadonly(@Nonnull String token, @Nonnull String appName) {
-    return new InvestApi(defaultChannel(token, appName), false, true);
+    return new InvestApi(defaultChannel(token, appName), true);
   }
 
   /**
@@ -212,7 +189,7 @@ public class InvestApi {
    */
   @Nonnull
   public static InvestApi createSandbox(@Nonnull Channel channel) {
-    return new InvestApi(channel, true, false);
+    return new InvestApi(channel, false);
   }
 
 
@@ -226,7 +203,7 @@ public class InvestApi {
    */
   @Nonnull
   public static InvestApi createSandbox(@Nonnull String token) {
-    return new InvestApi(defaultChannel(token, null), true, false);
+    return new InvestApi(defaultSandboxChannel(token, null), false);
   }
 
   /**
@@ -242,15 +219,16 @@ public class InvestApi {
    */
   @Nonnull
   public static InvestApi createSandbox(@Nonnull String token, @Nonnull String appName) {
-    return new InvestApi(defaultChannel(token, appName), true, false);
+    return new InvestApi(defaultSandboxChannel(token, appName), false);
   }
 
   @Nonnull
-  public static Channel defaultChannel(String token, String appName) {
+  public static Channel defaultChannel(String token, String appName, String target) {
     var headers = new Metadata();
     addAuthHeader(headers, token);
     addAppNameHeader(headers, appName);
-
+    var connectionTimeout = Duration.parse(props.getProperty("ru.tinkoff.piapi.core.connection-timeout"));
+    var requestTimeout = Duration.parse(props.getProperty("ru.tinkoff.piapi.core.request-timeout"));
     return NettyChannelBuilder
       .forTarget(target)
       .intercept(
@@ -264,6 +242,24 @@ public class InvestApi {
       .useTransportSecurity()
       .keepAliveTimeout(60, TimeUnit.SECONDS)
       .build();
+  }
+
+  @Nonnull
+  public static Channel defaultChannel(String token, String appName) {
+    var target = props.getProperty("ru.tinkoff.piapi.core.api.target");
+    return defaultChannel(token, appName, target);
+  }
+
+  @Nonnull
+  public static Channel defaultChannel(String token) {
+    var target = props.getProperty("ru.tinkoff.piapi.core.api.target");
+    return defaultChannel(token, defaultAppName, target);
+  }
+
+  @Nonnull
+  public static Channel defaultSandboxChannel(String token, String appName) {
+    var target = props.getProperty("ru.tinkoff.piapi.core.sandbox.target");
+    return defaultChannel(token, appName, target);
   }
 
   public static void addAppNameHeader(@Nonnull Metadata metadata, @Nullable String appName) {
@@ -314,8 +310,6 @@ public class InvestApi {
    */
   @Nonnull
   public OrdersService getOrdersService() {
-    if (sandboxMode) throw new IllegalStateException("Недоступно в режиме \"песочницы\".");
-
     return ordersService;
   }
 
@@ -326,8 +320,6 @@ public class InvestApi {
    */
   @Nonnull
   public OrdersStreamService getOrdersStreamService() {
-    if (sandboxMode) throw new IllegalStateException("Недоступно в режиме \"песочницы\".");
-
     return ordersStreamService;
   }
 
@@ -338,8 +330,6 @@ public class InvestApi {
    */
   @Nonnull
   public StopOrdersService getStopOrdersService() {
-    if (sandboxMode) throw new IllegalStateException("Недоступно в режиме \"песочницы\".");
-
     return stopOrdersService;
   }
 
@@ -360,8 +350,6 @@ public class InvestApi {
    */
   @Nonnull
   public OperationsService getOperationsService() {
-    if (sandboxMode) throw new IllegalStateException("Недоступно в режиме \"песочницы\".");
-
     return operationsService;
   }
 
@@ -372,8 +360,6 @@ public class InvestApi {
    */
   @Nonnull
   public UsersService getUserService() {
-    if (sandboxMode) throw new IllegalStateException("Недоступно в режиме \"песочницы\".");
-
     return userService;
   }
 
@@ -384,8 +370,6 @@ public class InvestApi {
    */
   @Nonnull
   public SandboxService getSandboxService() {
-    if (!sandboxMode) throw new IllegalStateException("Необходим режим \"песочницы\".");
-
     return sandboxService;
   }
 
@@ -399,27 +383,10 @@ public class InvestApi {
     return channel;
   }
 
-  /**
-   * Получение флага режима "песочницы".
-   * <p>
-   * Всега возвращает {@code false}, если действует режим "только для чтения".
-   *
-   * @return Флаг режима "песочницы".
-   */
-  public boolean isSandboxMode() {
-    return sandboxMode;
-  }
-
-  /**
-   * Получение флага режима "только для чтения".
-   * <p>
-   * Всега возвращает {@code false}, если действует режим "песочницы".
-   *
-   * @return Флаг режима "только для чтения".
-   */
   public boolean isReadonlyMode() {
     return readonlyMode;
   }
+
 
   static class TimeoutInterceptor implements ClientInterceptor {
     private final Duration timeout;

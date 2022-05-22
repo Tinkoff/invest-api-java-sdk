@@ -44,7 +44,6 @@ public class InvestApiTest {
 
     var api = InvestApi.create(channel);
     assertFalse(api.isReadonlyMode(), "Simple creation produces readonly mode.");
-    assertFalse(api.isSandboxMode(), "Simple creation produces sandbox mode.");
   }
 
   @Test
@@ -53,7 +52,6 @@ public class InvestApiTest {
 
     var readonlyApi = InvestApi.createReadonly(channel);
     assertTrue(readonlyApi.isReadonlyMode(), "Readonly creation doesn't produce readonly mode.");
-    assertFalse(readonlyApi.isSandboxMode(), "Readonly creation produces sandbox mode.");
   }
 
   @Test
@@ -62,49 +60,6 @@ public class InvestApiTest {
 
     var sandboxApi = InvestApi.createSandbox(channel);
     assertFalse(sandboxApi.isReadonlyMode(), "Sandbox creation produces readonly mode.");
-    assertTrue(sandboxApi.isSandboxMode(), "Sandbox creation doesn't produce sandbox mode.");
-  }
-
-  @Test
-  void ordersServiceIsDisallowedInSandboxMode() {
-    var channel = InvestApi.defaultChannel("token", null);
-
-    var sandboxApi = InvestApi.createSandbox(channel);
-    assertThrows(IllegalStateException.class, sandboxApi::getOrdersService);
-  }
-
-  @Test
-  void stopOrdersServiceIsDisallowedInSandboxMode() {
-    var channel = InvestApi.defaultChannel("token", null);
-
-    var sandboxApi = InvestApi.createSandbox(channel);
-    assertThrows(IllegalStateException.class, sandboxApi::getStopOrdersService);
-  }
-
-  @Test
-  void operationsServiceIsDisallowedInSandboxMode() {
-    var channel = InvestApi.defaultChannel("token", null);
-
-    var sandboxApi = InvestApi.createSandbox(channel);
-    assertThrows(IllegalStateException.class, sandboxApi::getOperationsService);
-  }
-
-  @Test
-  void userServiceIsDisallowedInSandboxMode() {
-    var channel = InvestApi.defaultChannel("token", null);
-
-    var sandboxApi = InvestApi.createSandbox(channel);
-    assertThrows(IllegalStateException.class, sandboxApi::getUserService);
-  }
-
-  @Test
-  void sandboxServiceIsAllowedInSandboxModeOnly() {
-    var channel = InvestApi.defaultChannel("token", null);
-
-    var api = InvestApi.create(channel);
-    assertThrows(IllegalStateException.class, api::getSandboxService);
-    var readonlyApi = InvestApi.createReadonly(channel);
-    assertThrows(IllegalStateException.class, readonlyApi::getSandboxService);
   }
 
   @Test

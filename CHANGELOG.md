@@ -2,6 +2,11 @@
 
 Invest API Java SDK v1.0 требует требует JDK 11 и выше.
 
+## v1.0-M9
+
+Новые методы в сервисе инструментов - Brands, Countries, FindInstrument
+Возможность указать target в channel при создании экземпляра Channel
+
 ## v1.0-M8
 
 Добавлена возможность указать appName
