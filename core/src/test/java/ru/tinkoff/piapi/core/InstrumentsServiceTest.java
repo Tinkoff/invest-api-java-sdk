@@ -23,6 +23,8 @@ import ru.tinkoff.piapi.contract.v1.AssetsResponse;
 import ru.tinkoff.piapi.contract.v1.Bond;
 import ru.tinkoff.piapi.contract.v1.BondResponse;
 import ru.tinkoff.piapi.contract.v1.BondsResponse;
+import ru.tinkoff.piapi.contract.v1.Brand;
+import ru.tinkoff.piapi.contract.v1.CountryResponse;
 import ru.tinkoff.piapi.contract.v1.CurrenciesResponse;
 import ru.tinkoff.piapi.contract.v1.Currency;
 import ru.tinkoff.piapi.contract.v1.CurrencyResponse;
@@ -35,11 +37,18 @@ import ru.tinkoff.piapi.contract.v1.Etf;
 import ru.tinkoff.piapi.contract.v1.EtfResponse;
 import ru.tinkoff.piapi.contract.v1.EtfsResponse;
 import ru.tinkoff.piapi.contract.v1.FavoriteInstrument;
+import ru.tinkoff.piapi.contract.v1.FindInstrumentRequest;
+import ru.tinkoff.piapi.contract.v1.FindInstrumentResponse;
 import ru.tinkoff.piapi.contract.v1.Future;
 import ru.tinkoff.piapi.contract.v1.FutureResponse;
 import ru.tinkoff.piapi.contract.v1.FuturesResponse;
 import ru.tinkoff.piapi.contract.v1.GetAccruedInterestsRequest;
 import ru.tinkoff.piapi.contract.v1.GetAccruedInterestsResponse;
+import ru.tinkoff.piapi.contract.v1.GetBrandRequest;
+import ru.tinkoff.piapi.contract.v1.GetBrandsRequest;
+import ru.tinkoff.piapi.contract.v1.GetBrandsResponse;
+import ru.tinkoff.piapi.contract.v1.GetCountriesRequest;
+import ru.tinkoff.piapi.contract.v1.GetCountriesResponse;
 import ru.tinkoff.piapi.contract.v1.GetDividendsRequest;
 import ru.tinkoff.piapi.contract.v1.GetDividendsResponse;
 import ru.tinkoff.piapi.contract.v1.GetFavoritesRequest;
@@ -50,6 +59,7 @@ import ru.tinkoff.piapi.contract.v1.Instrument;
 import ru.tinkoff.piapi.contract.v1.InstrumentIdType;
 import ru.tinkoff.piapi.contract.v1.InstrumentRequest;
 import ru.tinkoff.piapi.contract.v1.InstrumentResponse;
+import ru.tinkoff.piapi.contract.v1.InstrumentShort;
 import ru.tinkoff.piapi.contract.v1.InstrumentStatus;
 import ru.tinkoff.piapi.contract.v1.InstrumentsRequest;
 import ru.tinkoff.piapi.contract.v1.InstrumentsServiceGrpc;
@@ -101,6 +111,110 @@ public class InstrumentsServiceTest extends GrpcClientTester<InstrumentsService>
     var throwable = assertThrows(CompletionException.class, executable).getCause();
     assertTrue(throwable instanceof ApiRuntimeException);
     assertEquals(code, ((ApiRuntimeException) throwable).getCode());
+  }
+
+  @Nested
+  class GetCountriesTest {
+
+    @Test
+    void getCountriesTest() {
+      var country = CountryResponse.newBuilder().setAlfaTwo("EN").setAlfaThree("ENG").build();
+      var expected = GetCountriesResponse.newBuilder().addCountries(country).build();
+      var grpcService = mock(InstrumentsServiceGrpc.InstrumentsServiceImplBase.class, delegatesTo(
+        new InstrumentsServiceGrpc.InstrumentsServiceImplBase() {
+          @Override
+          public void getCountries(GetCountriesRequest request, StreamObserver<GetCountriesResponse> responseObserver) {
+            responseObserver.onNext(expected);
+            responseObserver.onCompleted();
+          }
+        }));
+      var service = mkClientBasedOnServer(grpcService);
+
+      var actualSync = service.getCountriesSync();
+      var actualAsync = service.getCountries().join();
+
+      assertIterableEquals(expected.getCountriesList(), actualSync);
+      assertIterableEquals(expected.getCountriesList(), actualAsync);
+
+      verify(grpcService, times(2)).getCountries(any(), any());
+    }
+  }
+
+  @Nested
+  class FindInstrumentTest {
+
+    @Test
+    void findInstrumentTest() {
+      var instrument = InstrumentShort.newBuilder().setFigi("figi").build();
+      var expected = FindInstrumentResponse.newBuilder().addInstruments(instrument).build();
+      var grpcService = mock(InstrumentsServiceGrpc.InstrumentsServiceImplBase.class, delegatesTo(
+        new InstrumentsServiceGrpc.InstrumentsServiceImplBase() {
+          @Override
+          public void findInstrument(FindInstrumentRequest request, StreamObserver<FindInstrumentResponse> responseObserver) {
+            responseObserver.onNext(expected);
+            responseObserver.onCompleted();
+          }
+        }));
+      var service = mkClientBasedOnServer(grpcService);
+
+      var actualSync = service.findInstrumentSync("my_id");
+      var actualAsync = service.findInstrument("my_id").join();
+
+      assertIterableEquals(expected.getInstrumentsList(), actualSync);
+      assertIterableEquals(expected.getInstrumentsList(), actualAsync);
+
+      verify(grpcService, times(2)).findInstrument(any(), any());
+    }
+  }
+
+  @Nested
+  class GetBrandsTest {
+
+    @Test
+    void getBrandsTest() {
+      var brand = Brand.newBuilder().setCompany("company").setCountryOfRisk("risk").build();
+      var expected = GetBrandsResponse.newBuilder().addBrands(brand).build();
+      var grpcService = mock(InstrumentsServiceGrpc.InstrumentsServiceImplBase.class, delegatesTo(
+        new InstrumentsServiceGrpc.InstrumentsServiceImplBase() {
+          @Override
+          public void getBrands(GetBrandsRequest request, StreamObserver<GetBrandsResponse> responseObserver) {
+            responseObserver.onNext(expected);
+            responseObserver.onCompleted();
+          }
+        }));
+      var service = mkClientBasedOnServer(grpcService);
+
+      var actualSync = service.getBrandsSync();
+      var actualAsync = service.getBrands().join();
+
+      assertIterableEquals(expected.getBrandsList(), actualSync);
+      assertIterableEquals(expected.getBrandsList(), actualAsync);
+
+      verify(grpcService, times(2)).getBrands(any(), any());
+    }
+
+    @Test
+    void getBrandByTest() {
+      var id = "my_id";
+      var brand = Brand.newBuilder().setCompany("company").setCountryOfRisk("risk").build();
+      var grpcService = mock(InstrumentsServiceGrpc.InstrumentsServiceImplBase.class, delegatesTo(
+        new InstrumentsServiceGrpc.InstrumentsServiceImplBase() {
+          @Override
+          public void getBrandBy(GetBrandRequest request, StreamObserver<Brand> responseObserver) {
+            responseObserver.onNext(brand);
+            responseObserver.onCompleted();
+          }
+        }));
+      var service = mkClientBasedOnServer(grpcService);
+
+      var actualSync = service.getBrandBySync(id);
+      var actualAsync = service.getBrandBy(id).join();
+
+      assertEquals(brand, actualSync);
+      assertEquals(brand, actualAsync);
+
+      verify(grpcService, times(2)).getBrandBy(any(), any());
+    }
   }
 
   @Nested

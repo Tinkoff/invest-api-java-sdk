@@ -97,17 +97,32 @@
   "30020": {
     "message": "'direction' is invalid",
     "type": "INVALID_ARGUMENT",
-    "description": "Входной параметр direction имеет некорректное значение.Список доступных значений: [direction](https://tinkoff.github.io/investAPI/stoporders/#stoporderdirection)."
+    "description": "Входной параметр direction имеет некорректное значение."
   },
   "30021": {
     "message": "missing parameter: 'account_id'",
     "type": "INVALID_ARGUMENT",
     "description": "Входной параметр account_id является обязательным.  Укажите корректный параметр account_id."
   },
+  "30022": {
+    "message": "missing parameter: 'state'",
+    "type": "INVALID_ARGUMENT",
+    "description": "Входной параметр state является обязательным.  Укажите корректный параметр state.Список доступных значений: [direction](https://tinkoff.github.io/investAPI/operations/#operationstate)."
+  },
+  "30023": {
+    "message": "invalid parameter: 'state'",
+    "type": "INVALID_ARGUMENT",
+    "description": "Входной параметр state имеет некорректное значение.  Укажите корректный параметр state.Список доступных значений: [direction](https://tinkoff.github.io/investAPI/operations/#operationstate)."
+  },
   "30025": {
     "message": "missing parameter: 'order_type'",
     "type": "INVALID_ARGUMENT",
     "description": "Входной параметр order_type является обязательным.  Укажите корректный параметр order_type."
+  },
+  "30026": {
+    "message": "invalid parameter: 'order_type'",
+    "type": "INVALID_ARGUMENT",
+    "description": "Входной параметр order_type имеет некорректное значение.  Укажите корректный параметр order_type."
   },
   "30027": {
     "message": "missing parameter: 'order_id'",
@@ -279,10 +294,35 @@
     "type": "INVALID_ARGUMENT",
     "description": "Входной параметр payload является обязательным.  Укажите корректный параметр payload."
   },
+  "30067": {
+    "message": "'action_type' is invalid",
+    "type": "INVALID_ARGUMENT",
+    "description": "Некорректное значение action_type.  Выберите допустимое значение."
+  },
+  "30068": {
+    "message": "Only limit order is allowed",
+    "type": "INVALID_ARGUMENT",
+    "description": "В настоящий момент возможно выставление только лимитного торгового поручения."
+  },
   "30077": {
     "message": "not available for OTC instruments",
     "type": "INVALID_ARGUMENT",
     "description": "Метод недоступен для внебиржевых инструментов."
+  },
+  "30078": {
+    "message": "Incorrect minimum price increment",
+    "type": "INVALID_ARGUMENT",
+    "description": "Некорректный шаг изменения цены."
+  },
+  "30079": {
+    "message": "instrument is not available for trading",
+    "type": "INVALID_ARGUMENT",
+    "description": "Инструмент недоступен для торгов."
+  },
+  "30080": {
+    "message": "quantity must be positive",
+    "type": "INVALID_ARGUMENT",
+    "description": "Количество лотов должно быть положительным числом."
   },
   "30081": {
     "message": "account status is closed",
@@ -294,10 +334,40 @@
     "type": "INVALID_ARGUMENT",
     "description": "Аккаунт заблокирован."
   },
+  "30083": {
+    "message": "order_type is invalid",
+    "type": "INVALID_ARGUMENT",
+    "description": "Некорректный тип заявки."
+  },
+  "30084": {
+    "message": "maximum request period has been exceeded",
+    "type": "INVALID_ARGUMENT",
+    "description": "Превышен лимит запрашиваемого периода."
+  },
+  "30085": {
+    "message": "price in points is available only for futures and bonds",
+    "type": "INVALID_ARGUMENT",
+    "description": "Тип цены в пунктах доступен только для фьючерсов и облигаций."
+  },
+  "30086": {
+    "message": "year is invalid",
+    "type": "INVALID_ARGUMENT",
+    "description": "Некорректный год."
+  },
+  "30087": {
+    "message": "missing parameter: query",
+    "type": "INVALID_ARGUMENT",
+    "description": "Входной параметр query является обязательным. Укажите не пустой параметр query."
+  },
   "40002": {
     "message": "insufficient privileges",
     "type": "PERMISSION_DENIED",
     "description": "Недостаточно прав для совершения операции. Токен доступа имеет уровень прав read-only.Подробнее: [Виды токенов](https://tinkoff.github.io/investAPI/index#_2)"
+  },
+  "40003": {
+    "message": "authentication token is missing or invalid",
+    "type": "PERMISSION_DENIED",
+    "description": "Токен доступа не найден или не активен. Вы можете выпустить новый токен по ссылке [Настройки](https://www.tinkoff.ru/invest/settings/)"
   },
 
   "50001": {
@@ -335,15 +405,30 @@
     "type": "NOT_FOUND",
     "description": "Отсутствует источник данных по стаканам."
   },
+  "50009": {
+    "message": "asset not found",
+    "type": "NOT_FOUND",
+    "description": "Актив не найден.Укажите корректный идентификатор актива."
+  },
+  "50010": {
+    "message": "brand not found",
+    "type": "NOT_FOUND",
+    "description": "Бренд не найден.Укажите корректный идентификатор бренда."
+  },
   "70001": {
     "message": "internal error",
     "type": "INTERNAL",
-    "description": "Внутренняя ошибка сервиса, попробуйте выполнить запрос позднее.Если ошибка повторяется, обратитесь в службу технической поддержки."
+    "description": "Внутренняя ошибка сервиса.Если ошибка повторяется, обратитесь в службу технической поддержки."
   },
   "70002": {
     "message": "internal network error",
     "type": "INTERNAL",
     "description": "Неизвестная сетевая ошибка, попробуйте выполнить запрос позднее.Если ошибка повторяется, обратитесь в службу технической поддержки."
+  },
+  "70003": {
+    "message": "internal error, please try again later",
+    "type": "INTERNAL",
+    "description": "Внутренняя ошибка сервиса, попробуйте выполнить запрос позднее.Если ошибка повторяется, обратитесь в службу технической поддержки."
   },
   "80001": {
     "message": "limit of open streams exceeded",

@@ -11,6 +11,8 @@ import ru.tinkoff.piapi.contract.v1.AssetsResponse;
 import ru.tinkoff.piapi.contract.v1.Bond;
 import ru.tinkoff.piapi.contract.v1.BondResponse;
 import ru.tinkoff.piapi.contract.v1.BondsResponse;
+import ru.tinkoff.piapi.contract.v1.Brand;
+import ru.tinkoff.piapi.contract.v1.CountryResponse;
 import ru.tinkoff.piapi.contract.v1.Coupon;
 import ru.tinkoff.piapi.contract.v1.CurrenciesResponse;
 import ru.tinkoff.piapi.contract.v1.Currency;
@@ -24,6 +26,8 @@ import ru.tinkoff.piapi.contract.v1.Etf;
 import ru.tinkoff.piapi.contract.v1.EtfResponse;
 import ru.tinkoff.piapi.contract.v1.EtfsResponse;
 import ru.tinkoff.piapi.contract.v1.FavoriteInstrument;
+import ru.tinkoff.piapi.contract.v1.FindInstrumentRequest;
+import ru.tinkoff.piapi.contract.v1.FindInstrumentResponse;
 import ru.tinkoff.piapi.contract.v1.Future;
 import ru.tinkoff.piapi.contract.v1.FutureResponse;
 import ru.tinkoff.piapi.contract.v1.FuturesResponse;
@@ -31,6 +35,11 @@ import ru.tinkoff.piapi.contract.v1.GetAccruedInterestsRequest;
 import ru.tinkoff.piapi.contract.v1.GetAccruedInterestsResponse;
 import ru.tinkoff.piapi.contract.v1.GetBondCouponsRequest;
 import ru.tinkoff.piapi.contract.v1.GetBondCouponsResponse;
+import ru.tinkoff.piapi.contract.v1.GetBrandRequest;
+import ru.tinkoff.piapi.contract.v1.GetBrandsRequest;
+import ru.tinkoff.piapi.contract.v1.GetBrandsResponse;
+import ru.tinkoff.piapi.contract.v1.GetCountriesRequest;
+import ru.tinkoff.piapi.contract.v1.GetCountriesResponse;
 import ru.tinkoff.piapi.contract.v1.GetDividendsRequest;
 import ru.tinkoff.piapi.contract.v1.GetDividendsResponse;
 import ru.tinkoff.piapi.contract.v1.GetFavoritesRequest;
@@ -41,6 +50,7 @@ import ru.tinkoff.piapi.contract.v1.Instrument;
 import ru.tinkoff.piapi.contract.v1.InstrumentIdType;
 import ru.tinkoff.piapi.contract.v1.InstrumentRequest;
 import ru.tinkoff.piapi.contract.v1.InstrumentResponse;
+import ru.tinkoff.piapi.contract.v1.InstrumentShort;
 import ru.tinkoff.piapi.contract.v1.InstrumentStatus;
 import ru.tinkoff.piapi.contract.v1.InstrumentsRequest;
 import ru.tinkoff.piapi.contract.v1.InstrumentsServiceGrpc.InstrumentsServiceBlockingStub;
@@ -1118,6 +1128,97 @@ public class InstrumentsService {
    */
   public List<FavoriteInstrument> getFavoritesSync() {
     return unaryCall(() -> instrumentsBlockingStub.getFavorites(GetFavoritesRequest.getDefaultInstance()).getFavoriteInstrumentsList());
+  }
+
+  /**
+   * Получение (асинхронное) списка стран.
+   *
+   * @return Список стран.
+   */
+  public CompletableFuture<List<CountryResponse>> getCountries() {
+    return Helpers.<GetCountriesResponse>unaryAsyncCall(
+        observer -> instrumentsStub.getCountries(
+          GetCountriesRequest.getDefaultInstance(),
+          observer))
+      .thenApply(GetCountriesResponse::getCountriesList);
+  }
+
+  /**
+   * Получение (синхронное) списка стран.
+   *
+   * @return Список стран.
+   */
+  public List<CountryResponse> getCountriesSync() {
+    return unaryCall(() -> instrumentsBlockingStub.getCountries(GetCountriesRequest.getDefaultInstance()).getCountriesList());
+  }
+
+  /**
+   * Получение (асинхронное) списка брендов.
+   *
+   * @return Список брендов.
+   */
+  public CompletableFuture<List<Brand>> getBrands() {
+    return Helpers.<GetBrandsResponse>unaryAsyncCall(
+        observer -> instrumentsStub.getBrands(
+          GetBrandsRequest.getDefaultInstance(),
+          observer))
+      .thenApply(GetBrandsResponse::getBrandsList);
+  }
+
+  /**
+   * Получение (синхронное) списка брендов.
+   *
+   * @return Список брендов.
+   */
+  public List<Brand> getBrandsSync() {
+    return unaryCall(() -> instrumentsBlockingStub.getBrands(GetBrandsRequest.getDefaultInstance()).getBrandsList());
+  }
+
+  /**
+   * Получение (асинхронное) бренда по его идентификатору.
+   *
+   * @param uid идентификатор бренда.
+   * @return Бренд.
+   */
+  public CompletableFuture<Brand> getBrandBy(String uid) {
+    return Helpers.unaryAsyncCall(
+        observer -> instrumentsStub.getBrandBy(
+          GetBrandRequest.newBuilder().setId(uid).build(),
+          observer));
+  }
+
+  /**
+   * Получение (синхронное) бренда по его идентификатору.
+   *
+   * @param uid идентификатор бренда.
+   * @return Бренд.
+   */
+  public Brand getBrandBySync(String uid) {
+    return unaryCall(() -> instrumentsBlockingStub.getBrandBy(GetBrandRequest.newBuilder().setId(uid).build()));
+  }
+
+  /**
+   * Регистронезависимый поиск (асинхронный) инструмента по одному из его идентификаторов.
+   *
+   * @param id полный или частичный figi/ticker/isin/uid/name инструмента.
+   * @return Бренд.
+   */
+  public CompletableFuture<List<InstrumentShort>> findInstrument(String id) {
+    return Helpers.<FindInstrumentResponse>unaryAsyncCall(
+      observer -> instrumentsStub.findInstrument(
+        FindInstrumentRequest.newBuilder().setQuery(id).build(),
+        observer))
+      .thenApply(FindInstrumentResponse::getInstrumentsList);
+  }
+
+  /**
+   * Регистронезависимый поиск (синхронный) инструмента по одному из его идентификаторов.
+   *
+   * @param id полный или частичный figi/ticker/isin/uid/name инструмента.
+   * @return Бренд.
+   */
+  public List<InstrumentShort> findInstrumentSync(String id) {
+    return unaryCall(() -> instrumentsBlockingStub.findInstrument(FindInstrumentRequest.newBuilder().setQuery(id).build()).getInstrumentsList());
   }
 
   /**
