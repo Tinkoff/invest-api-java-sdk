@@ -203,7 +203,8 @@ public class InvestApi {
    */
   @Nonnull
   public static InvestApi createSandbox(@Nonnull String token) {
-    return new InvestApi(defaultSandboxChannel(token, null), false);
+    var target = props.getProperty("ru.tinkoff.piapi.core.sandbox.target");
+    return new InvestApi(defaultChannel(token, defaultAppName, target), false);
   }
 
   /**
@@ -219,7 +220,8 @@ public class InvestApi {
    */
   @Nonnull
   public static InvestApi createSandbox(@Nonnull String token, @Nonnull String appName) {
-    return new InvestApi(defaultSandboxChannel(token, appName), false);
+    var target = props.getProperty("ru.tinkoff.piapi.core.sandbox.target");
+    return new InvestApi(defaultChannel(token, appName, target), false);
   }
 
   @Nonnull
@@ -254,12 +256,6 @@ public class InvestApi {
   public static Channel defaultChannel(String token) {
     var target = props.getProperty("ru.tinkoff.piapi.core.api.target");
     return defaultChannel(token, defaultAppName, target);
-  }
-
-  @Nonnull
-  public static Channel defaultSandboxChannel(String token, String appName) {
-    var target = props.getProperty("ru.tinkoff.piapi.core.sandbox.target");
-    return defaultChannel(token, appName, target);
   }
 
   public static void addAppNameHeader(@Nonnull Metadata metadata, @Nullable String appName) {
