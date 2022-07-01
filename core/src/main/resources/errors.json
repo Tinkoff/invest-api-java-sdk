@@ -1,4 +1,9 @@
 {
+  "12001": {
+    "message": "Method is unimplemented",
+    "type": "UNIMPLEMENTED",
+    "description": "Метод не реализован."
+  },
   "30001": {
     "message": "missing parameter: 'from'",
     "type": "INVALID_ARGUMENT",
@@ -304,6 +309,16 @@
     "type": "INVALID_ARGUMENT",
     "description": "В настоящий момент возможно выставление только лимитного торгового поручения."
   },
+  "30069": {
+    "message": "Invalid parameter: 'limit'",
+    "type": "INVALID_ARGUMENT",
+    "description": "Входной параметр limit имеет некорректное значение.Значение должно быть меньше или равно 1000."
+  },
+  "30070": {
+    "message": "'from' can't be more than the current date",
+    "type": "INVALID_ARGUMENT",
+    "description": "Входной параметр from имеет некорректное значение.Укажите корректный параметр."
+  },
   "30077": {
     "message": "not available for OTC instruments",
     "type": "INVALID_ARGUMENT",
@@ -359,6 +374,22 @@
     "type": "INVALID_ARGUMENT",
     "description": "Входной параметр query является обязательным. Укажите не пустой параметр query."
   },
+  "30088": {
+    "message": "'from' and 'to' must have the same year",
+    "type": "INVALID_ARGUMENT",
+    "description": "Запрашиваемые даты должны быть в рамках одного года."
+  },
+  "30089": {
+    "message": "'to' must not be later than %s",
+    "type": "INVALID_ARGUMENT",
+    "description": "Поле to не должно быть позднее даты, указанной в тексте ошибки. Дата указана в формате ISO 8601."
+  },
+  "30090": {
+    "message": "missing parameter: 'siebel_id'",
+    "type": "INVALID_ARGUMENT",
+    "description": "Входной параметр siebel_id является обязательным.  Укажите корректный параметр siebel_id."
+  },
+
   "40002": {
     "message": "insufficient privileges",
     "type": "PERMISSION_DENIED",
@@ -366,7 +397,7 @@
   },
   "40003": {
     "message": "authentication token is missing or invalid",
-    "type": "PERMISSION_DENIED",
+    "type": "UNAUTHENTICATED",
     "description": "Токен доступа не найден или не активен. Вы можете выпустить новый токен по ссылке [Настройки](https://www.tinkoff.ru/invest/settings/)"
   },
 
@@ -444,5 +475,10 @@
     "message": "need confirmation: %s",
     "type": "FAILED_PRECONDITION",
     "description": "Требуется подтверждение операции. Подробнее в тексте ошибки."
+  },
+  "90002": {
+    "message": "only for qualified investors",
+    "type": "FAILED_PRECONDITION",
+    "description": "Торговля этим инструментом доступна только квалифицированным инвесторам."
   }
 }

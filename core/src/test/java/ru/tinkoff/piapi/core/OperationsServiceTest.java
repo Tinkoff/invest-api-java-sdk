@@ -33,7 +33,8 @@ public class OperationsServiceTest extends GrpcClientTester<OperationsService> {
   protected OperationsService createClient(Channel channel) {
     return new OperationsService(
       OperationsServiceGrpc.newBlockingStub(channel),
-      OperationsServiceGrpc.newStub(channel));
+      OperationsServiceGrpc.newStub(channel),
+      false);
   }
 
   @Test

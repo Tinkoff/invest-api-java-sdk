@@ -22,6 +22,7 @@ public class Helpers {
 
   private static final Map<String, HashMap<String, String>> errorsMap = new HashMap<>();
   private static final String DEFAULT_ERROR_ID = "70001";
+  private static final String DEFAULT_ERROR_DESCRIPTION = "unknown error";
   private static final String TRACKING_ID_HEADER = "x-tracking-id";
 
   static {
@@ -70,6 +71,9 @@ public class Helpers {
   private static String getErrorId(Status status) {
     if ("RESOURCE_EXHAUSTED".equals(status.getCode().name())) {
       return "80002";
+    }
+    if ("UNAUTHENTICATED".equals(status.getCode().name())) {
+      return "40003";
     }
     var error = status.getDescription();
     return Objects.requireNonNullElse(error, DEFAULT_ERROR_ID);
@@ -150,6 +154,10 @@ public class Helpers {
   }
 
   private static String getErrorDescription(String id) {
-    return errorsMap.get(id).get("description");
+    var error = errorsMap.get(id);
+    if (error == null) {
+      return DEFAULT_ERROR_DESCRIPTION;
+    }
+    return error.get("description");
   }
 }

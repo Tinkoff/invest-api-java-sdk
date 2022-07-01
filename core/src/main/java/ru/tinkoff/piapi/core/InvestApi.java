@@ -13,16 +13,9 @@ import io.grpc.netty.shaded.io.netty.channel.ChannelOption;
 import io.grpc.stub.MetadataUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.tinkoff.piapi.contract.v1.InstrumentsServiceGrpc;
-import ru.tinkoff.piapi.contract.v1.MarketDataServiceGrpc;
-import ru.tinkoff.piapi.contract.v1.MarketDataStreamServiceGrpc;
-import ru.tinkoff.piapi.contract.v1.OperationsServiceGrpc;
-import ru.tinkoff.piapi.contract.v1.OrdersServiceGrpc;
-import ru.tinkoff.piapi.contract.v1.OrdersStreamServiceGrpc;
-import ru.tinkoff.piapi.contract.v1.SandboxServiceGrpc;
-import ru.tinkoff.piapi.contract.v1.StopOrdersServiceGrpc;
-import ru.tinkoff.piapi.contract.v1.UsersServiceGrpc;
+import ru.tinkoff.piapi.contract.v1.*;
 import ru.tinkoff.piapi.core.stream.MarketDataStreamService;
+import ru.tinkoff.piapi.core.stream.OperationsStreamService;
 import ru.tinkoff.piapi.core.stream.OrdersStreamService;
 
 import javax.annotation.Nonnull;
@@ -55,13 +48,16 @@ public class InvestApi {
   private final StopOrdersService stopOrdersService;
   private final OrdersService ordersService;
   private final OrdersStreamService ordersStreamService;
+  private final OperationsStreamService operationsStreamService;
   private final MarketDataService marketDataService;
   private final MarketDataStreamService marketDataStreamService;
   private final SandboxService sandboxService;
   private final boolean readonlyMode;
+  private final boolean sandboxMode;
 
-  private InvestApi(@Nonnull Channel channel, boolean readonlyMode) {
+  private InvestApi(@Nonnull Channel channel, boolean readonlyMode, boolean sandboxMode) {
     this.readonlyMode = readonlyMode;
+    this.sandboxMode = sandboxMode;
     this.channel = channel;
     this.instrumentsService = new InstrumentsService(
       InstrumentsServiceGrpc.newBlockingStub(channel),
@@ -71,16 +67,20 @@ public class InvestApi {
       MarketDataServiceGrpc.newStub(channel));
     this.marketDataStreamService = new MarketDataStreamService(MarketDataStreamServiceGrpc.newStub(channel));
     this.ordersStreamService = new OrdersStreamService(OrdersStreamServiceGrpc.newStub(channel));
+    this.operationsStreamService = new OperationsStreamService(OperationsStreamServiceGrpc.newStub(channel));
     this.userService = new UsersService(
       UsersServiceGrpc.newBlockingStub(channel),
-      UsersServiceGrpc.newStub(channel));
+      UsersServiceGrpc.newStub(channel),
+      sandboxMode);
     this.operationsService = new OperationsService(
       OperationsServiceGrpc.newBlockingStub(channel),
-      OperationsServiceGrpc.newStub(channel));
+      OperationsServiceGrpc.newStub(channel),
+      sandboxMode);
     this.stopOrdersService = new StopOrdersService(
       StopOrdersServiceGrpc.newBlockingStub(channel),
       StopOrdersServiceGrpc.newStub(channel),
-      readonlyMode);
+      readonlyMode,
+      sandboxMode);
     this.ordersService = new OrdersService(
       OrdersServiceGrpc.newBlockingStub(channel),
       OrdersServiceGrpc.newStub(channel),
@@ -103,7 +103,7 @@ public class InvestApi {
    */
   @Nonnull
   public static InvestApi create(@Nonnull Channel channel) {
-    return new InvestApi(channel, false);
+    return new InvestApi(channel, false, false);
   }
 
   /**
@@ -116,7 +116,7 @@ public class InvestApi {
    */
   @Nonnull
   public static InvestApi create(@Nonnull String token) {
-    return new InvestApi(defaultChannel(token, null), false);
+    return new InvestApi(defaultChannel(token, null), false, false);
   }
 
   /**
@@ -131,7 +131,7 @@ public class InvestApi {
    */
   @Nonnull
   public static InvestApi create(@Nonnull String token, @Nonnull String appName) {
-    return new InvestApi(defaultChannel(token, appName), false);
+    return new InvestApi(defaultChannel(token, appName), false, false);
   }
 
   /**
@@ -146,7 +146,7 @@ public class InvestApi {
    */
   @Nonnull
   public static InvestApi createReadonly(@Nonnull Channel channel) {
-    return new InvestApi(channel, true);
+    return new InvestApi(channel, true, false);
   }
 
   /**
@@ -159,7 +159,7 @@ public class InvestApi {
    */
   @Nonnull
   public static InvestApi createReadonly(@Nonnull String token) {
-    return new InvestApi(defaultChannel(token, null), true);
+    return new InvestApi(defaultChannel(token, null), true, false);
   }
 
   /**
@@ -174,7 +174,7 @@ public class InvestApi {
    */
   @Nonnull
   public static InvestApi createReadonly(@Nonnull String token, @Nonnull String appName) {
-    return new InvestApi(defaultChannel(token, appName), true);
+    return new InvestApi(defaultChannel(token, appName), true, false);
   }
 
   /**
@@ -189,7 +189,7 @@ public class InvestApi {
    */
   @Nonnull
   public static InvestApi createSandbox(@Nonnull Channel channel) {
-    return new InvestApi(channel, false);
+    return new InvestApi(channel, false, true);
   }
 
 
@@ -204,7 +204,7 @@ public class InvestApi {
   @Nonnull
   public static InvestApi createSandbox(@Nonnull String token) {
     var target = props.getProperty("ru.tinkoff.piapi.core.sandbox.target");
-    return new InvestApi(defaultChannel(token, defaultAppName, target), false);
+    return new InvestApi(defaultChannel(token, defaultAppName, target), false, true);
   }
 
   /**
@@ -221,7 +221,7 @@ public class InvestApi {
   @Nonnull
   public static InvestApi createSandbox(@Nonnull String token, @Nonnull String appName) {
     var target = props.getProperty("ru.tinkoff.piapi.core.sandbox.target");
-    return new InvestApi(defaultChannel(token, appName, target), false);
+    return new InvestApi(defaultChannel(token, appName, target), false, true);
   }
 
   @Nonnull
@@ -383,6 +383,18 @@ public class InvestApi {
     return readonlyMode;
   }
 
+  /**
+   * Получение флага режима "песочницы".
+   *
+   * @return Флаг режима "песочницы".
+   */
+  public boolean isSandboxMode() {
+    return sandboxMode;
+  }
+
+  public OperationsStreamService getOperationsStreamService() {
+    return operationsStreamService;
+  }
 
   static class TimeoutInterceptor implements ClientInterceptor {
     private final Duration timeout;
