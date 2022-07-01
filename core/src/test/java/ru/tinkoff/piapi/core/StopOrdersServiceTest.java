@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.rules.ExpectedException;
 import ru.tinkoff.piapi.contract.v1.*;
 import ru.tinkoff.piapi.core.exception.ReadonlyModeViolationException;
+import ru.tinkoff.piapi.core.exception.SandboxModeViolationException;
 import ru.tinkoff.piapi.core.utils.DateUtils;
 
 import java.time.Instant;
@@ -30,6 +31,7 @@ public class StopOrdersServiceTest extends GrpcClientTester<StopOrdersService> {
     return new StopOrdersService(
       StopOrdersServiceGrpc.newBlockingStub(channel),
       StopOrdersServiceGrpc.newStub(channel),
+      false,
       false);
   }
 
@@ -37,6 +39,15 @@ public class StopOrdersServiceTest extends GrpcClientTester<StopOrdersService> {
     return new StopOrdersService(
       StopOrdersServiceGrpc.newBlockingStub(channel),
       StopOrdersServiceGrpc.newStub(channel),
+      true,
+      false);
+  }
+
+  private StopOrdersService createSandboxClient(Channel channel) {
+    return new StopOrdersService(
+      StopOrdersServiceGrpc.newBlockingStub(channel),
+      StopOrdersServiceGrpc.newStub(channel),
+      false,
       true);
   }
 
@@ -230,6 +241,24 @@ public class StopOrdersServiceTest extends GrpcClientTester<StopOrdersService> {
   }
 
   @Test
+  void postStopOrderGoodTillCancel_forbiddenInSandbox_Test() {
+    var grpcService = mock(StopOrdersServiceGrpc.StopOrdersServiceImplBase.class);
+    var sandboxService = mkClientBasedOnServer(grpcService, this::createSandboxClient);
+
+    assertThrows(
+      SandboxModeViolationException.class,
+      () -> sandboxService.postStopOrderGoodTillCancelSync(
+        "", 0, Quotation.getDefaultInstance(), Quotation.getDefaultInstance(),
+        StopOrderDirection.STOP_ORDER_DIRECTION_UNSPECIFIED, "", StopOrderType.STOP_ORDER_TYPE_UNSPECIFIED)
+    );
+    futureThrown.expect(CompletionException.class);
+    futureThrown.expectCause(IsInstanceOf.instanceOf(SandboxModeViolationException.class));
+    assertThrows(SandboxModeViolationException.class, () -> sandboxService.postStopOrderGoodTillCancel(
+      "", 0, Quotation.getDefaultInstance(), Quotation.getDefaultInstance(),
+      StopOrderDirection.STOP_ORDER_DIRECTION_UNSPECIFIED, "", StopOrderType.STOP_ORDER_TYPE_UNSPECIFIED));
+  }
+
+  @Test
   void postStopOrderGoodTillDate_forbiddenInReadonly_Test() {
     var grpcService = mock(StopOrdersServiceGrpc.StopOrdersServiceImplBase.class);
     var readonlyService = mkClientBasedOnServer(grpcService, this::createReadonlyClient);
@@ -249,6 +278,25 @@ public class StopOrdersServiceTest extends GrpcClientTester<StopOrdersService> {
   }
 
   @Test
+  void postStopOrderGoodTillDate_forbiddenInSandbox_Test() {
+    var grpcService = mock(StopOrdersServiceGrpc.StopOrdersServiceImplBase.class);
+    var sandboxService = mkClientBasedOnServer(grpcService, this::createSandboxClient);
+
+    assertThrows(
+      SandboxModeViolationException.class,
+      () -> sandboxService.postStopOrderGoodTillDateSync(
+        "", 0, Quotation.getDefaultInstance(), Quotation.getDefaultInstance(),
+        StopOrderDirection.STOP_ORDER_DIRECTION_UNSPECIFIED, "", StopOrderType.STOP_ORDER_TYPE_UNSPECIFIED,
+        Instant.EPOCH));
+    futureThrown.expect(CompletionException.class);
+    futureThrown.expectCause(IsInstanceOf.instanceOf(SandboxModeViolationException.class));
+    assertThrows(SandboxModeViolationException.class, () -> sandboxService.postStopOrderGoodTillDate(
+      "", 0, Quotation.getDefaultInstance(), Quotation.getDefaultInstance(),
+      StopOrderDirection.STOP_ORDER_DIRECTION_UNSPECIFIED, "", StopOrderType.STOP_ORDER_TYPE_UNSPECIFIED,
+      Instant.EPOCH));
+  }
+
+  @Test
   void cancelStopOrder_forbiddenInReadonly_Test() {
     var grpcService = mock(StopOrdersServiceGrpc.StopOrdersServiceImplBase.class);
     var readonlyService = mkClientBasedOnServer(grpcService, this::createReadonlyClient);
@@ -259,5 +307,18 @@ public class StopOrdersServiceTest extends GrpcClientTester<StopOrdersService> {
     futureThrown.expect(CompletionException.class);
     futureThrown.expectCause(IsInstanceOf.instanceOf(ReadonlyModeViolationException.class));
     assertThrows(ReadonlyModeViolationException.class, () -> readonlyService.cancelStopOrder("", ""));
+  }
+
+  @Test
+  void cancelStopOrder_forbiddenInSandbox_Test() {
+    var grpcService = mock(StopOrdersServiceGrpc.StopOrdersServiceImplBase.class);
+    var sandboxService = mkClientBasedOnServer(grpcService, this::createSandboxClient);
+
+    assertThrows(
+      SandboxModeViolationException.class,
+      () -> sandboxService.cancelStopOrderSync("", ""));
+    futureThrown.expect(CompletionException.class);
+    futureThrown.expectCause(IsInstanceOf.instanceOf(SandboxModeViolationException.class));
+    assertThrows(SandboxModeViolationException.class, () -> sandboxService.cancelStopOrder("", ""));
   }
 }

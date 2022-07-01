@@ -36,6 +36,7 @@ import java.util.concurrent.CompletableFuture;
 import static ru.tinkoff.piapi.core.utils.Helpers.unaryCall;
 import static ru.tinkoff.piapi.core.utils.ValidationUtils.checkFromTo;
 import static ru.tinkoff.piapi.core.utils.ValidationUtils.checkPage;
+import static ru.tinkoff.piapi.core.utils.ValidationUtils.checkSandbox;
 
 /**
  * Сервис получения информации о портфеле по конкретному счёту.
@@ -43,9 +44,12 @@ import static ru.tinkoff.piapi.core.utils.ValidationUtils.checkPage;
 public class OperationsService {
   private final OperationsServiceBlockingStub operationsBlockingStub;
   private final OperationsServiceStub operationsStub;
+  private final boolean sandboxMode;
 
   OperationsService(@Nonnull OperationsServiceBlockingStub operationsBlockingStub,
-                    @Nonnull OperationsServiceStub operationsStub) {
+                    @Nonnull OperationsServiceStub operationsStub,
+                    boolean sandboxMode) {
+    this.sandboxMode = sandboxMode;
     this.operationsBlockingStub = operationsBlockingStub;
     this.operationsStub = operationsStub;
   }
@@ -250,6 +254,7 @@ public class OperationsService {
    */
   public GetDividendsForeignIssuerReportResponse getDividendsForeignIssuerSync(@Nonnull String taskId, int page) {
     checkPage(page);
+    checkSandbox(sandboxMode);
 
     var request = GetDividendsForeignIssuerRequest.newBuilder()
       .setGetDivForeignIssuerReport(GetDividendsForeignIssuerReportRequest.newBuilder().setTaskId(taskId).setPage(page).build())
@@ -268,6 +273,7 @@ public class OperationsService {
   public CompletableFuture<GetDividendsForeignIssuerReportResponse> getDividendsForeignIssuer(@Nonnull String taskId,
                                                                                               int page) {
     checkPage(page);
+    checkSandbox(sandboxMode);
 
     var request = GetDividendsForeignIssuerRequest.newBuilder()
       .setGetDivForeignIssuerReport(
@@ -291,6 +297,7 @@ public class OperationsService {
                                                                          @Nonnull Instant from,
                                                                          @Nonnull Instant to) {
     checkFromTo(from, to);
+    checkSandbox(sandboxMode);
 
     var request = GetDividendsForeignIssuerRequest.newBuilder()
       .setGenerateDivForeignIssuerReport(
@@ -317,6 +324,7 @@ public class OperationsService {
                                                                                         @Nonnull Instant from,
                                                                                         @Nonnull Instant to) {
     checkFromTo(from, to);
+    checkSandbox(sandboxMode);
 
     return Helpers.unaryAsyncCall(
       observer ->
@@ -549,6 +557,7 @@ public class OperationsService {
                                                   @Nonnull Instant from,
                                                   @Nonnull Instant to) {
     checkFromTo(from, to);
+    checkSandbox(sandboxMode);
 
     var request = BrokerReportRequest.newBuilder()
       .setGenerateBrokerReportRequest(
@@ -574,6 +583,7 @@ public class OperationsService {
                                                                  @Nonnull Instant from,
                                                                  @Nonnull Instant to) {
     checkFromTo(from, to);
+    checkSandbox(sandboxMode);
 
     var request = BrokerReportRequest.newBuilder()
       .setGenerateBrokerReportRequest(
@@ -596,6 +606,7 @@ public class OperationsService {
   @Nonnull
   public CompletableFuture<GetBrokerReportResponse> getBrokerReport(@Nonnull String taskId, int page) {
     checkPage(page);
+    checkSandbox(sandboxMode);
 
     var request = BrokerReportRequest.newBuilder()
       .setGetBrokerReportRequest(GetBrokerReportRequest.newBuilder().setTaskId(taskId).setPage(page).build())
@@ -616,6 +627,7 @@ public class OperationsService {
   @Nonnull
   public GetBrokerReportResponse getBrokerReportSync(@Nonnull String taskId, int page) {
     checkPage(page);
+    checkSandbox(sandboxMode);
 
     var request = BrokerReportRequest.newBuilder()
       .setGetBrokerReportRequest(GetBrokerReportRequest.newBuilder().setTaskId(taskId).setPage(page).build())

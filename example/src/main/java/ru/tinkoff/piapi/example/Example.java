@@ -43,6 +43,30 @@ public class Example {
     //Примеры подписок на стримы
     marketdataStreamExample(api);
     ordersStreamExample(api);
+    portfolioStreamExample(api);
+  }
+
+  private static void portfolioStreamExample(InvestApi api) {
+    StreamProcessor<PortfolioStreamResponse> consumer = response -> {
+      if (response.hasPing()) {
+        log.info("пинг сообщение");
+      } else if (response.hasPortfolio()) {
+        log.info("Новые данные по портфолио: {}", response);
+      }
+    };
+
+    Consumer<Throwable> onErrorCallback = error -> log.error(error.toString());
+    var accountId1 = "my_account_id1";
+    var accountId2 = "my_account_id2";
+    //Подписка стрим портфолио. Не блокирующий вызов
+    //При необходимости обработки ошибок (реконнект по вине сервера или клиента), рекомендуется сделать onErrorCallback
+    api.getOperationsStreamService().subscribePortfolio(consumer, onErrorCallback, accountId1);
+
+    //Если обработка ошибок не требуется, то можно использовать перегруженный метод
+    api.getOperationsStreamService().subscribePortfolio(consumer, accountId2);
+
+    //Если требуется подписаться на обновление сразу по нескольким accountId - можно передать список
+    api.getOperationsStreamService().subscribePortfolio(consumer, List.of(accountId1, accountId2));
   }
 
   private static void ordersStreamExample(InvestApi api) {

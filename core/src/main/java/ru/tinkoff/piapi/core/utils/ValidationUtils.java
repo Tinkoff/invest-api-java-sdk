@@ -1,6 +1,7 @@
 package ru.tinkoff.piapi.core.utils;
 
 import ru.tinkoff.piapi.core.exception.ReadonlyModeViolationException;
+import ru.tinkoff.piapi.core.exception.SandboxModeViolationException;
 
 import java.time.Instant;
 
@@ -24,6 +25,12 @@ public class ValidationUtils {
   public static void checkReadonly(boolean readonlyMode) {
     if (readonlyMode) {
       throw new ReadonlyModeViolationException();
+    }
+  }
+
+  public static void checkSandbox(boolean sandboxMode) {
+    if (sandboxMode) {
+      throw new SandboxModeViolationException();
     }
   }
 }

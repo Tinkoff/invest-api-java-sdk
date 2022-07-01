@@ -18,7 +18,7 @@ public class UsersServiceTest extends GrpcClientTester<UsersService> {
 
   @Override
   protected UsersService createClient(Channel channel) {
-    return new UsersService(UsersServiceGrpc.newBlockingStub(channel), UsersServiceGrpc.newStub(channel));
+    return new UsersService(UsersServiceGrpc.newBlockingStub(channel), UsersServiceGrpc.newStub(channel), false);
   }
 
   @Test

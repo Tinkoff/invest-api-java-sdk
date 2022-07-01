@@ -23,15 +23,19 @@ import java.util.concurrent.CompletableFuture;
 
 import static ru.tinkoff.piapi.core.utils.Helpers.unaryCall;
 import static ru.tinkoff.piapi.core.utils.ValidationUtils.checkReadonly;
+import static ru.tinkoff.piapi.core.utils.ValidationUtils.checkSandbox;
 
 public class StopOrdersService {
   private final StopOrdersServiceBlockingStub stopOrdersBlockingStub;
   private final StopOrdersServiceStub stopOrdersStub;
   private final boolean readonlyMode;
+  private final boolean sandboxMode;
 
   StopOrdersService(@Nonnull StopOrdersServiceBlockingStub stopOrdersBlockingStub,
                     @Nonnull StopOrdersServiceStub stopOrdersStub,
-                    boolean readonlyMode) {
+                    boolean readonlyMode,
+                    boolean sandboxMode) {
+    this.sandboxMode = sandboxMode;
     this.stopOrdersBlockingStub = stopOrdersBlockingStub;
     this.stopOrdersStub = stopOrdersStub;
     this.readonlyMode = readonlyMode;
@@ -46,6 +50,7 @@ public class StopOrdersService {
                                                 @Nonnull String accountId,
                                                 @Nonnull StopOrderType type) {
     checkReadonly(readonlyMode);
+    checkSandbox(sandboxMode);
 
     return unaryCall(() -> stopOrdersBlockingStub.postStopOrder(
         PostStopOrderRequest.newBuilder()
@@ -71,6 +76,7 @@ public class StopOrdersService {
                                               @Nonnull StopOrderType type,
                                               @Nonnull Instant expireDate) {
     checkReadonly(readonlyMode);
+    checkSandbox(sandboxMode);
 
     return unaryCall(() -> stopOrdersBlockingStub.postStopOrder(
         PostStopOrderRequest.newBuilder()
@@ -89,6 +95,8 @@ public class StopOrdersService {
 
   @Nonnull
   public List<StopOrder> getStopOrdersSync(@Nonnull String accountId) {
+    checkSandbox(sandboxMode);
+
     return unaryCall(() -> stopOrdersBlockingStub.getStopOrders(
         GetStopOrdersRequest.newBuilder()
           .setAccountId(accountId)
@@ -100,6 +108,7 @@ public class StopOrdersService {
   public Instant cancelStopOrderSync(@Nonnull String accountId,
                                      @Nonnull String stopOrderId) {
     checkReadonly(readonlyMode);
+    checkSandbox(sandboxMode);
 
     var responseTime = unaryCall(() -> stopOrdersBlockingStub.cancelStopOrder(
         CancelStopOrderRequest.newBuilder()
@@ -120,6 +129,7 @@ public class StopOrdersService {
                                                                @Nonnull String accountId,
                                                                @Nonnull StopOrderType type) {
     checkReadonly(readonlyMode);
+    checkSandbox(sandboxMode);
 
     return Helpers.<PostStopOrderResponse>unaryAsyncCall(
         observer -> stopOrdersStub.postStopOrder(
@@ -147,6 +157,7 @@ public class StopOrdersService {
                                                              @Nonnull StopOrderType type,
                                                              @Nonnull Instant expireDate) {
     checkReadonly(readonlyMode);
+    checkSandbox(sandboxMode);
 
     return Helpers.<PostStopOrderResponse>unaryAsyncCall(
         observer -> stopOrdersStub.postStopOrder(
@@ -167,6 +178,8 @@ public class StopOrdersService {
 
   @Nonnull
   public CompletableFuture<List<StopOrder>> getStopOrders(@Nonnull String accountId) {
+    checkSandbox(sandboxMode);
+
     return Helpers.<GetStopOrdersResponse>unaryAsyncCall(
         observer -> stopOrdersStub.getStopOrders(
           GetStopOrdersRequest.newBuilder()
@@ -180,6 +193,7 @@ public class StopOrdersService {
   public CompletableFuture<Instant> cancelStopOrder(@Nonnull String accountId,
                                                     @Nonnull String stopOrderId) {
     checkReadonly(readonlyMode);
+    checkSandbox(sandboxMode);
 
     return Helpers.<CancelStopOrderResponse>unaryAsyncCall(
         observer -> stopOrdersStub.cancelStopOrder(
