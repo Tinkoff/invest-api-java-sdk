@@ -642,7 +642,7 @@ public class OperationsService {
                                                                 @Nullable Boolean withoutCommission,
                                                                 @Nullable Boolean withoutTrades,
                                                                 @Nullable Boolean withoutOvernights,
-                                                                @Nullable List<String> operationTypes
+                                                                @Nullable List<OperationType> operationTypes
                                                           ) {
     checkSandbox(sandboxMode);
 
@@ -704,7 +704,7 @@ public class OperationsService {
                                                                                 @Nullable Boolean withoutCommission,
                                                                                 @Nullable Boolean withoutTrades,
                                                                                 @Nullable Boolean withoutOvernights,
-                                                                                @Nullable List<String> operationTypes) {
+                                                                                @Nullable List<OperationType> operationTypes) {
     checkSandbox(sandboxMode);
 
     var request = GetOperationsByCursorRequest.newBuilder()

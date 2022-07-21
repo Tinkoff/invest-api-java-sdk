@@ -453,8 +453,18 @@ public class Example {
         true,
         true,
         true,
-        List.of("OPERATION_TYPE_BUY"))
+        List.of(OperationType.OPERATION_TYPE_BUY, OperationType.OPERATION_TYPE_SELL))
       .getItemsList();
+
+    for (int i = 0; i < Math.min(operations.size(), 5); i++) {
+      var operation = operations.get(i);
+      var date = timestampToString(operation.getDate());
+      var state = operation.getState().name();
+      var id = operation.getId();
+      var payment = moneyValueToBigDecimal(operation.getPayment());
+      var figi = operation.getFigi();
+      log.info("операция с id: {}, дата: {}, статус: {}, платеж: {}, figi: {}", id, date, state, payment, figi);
+    }
   }
 
   private static void getOperationsExample(InvestApi api) {

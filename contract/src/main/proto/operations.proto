@@ -374,7 +374,7 @@ message GetOperationsByCursorRequest {
   google.protobuf.Timestamp to = 7; //Окончание периода (по UTC).
   string cursor	= 11; //Идентификатор элемента, с которого начать формировать ответ.
   int32 limit	= 12; //Лимит количества операций.
-  repeated string operation_types	= 13; //Тип операции. Принимает значение из списка
+  repeated OperationType operation_types	= 13; //Тип операции. Принимает значение из списка
   OperationState state  = 14;	//Статус запрашиваемых операций, возможные значения.
   bool without_commissions	= 15; //Флаг возвращать ли комиссии, по умолчанию false
   bool without_trades	= 16; //Флаг ответ без сделок.
