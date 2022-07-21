@@ -1,22 +1,13 @@
 package ru.tinkoff.piapi.core;
 
-import ru.tinkoff.piapi.contract.v1.CancelOrderRequest;
-import ru.tinkoff.piapi.contract.v1.CancelOrderResponse;
-import ru.tinkoff.piapi.contract.v1.GetOrderStateRequest;
-import ru.tinkoff.piapi.contract.v1.GetOrdersRequest;
-import ru.tinkoff.piapi.contract.v1.GetOrdersResponse;
-import ru.tinkoff.piapi.contract.v1.OrderDirection;
-import ru.tinkoff.piapi.contract.v1.OrderState;
-import ru.tinkoff.piapi.contract.v1.OrderType;
+import ru.tinkoff.piapi.contract.v1.*;
 import ru.tinkoff.piapi.contract.v1.OrdersServiceGrpc.OrdersServiceBlockingStub;
 import ru.tinkoff.piapi.contract.v1.OrdersServiceGrpc.OrdersServiceStub;
-import ru.tinkoff.piapi.contract.v1.PostOrderRequest;
-import ru.tinkoff.piapi.contract.v1.PostOrderResponse;
-import ru.tinkoff.piapi.contract.v1.Quotation;
 import ru.tinkoff.piapi.core.utils.DateUtils;
 import ru.tinkoff.piapi.core.utils.Helpers;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -154,5 +145,62 @@ public class OrdersService {
             .build(),
           observer))
       .thenApply(GetOrdersResponse::getOrdersList);
+  }
+
+  /** Последовательное выполнение 2 операций - отмены и выставления нового ордера
+   *
+   * @param accountId Номер счета
+   * @param quantity Количество лотов
+   * @param price Цена за 1 инструмент
+   * @param idempotencyKey Новый идентификатор запроса выставления поручения для целей идемпотентности. Максимальная длина 36 символов. Перезатирает старый ключ
+   * @param orderId Идентификатор заявки на бирже
+   * @param priceType Тип цены. Пока не используется (можно передавать null)
+   * @return Информация о выставлении поручения
+   */
+  @Nonnull
+  public CompletableFuture<PostOrderResponse> replaceOrder(@Nonnull String accountId,
+                                                           long quantity,
+                                                           @Nonnull Quotation price,
+                                                           @Nullable String idempotencyKey,
+                                                           @Nonnull String orderId,
+                                                           @Nullable PriceType priceType) {
+    var request = ReplaceOrderRequest.newBuilder()
+      .setAccountId(accountId)
+      .setPrice(price)
+      .setQuantity(quantity)
+      .setIdempotencyKey(idempotencyKey == null ? "" : idempotencyKey)
+      .setOrderId(orderId)
+      .setPriceType(priceType == null ? PriceType.PRICE_TYPE_UNSPECIFIED : priceType)
+      .build();
+    return Helpers.unaryAsyncCall(
+      observer -> ordersStub.replaceOrder(request, observer));
+  }
+
+  /** Последовательное выполнение 2 операций - отмены и выставления нового ордера
+   *
+   * @param accountId Номер счета
+   * @param quantity Количество лотов
+   * @param price Цена за 1 инструмент
+   * @param idempotencyKey Новый идентификатор запроса выставления поручения для целей идемпотентности. Максимальная длина 36 символов. Перезатирает старый ключ
+   * @param orderId Идентификатор заявки на бирже
+   * @param priceType Тип цены. Пока не используется (можно передавать null)
+   * @return Информация о выставлении поручения
+   */
+  @Nonnull
+  public PostOrderResponse replaceOrderSync(@Nonnull String accountId,
+                                            long quantity,
+                                            @Nonnull Quotation price,
+                                            @Nullable String idempotencyKey,
+                                            @Nonnull String orderId,
+                                            @Nullable PriceType priceType) {
+    var request = ReplaceOrderRequest.newBuilder()
+      .setAccountId(accountId)
+      .setPrice(price)
+      .setQuantity(quantity)
+      .setIdempotencyKey(idempotencyKey == null ? "" : idempotencyKey)
+      .setOrderId(orderId)
+      .setPriceType(priceType == null ? PriceType.PRICE_TYPE_UNSPECIFIED : priceType)
+      .build();
+    return unaryCall(() -> ordersBlockingStub.replaceOrder(request));
   }
 }

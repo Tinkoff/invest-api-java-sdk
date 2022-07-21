@@ -272,6 +272,11 @@ message Bond {
   string uid = 40; //Уникальный идентификатор инструмента.
   RealExchange real_exchange = 41; //Реальная площадка исполнения расчётов.
   string position_uid = 42; //Уникальный идентификатор позиции инструмента.
+
+  bool for_iis_flag = 51; //Признак доступности для ИИС.
+
+  google.protobuf.Timestamp first_1min_candle_date = 61; //Дата первой минутной свечи.
+  google.protobuf.Timestamp first_1day_candle_date = 62; //Дата первой дневной свечи.
 }
 
 //Объект передачи информации о валюте.
@@ -309,6 +314,11 @@ message Currency {
   string uid = 27; //Уникальный идентификатор инструмента.
   RealExchange real_exchange = 28; //Реальная площадка исполнения расчётов.
   string position_uid = 29; //Уникальный идентификатор позиции инструмента.
+
+  bool for_iis_flag = 41; //Признак доступности для ИИС.
+
+  google.protobuf.Timestamp first_1min_candle_date = 56; //Дата первой минутной свечи.
+  google.protobuf.Timestamp first_1day_candle_date = 57; //Дата первой дневной свечи.
 }
 
 //Объект передачи информации об инвестиционном фонде.
@@ -350,6 +360,11 @@ message Etf {
   string uid = 31; //Уникальный идентификатор инструмента.
   RealExchange real_exchange = 32; //Реальная площадка исполнения расчётов.
   string position_uid = 33; //Уникальный идентификатор позиции инструмента.
+
+  bool for_iis_flag = 41; //Признак доступности для ИИС.
+
+  google.protobuf.Timestamp first_1min_candle_date = 56; //Дата первой минутной свечи.
+  google.protobuf.Timestamp first_1day_candle_date = 57; //Дата первой дневной свечи.
 }
 
 //Объект передачи информации о фьючерсе.
@@ -393,6 +408,11 @@ message Future {
   RealExchange real_exchange = 32; //Реальная площадка исполнения расчётов.
   string position_uid = 33; //Уникальный идентификатор позиции инструмента.
   string basic_asset_position_uid = 34; //Уникальный идентификатор позиции основного инструмента.
+
+  bool for_iis_flag = 41; //Признак доступности для ИИС.
+
+  google.protobuf.Timestamp first_1min_candle_date = 56; //Дата первой минутной свечи.
+  google.protobuf.Timestamp first_1day_candle_date = 57; //Дата первой дневной свечи.
 }
 
 //Объект передачи информации об акции.
@@ -435,6 +455,11 @@ message Share {
   string uid = 33; //Уникальный идентификатор инструмента.
   RealExchange real_exchange = 34; //Реальная площадка исполнения расчётов.
   string position_uid = 35; //Уникальный идентификатор позиции инструмента.
+
+  bool for_iis_flag = 46; //Признак доступности для ИИС.
+
+  google.protobuf.Timestamp first_1min_candle_date = 56; //Дата первой минутной свечи.
+  google.protobuf.Timestamp first_1day_candle_date = 57; //Дата первой дневной свечи.
 }
 
 //Запрос НКД по облигации
@@ -523,6 +548,11 @@ message Instrument {
   string uid = 25; //Уникальный идентификатор инструмента.
   RealExchange real_exchange = 26; //Реальная площадка исполнения расчётов.
   string position_uid = 27; //Уникальный идентификатор позиции инструмента.
+
+  bool for_iis_flag = 36; //Признак доступности для ИИС.
+
+  google.protobuf.Timestamp first_1min_candle_date = 56; //Дата первой минутной свечи.
+  google.protobuf.Timestamp first_1day_candle_date = 57; //Дата первой дневной свечи.
 }
 
 //Запрос дивидендов.
@@ -866,6 +896,9 @@ message InstrumentShort {
   string uid = 7; //Уникальный идентификатор инструмента.
   string position_uid = 8; //Уникальный идентификатор позиции инструмента.
   bool api_trade_available_flag = 11; //Признак доступности торгов через API.
+  bool for_iis_flag = 12; //Признак доступности для ИИС.
+  google.protobuf.Timestamp first_1min_candle_date = 26; //Дата первой минутной свечи.
+  google.protobuf.Timestamp first_1day_candle_date = 27; //Дата первой дневной свечи.
 }
 
 //Запрос списка брендов.

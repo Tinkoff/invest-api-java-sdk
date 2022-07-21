@@ -248,6 +248,7 @@ public class Example {
 
   private static void operationsServiceExample(InvestApi api) {
     getOperationsExample(api);
+    getOperationsByCursorExample(api);
     getPositionsExample(api);
     getPortfolioExample(api);
     getWithdrawLimitsExample(api);
@@ -418,6 +419,51 @@ public class Example {
       var balance = security.getBalance();
       var blocked = security.getBlocked();
       log.info("figi: {}, текущий баланс: {}, заблокировано: {}", figi, balance, blocked);
+    }
+  }
+
+  private static void getOperationsByCursorExample(InvestApi api) {
+    var accounts = api.getUserService().getAccountsSync();
+    var mainAccount = accounts.get(0).getId();
+
+    //Получаем и печатаем список операций клиента
+    var operations = api.getOperationsService()
+      .getOperationByCursorSync(mainAccount, Instant.now().minus(30, ChronoUnit.DAYS), Instant.now())
+      .getItemsList();
+    for (int i = 0; i < Math.min(operations.size(), 5); i++) {
+      var operation = operations.get(i);
+      var date = timestampToString(operation.getDate());
+      var state = operation.getState().name();
+      var id = operation.getId();
+      var payment = moneyValueToBigDecimal(operation.getPayment());
+      var figi = operation.getFigi();
+      log.info("операция с id: {}, дата: {}, статус: {}, платеж: {}, figi: {}", id, date, state, payment, figi);
+    }
+
+    //Метод так же позволяет отфильтровать операции по многим параметрам
+    operations = api.getOperationsService()
+      .getOperationByCursorSync(
+        mainAccount,
+        Instant.now().minus(30, ChronoUnit.DAYS),
+        Instant.now(),
+        null,
+        10,
+        OperationState.OPERATION_STATE_EXECUTED,
+        "BBG00RPRPX12",
+        true,
+        true,
+        true,
+        List.of(OperationType.OPERATION_TYPE_BUY, OperationType.OPERATION_TYPE_SELL))
+      .getItemsList();
+
+    for (int i = 0; i < Math.min(operations.size(), 5); i++) {
+      var operation = operations.get(i);
+      var date = timestampToString(operation.getDate());
+      var state = operation.getState().name();
+      var id = operation.getId();
+      var payment = moneyValueToBigDecimal(operation.getPayment());
+      var figi = operation.getFigi();
+      log.info("операция с id: {}, дата: {}, статус: {}, платеж: {}, figi: {}", id, date, state, payment, figi);
     }
   }
 

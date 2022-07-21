@@ -10,23 +10,23 @@ import java.util.Locale;
 import java.util.Objects;
 
 public class Money {
-  private final Currency currency;
+  private final String currency;
   private final BigDecimal value;
 
-  private Money(@Nonnull Currency currency, @Nonnull BigDecimal value) {
+  private Money(@Nonnull String currency, @Nonnull BigDecimal value) {
     this.currency = currency;
     this.value = value;
   }
 
   public static Money fromResponse(@Nonnull MoneyValue moneyValue) {
     return new Money(
-      Currency.getInstance(moneyValue.getCurrency().toUpperCase(Locale.ROOT)),
+      moneyValue.getCurrency(),
       MapperUtils.moneyValueToBigDecimal(moneyValue)
     );
   }
 
   @Nonnull
-  public Currency getCurrency() {
+  public String getCurrency() {
     return currency;
   }
 
@@ -50,5 +50,13 @@ public class Money {
   @Override
   public int hashCode() {
     return Objects.hash(currency, value);
+  }
+
+  @Override
+  public String toString() {
+    return "Money{" +
+      "currency='" + currency + '\'' +
+      ", value=" + value +
+      '}';
   }
 }
