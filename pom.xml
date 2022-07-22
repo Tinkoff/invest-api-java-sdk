@@ -5,7 +5,7 @@
     <groupId>ru.tinkoff.piapi</groupId>
     <artifactId>java-sdk</artifactId>
     <packaging>pom</packaging>
-    <version>1.0.11</version>
+    <version>1.0.12-SNAPSHOT</version>
 
     <name>Tinkoff Invest API Java SDK</name>
     <description>Java SDK for Tinkoff Invest API</description>
