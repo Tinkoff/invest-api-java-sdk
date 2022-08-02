@@ -31,8 +31,13 @@ public class Example {
 
     var token = args[0];
     var api = InvestApi.create(token);
+    //Можно создать экземпляр sandbox - тогда все вызовы будут переадресованы в песочницу
+    var sandboxApi = InvestApi.createSandbox(token);
+    //Можно создать экземпляр readonly - тогда на уровне SDK будут заблокированы вызовы на выставление ордеров во избежании траты средств
+    var readonlyToken = InvestApi.createReadonly(token);
 
     //Примеры unary запросов
+    sandboxServiceExample(sandboxApi, instrumentFigi);
     instrumentsServiceExample(api);
     marketdataServiceExample(api);
     operationsServiceExample(api);
@@ -170,6 +175,39 @@ public class Example {
     api.getMarketDataStreamService().getStreamById("new_stream").unsubscribeCandles(randomFigi);
   }
 
+  private static void sandboxServiceExample(InvestApi sandboxApi, String figi) {
+    //В sandbox режиме можно делать запросы в те же методы, что и в обычном API
+    //Поэтому не придется писать отдельный код для песочницы, чтоб проверить свою стратегию
+    var accounts = sandboxApi.getUserService().getAccountsSync();
+    var mainAccount = accounts.get(0);
+    for (Account account : accounts) {
+      log.info("sandbox account id: {}, access level: {}", account.getId(), account.getAccessLevel().name());
+    }
+
+    //Убеждаемся, что мы в режиме песочницы
+    log.info("тариф должен быть sandbox. фактический тариф: {}", sandboxApi.getUserService().getInfoSync().getTariff());
+
+    //пополняем счет песочницы на 10_000 рублей и 10_000 долларов
+    sandboxApi.getSandboxService().payIn(mainAccount.getId(), MoneyValue.newBuilder().setUnits(10000).setCurrency("RUB").build());
+    sandboxApi.getSandboxService().payIn(mainAccount.getId(), MoneyValue.newBuilder().setUnits(10000).setCurrency("USD").build());
+
+    //В режиме песочницы недоступны следующие методы:
+    //UsersService.GetMarginAttributes
+    //Все методы сервиса StopOrdersService.*
+    //OperationsService.GetBrokerReport
+    //OperationsService.GetDividendsForeignIssuer
+    //OperationsService.GetWithdrawLimits
+    //OperationsService.GetOperationsByCursor
+    //OperationsStreamService.PortfolioStream
+    //OrdersStreamService.TradesStream
+
+    //Остальные методы - доступны. При вызове из sandbox режима запрос идет в песочницу, например, получим портфолио
+    getPortfolioExample(sandboxApi);
+    //Или список позиций
+    getPositionsExample(sandboxApi);
+    //Выставляем ордер
+    ordersServiceExample(sandboxApi, figi);
+  }
   private static void usersServiceExample(InvestApi api) {
     //Получаем список аккаунтов и распечатываем их с указанием привилегий токена
     var accounts = api.getUserService().getAccountsSync();
