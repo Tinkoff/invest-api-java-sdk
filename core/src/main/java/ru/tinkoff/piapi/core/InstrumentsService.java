@@ -55,6 +55,9 @@ import ru.tinkoff.piapi.contract.v1.InstrumentStatus;
 import ru.tinkoff.piapi.contract.v1.InstrumentsRequest;
 import ru.tinkoff.piapi.contract.v1.InstrumentsServiceGrpc.InstrumentsServiceBlockingStub;
 import ru.tinkoff.piapi.contract.v1.InstrumentsServiceGrpc.InstrumentsServiceStub;
+import ru.tinkoff.piapi.contract.v1.Option;
+import ru.tinkoff.piapi.contract.v1.OptionResponse;
+import ru.tinkoff.piapi.contract.v1.OptionsResponse;
 import ru.tinkoff.piapi.contract.v1.Share;
 import ru.tinkoff.piapi.contract.v1.ShareResponse;
 import ru.tinkoff.piapi.contract.v1.SharesResponse;
@@ -210,6 +213,28 @@ public class InstrumentsService {
   }
 
   /**
+   * Получение (синхронное) облигации по uid.
+   *
+   * @param uid Уникальный идентификатор инструмента.
+   * @return Облигация (если таковая есть).
+   */
+  @Nonnull
+  public Bond getBondByUidSync(@Nonnull String uid) {
+    return getInstrumentByUidSync(uid, request -> instrumentsBlockingStub.bondBy(request).getInstrument());
+  }
+
+  /**
+   * Получение (синхронное) облигации по positionUid.
+   *
+   * @param positionUid Уникальный идентификатор позиции.
+   * @return Облигация (если таковая есть).
+   */
+  @Nonnull
+  public Bond getBondByPositionUidSync(@Nonnull String positionUid) {
+    return getInstrumentByPositionUidSync(positionUid, request -> instrumentsBlockingStub.bondBy(request).getInstrument());
+  }
+
+  /**
    * Получение (синхронное) списка облигаций доступных для торговли через Tinkoff Invest API.
    *
    * @return Список облигаций.
@@ -271,6 +296,28 @@ public class InstrumentsService {
   }
 
   /**
+   * Получение (синхронное) валюты по uid.
+   *
+   * @param uid Уникальный идентификатор инструмента.
+   * @return Валюта (если таковая есть).
+   */
+  @Nonnull
+  public Currency getCurrencyByUidSync(@Nonnull String uid) {
+    return getInstrumentByUidSync(uid, request -> instrumentsBlockingStub.currencyBy(request).getInstrument());
+  }
+
+  /**
+   * Получение (синхронное) валюты по positionUid.
+   *
+   * @param positionUid Уникальный идентификатор позиции.
+   * @return Валюта (если таковая есть).
+   */
+  @Nonnull
+  public Currency getCurrencyByPositionUidSync(@Nonnull String positionUid) {
+    return getInstrumentByPositionUidSync(positionUid, request -> instrumentsBlockingStub.currencyBy(request).getInstrument());
+  }
+
+  /**
    * Получение (синхронное) списка валют.
    *
    * @param instrumentStatus статус инструмента. Значения INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL
@@ -326,6 +373,28 @@ public class InstrumentsService {
   @Nonnull
   public Etf getEtfByFigiSync(@Nonnull String figi) {
     return getInstrumentByFigiSync(figi, request -> instrumentsBlockingStub.etfBy(request).getInstrument());
+  }
+
+  /**
+   * Получение (синхронное) фонда по uid.
+   *
+   * @param uid Уникальный идентификатор инструмента.
+   * @return Фонд (если таковой есть).
+   */
+  @Nonnull
+  public Etf getEtfByUidSync(@Nonnull String uid) {
+    return getInstrumentByUidSync(uid, request -> instrumentsBlockingStub.etfBy(request).getInstrument());
+  }
+
+  /**
+   * Получение (синхронное) фонда по positionUid.
+   *
+   * @param positionUid Уникальный идентификатор позиции.
+   * @return Фонд (если таковой есть).
+   */
+  @Nonnull
+  public Etf getEtfByPositionUidSync(@Nonnull String positionUid) {
+    return getInstrumentByPositionUidSync(positionUid, request -> instrumentsBlockingStub.etfBy(request).getInstrument());
   }
 
   /**
@@ -390,6 +459,28 @@ public class InstrumentsService {
   }
 
   /**
+   * Получение (синхронное) фьючерса по uid.
+   *
+   * @param uid Уникальный идентификатор инструмента.
+   * @return Фьючерс (если таковой есть).
+   */
+  @Nonnull
+  public Future getFutureByUidSync(@Nonnull String uid) {
+    return getInstrumentByUidSync(uid, request -> instrumentsBlockingStub.futureBy(request).getInstrument());
+  }
+
+  /**
+   * Получение (синхронное) фьючерса по positionUid.
+   *
+   * @param positionUid Уникальный идентификатор позиции.
+   * @return Фьючерс (если таковой есть).
+   */
+  @Nonnull
+  public Future getFutureByPositionUidSync(@Nonnull String positionUid) {
+    return getInstrumentByPositionUidSync(positionUid, request -> instrumentsBlockingStub.futureBy(request).getInstrument());
+  }
+
+  /**
    * Получение (синхронное) списка фьючерсов.
    *
    * @param instrumentStatus статус инструмента. Значения INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL
@@ -450,6 +541,28 @@ public class InstrumentsService {
     return getInstrumentByFigiSync(figi, request -> instrumentsBlockingStub.shareBy(request).getInstrument());
   }
 
+  /**
+   * Получение (синхронное) акции по uid.
+   *
+   * @param uid Уникальный идентификатор инструмента.
+   * @return Акция (если таковой есть).
+   */
+  @Nonnull
+  public Share getShareByUidSync(@Nonnull String uid) {
+    return getInstrumentByUidSync(uid, request -> instrumentsBlockingStub.shareBy(request).getInstrument());
+  }
+
+
+  /**
+   * Получение (синхронное) акции по positionUid.
+   *
+   * @param positionUid Уникальный идентификатор позиции.
+   * @return Акция (если таковой есть).
+   */
+  @Nonnull
+  public Share getShareByPositionUidSync(@Nonnull String positionUid) {
+    return getInstrumentByPositionUidSync(positionUid, request -> instrumentsBlockingStub.shareBy(request).getInstrument());
+  }
 
   /**
    * Получение (синхронное) списка акций.
@@ -691,6 +804,29 @@ public class InstrumentsService {
   }
 
   /**
+   * Получение (асинхронное) облигации по uid.
+   *
+   * @param uid Уникальный идентификатор инструмента.
+   * @return Облигация (если таковая есть).
+   */
+  @Nonnull
+  public CompletableFuture<Bond> getBondByUid(@Nonnull String uid) {
+    return getInstrumentByUid(uid, instrumentsStub::bondBy, BondResponse::getInstrument);
+  }
+
+  /**
+   * Получение (асинхронное) облигации по positionUid.
+   *
+   * @param positionUid Уникальный идентификатор позиции.
+   * @return Облигация (если таковая есть).
+   */
+  @Nonnull
+  public CompletableFuture<Bond> getBondByPositionUid(@Nonnull String positionUid) {
+    return getInstrumentByPositionUid(positionUid, instrumentsStub::bondBy, BondResponse::getInstrument);
+  }
+
+
+  /**
    * Получение (асинхронное) списка облигаций.
    *
    * @param instrumentStatus статус инструмента. Значения INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL
@@ -755,6 +891,28 @@ public class InstrumentsService {
   }
 
   /**
+   * Получение (асинхронное) валюты по uid.
+   *
+   * @param uid Уникальный идентификатор инструмента.
+   * @return Валюта (если таковая есть).
+   */
+  @Nonnull
+  public CompletableFuture<Currency> getCurrencyByUid(@Nonnull String uid) {
+    return getInstrumentByUid(uid, instrumentsStub::currencyBy, CurrencyResponse::getInstrument);
+  }
+
+  /**
+   * Получение (асинхронное) валюты по positionUid.
+   *
+   * @param positionUid Уникальный идентификатор позиции.
+   * @return Валюта (если таковая есть).
+   */
+  @Nonnull
+  public CompletableFuture<Currency> getCurrencyByPositionUid(@Nonnull String positionUid) {
+    return getInstrumentByPositionUid(positionUid, instrumentsStub::currencyBy, CurrencyResponse::getInstrument);
+  }
+
+  /**
    * Получение (асинхронное) списка валют.
    *
    * @param instrumentStatus статус инструмента. Значения INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL
@@ -812,6 +970,28 @@ public class InstrumentsService {
   @Nonnull
   public CompletableFuture<Etf> getEtfByFigi(@Nonnull String figi) {
     return getInstrumentByFigi(figi, instrumentsStub::etfBy, EtfResponse::getInstrument);
+  }
+
+  /**
+   * Получение (синхронное) фонда по uid.
+   *
+   * @param uid Уникальный идентификатор инструмента.
+   * @return Фонд (если таковой есть).
+   */
+  @Nonnull
+  public CompletableFuture<Etf> getEtfByUid(@Nonnull String uid) {
+    return getInstrumentByUid(uid, instrumentsStub::etfBy, EtfResponse::getInstrument);
+  }
+
+  /**
+   * Получение (синхронное) фонда по positionUid.
+   *
+   * @param positionUid Уникальный идентификатор позиции.
+   * @return Фонд (если таковой есть).
+   */
+  @Nonnull
+  public CompletableFuture<Etf> getEtfByPositionUid(@Nonnull String positionUid) {
+    return getInstrumentByPositionUid(positionUid, instrumentsStub::etfBy, EtfResponse::getInstrument);
   }
 
   /**
@@ -875,6 +1055,28 @@ public class InstrumentsService {
   }
 
   /**
+   * Получение (асинхронное) фьючерса по uid.
+   *
+   * @param uid Уникальный идентификатор инструмента.
+   * @return Фьючерс (если таковой есть).
+   */
+  @Nonnull
+  public CompletableFuture<Future> getFutureByUid(@Nonnull String uid) {
+    return getInstrumentByUid(uid, instrumentsStub::futureBy, FutureResponse::getInstrument);
+  }
+
+  /**
+   * Получение (асинхронное) фьючерса по positionUid.
+   *
+   * @param positionUid Уникальный идентификатор позиции.
+   * @return Фьючерс (если таковой есть).
+   */
+  @Nonnull
+  public CompletableFuture<Future> getFutureByPositionUid(@Nonnull String positionUid) {
+    return getInstrumentByPositionUid(positionUid, instrumentsStub::futureBy, FutureResponse::getInstrument);
+  }
+
+  /**
    * Получение (асинхронное) списка фьючерсов.
    *
    * @param instrumentStatus статус инструмента. Значения INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL
@@ -935,6 +1137,29 @@ public class InstrumentsService {
   }
 
   /**
+   * Получение (асинхронное) акции по uid.
+   *
+   * @param uid Уникальный идентификатор инструмента.
+   * @return Акция (если таковой есть).
+   */
+  @Nonnull
+  public CompletableFuture<Share> getShareByUid(@Nonnull String uid) {
+    return getInstrumentByUid(uid, instrumentsStub::shareBy, ShareResponse::getInstrument);
+  }
+
+
+  /**
+   * Получение (асинхронное) акции по positionUid.
+   *
+   * @param positionUid Уникальный идентификатор позиции.
+   * @return Акция (если таковой есть).
+   */
+  @Nonnull
+  public CompletableFuture<Share> getShareByPositionUid(@Nonnull String positionUid) {
+    return getInstrumentByPositionUid(positionUid, instrumentsStub::shareBy, ShareResponse::getInstrument);
+  }
+
+  /**
    * Получение (асинхронное) списка акций.
    *
    * @param instrumentStatus статус инструмента. Значения INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL
@@ -968,6 +1193,120 @@ public class InstrumentsService {
   @Nonnull
   public CompletableFuture<List<Share>> getAllShares() {
     return getShares(InstrumentStatus.INSTRUMENT_STATUS_ALL);
+  }
+
+  /**
+   * Получение (асинхронное) списка опционов.
+   *
+   * @param instrumentStatus статус инструмента. Значения INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL
+   * @return Список опционов.
+   */
+  public CompletableFuture<List<Option>> getOptions(InstrumentStatus instrumentStatus) {
+    return Helpers.<OptionsResponse>unaryAsyncCall(
+        observer -> instrumentsStub.options(
+          InstrumentsRequest.newBuilder()
+            .setInstrumentStatus(instrumentStatus)
+            .build(),
+          observer))
+      .thenApply(OptionsResponse::getInstrumentsList);
+  }
+
+  /**
+   * Получение (асинхронное) списка опционов доступных для торговли через Tinkoff Invest API.
+   *
+   * @return Список опционов.
+   */
+  @Nonnull
+  public CompletableFuture<List<Option>> getTradableOptions() {
+    return getOptions(InstrumentStatus.INSTRUMENT_STATUS_BASE);
+  }
+
+  /**
+   * Получение (асинхронное) списка всех опционов доступных в Тинькофф Инвестиции.
+   *
+   * @return Список опционов.
+   */
+  @Nonnull
+  public CompletableFuture<List<Option>> getAllOptions() {
+    return getOptions(InstrumentStatus.INSTRUMENT_STATUS_ALL);
+  }
+
+  /**
+   * Получение (синхронное) списка опционов.
+   *
+   * @param instrumentStatus статус инструмента. Значения INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL
+   * @return Список опционов.
+   */
+  public List<Option> getOptionsSync(InstrumentStatus instrumentStatus) {
+    return unaryCall(() -> instrumentsBlockingStub.options(
+        InstrumentsRequest.newBuilder()
+          .setInstrumentStatus(instrumentStatus)
+          .build())
+      .getInstrumentsList());
+  }
+
+  /**
+   * Получение (синхронное) списка опционов доступных для торговли через Tinkoff Invest API.
+   *
+   * @return Список опционов.
+   */
+  @Nonnull
+  public List<Option> getTradableOptionsSync() {
+    return getOptionsSync(InstrumentStatus.INSTRUMENT_STATUS_BASE);
+  }
+
+  /**
+   * Получение (синхронное) списка всех опционов доступных в Тинькофф Инвестиции.
+   *
+   * @return Список опционов.
+   */
+  @Nonnull
+  public List<Option> getAllOptionsSync() {
+    return getOptionsSync(InstrumentStatus.INSTRUMENT_STATUS_ALL);
+  }
+
+  /**
+   * Получение (синхронное) опциона по uid.
+   *
+   * @param uid Уникальный идентификатор инструмента.
+   * @return Опцион (если таковой есть).
+   */
+  @Nonnull
+  public Option getOptionByUidSync(@Nonnull String uid) {
+    return getInstrumentByUidSync(uid, request->instrumentsBlockingStub.optionBy(request).getInstrument());
+  }
+
+  /**
+   * Получение (асинхронное) опциона по uid.
+   *
+   * @param uid Уникальный идентификатор инструмента.
+   * @return Опцион (если таковой есть).
+   */
+  @Nonnull
+  public CompletableFuture<Option> getOptionByUid(@Nonnull String uid) {
+    return getInstrumentByUid(uid, instrumentsStub::optionBy, OptionResponse::getInstrument);
+  }
+
+  /**
+   * Получение (синхронное) опциона по positionUid.
+   *
+   * @param positionUid Уникальный идентификатор позиции.
+   * @return Опцион (если таковой есть).
+   */
+  @Nonnull
+  public Option getOptionByPositionUidSync(@Nonnull String positionUid) {
+    return getInstrumentByPositionUidSync(positionUid, request->instrumentsBlockingStub.optionBy(request).getInstrument());
+  }
+
+  /**
+   * Получение (асинхронное) опциона по positionUid.
+   *
+   * @param positionUid Уникальный идентификатор позиции.
+   * @return Опцион (если таковой есть).
+   */
+  @Nonnull
+  public CompletableFuture<Option> getOptionByPositionUid(@Nonnull String positionUid) {
+    return getInstrumentByPositionUid(positionUid, instrumentsStub::optionBy, OptionResponse::getInstrument);
   }
 
   /**
@@ -1108,6 +1447,50 @@ public class InstrumentsService {
       .thenApply(extractor);
   }
 
+  private <T, R> CompletableFuture<T> getInstrumentByPositionUid(@Nonnull String positionUid,
+                                                                 BiConsumer<InstrumentRequest, StreamObserver<R>> call,
+                                                                 Function<R, T> extractor) {
+    return Helpers.<R>unaryAsyncCall(
+        observer -> call.accept(
+          InstrumentRequest.newBuilder()
+            .setIdType(InstrumentIdType.INSTRUMENT_ID_TYPE_POSITION_UID)
+            .setId(positionUid)
+            .build(),
+          observer))
+      .thenApply(extractor);
+  }
+
+  private <T> T getInstrumentByPositionUidSync(@Nonnull String positionUid,
+                                               Function<InstrumentRequest, T> getter) {
+    return unaryCall(() -> getter.apply(
+      InstrumentRequest.newBuilder()
+        .setIdType(InstrumentIdType.INSTRUMENT_ID_TYPE_POSITION_UID)
+        .setId(positionUid)
+        .build()));
+  }
+
+  private <T, R> CompletableFuture<T> getInstrumentByUid(@Nonnull String uid,
+                                                         BiConsumer<InstrumentRequest, StreamObserver<R>> call,
+                                                         Function<R, T> extractor) {
+    return Helpers.<R>unaryAsyncCall(
+        observer -> call.accept(
+          InstrumentRequest.newBuilder()
+            .setIdType(InstrumentIdType.INSTRUMENT_ID_TYPE_UID)
+            .setId(uid)
+            .build(),
+          observer))
+      .thenApply(extractor);
+  }
+
+  private <T> T getInstrumentByUidSync(@Nonnull String uid,
+                                       Function<InstrumentRequest, T> getter) {
+    return unaryCall(() -> getter.apply(
+      InstrumentRequest.newBuilder()
+        .setIdType(InstrumentIdType.INSTRUMENT_ID_TYPE_UID)
+        .setId(uid)
+        .build()));
+  }
+
   /**
    * Получение (асинхронное) списка избранных инструментов.
    *
@@ -1182,9 +1565,9 @@ public class InstrumentsService {
    */
   public CompletableFuture<Brand> getBrandBy(String uid) {
     return Helpers.unaryAsyncCall(
-        observer -> instrumentsStub.getBrandBy(
-          GetBrandRequest.newBuilder().setId(uid).build(),
-          observer));
+      observer -> instrumentsStub.getBrandBy(
+        GetBrandRequest.newBuilder().setId(uid).build(),
+        observer));
   }
 
   /**
@@ -1205,9 +1588,9 @@ public class InstrumentsService {
    */
   public CompletableFuture<List<InstrumentShort>> findInstrument(String id) {
     return Helpers.<FindInstrumentResponse>unaryAsyncCall(
-      observer -> instrumentsStub.findInstrument(
-        FindInstrumentRequest.newBuilder().setQuery(id).build(),
-        observer))
+        observer -> instrumentsStub.findInstrument(
+          FindInstrumentRequest.newBuilder().setQuery(id).build(),
+          observer))
       .thenApply(FindInstrumentResponse::getInstrumentsList);
   }
 
@@ -1224,7 +1607,7 @@ public class InstrumentsService {
   /**
    * Редактирование (асинхронное) списка избранных инструментов.
    *
-   * @param figiList список FIGI инструментов.
+   * @param figiList   список FIGI инструментов.
    * @param actionType Тип действия со списком избранных инструментов
    * @return Список избранных инструментов.
    */
@@ -1235,7 +1618,7 @@ public class InstrumentsService {
       builder.addInstruments(instrument);
     }
     return Helpers.<EditFavoritesResponse>unaryAsyncCall(
-        observer -> instrumentsStub.editFavorites(builder.build(),observer))
+        observer -> instrumentsStub.editFavorites(builder.build(), observer))
       .thenApply(EditFavoritesResponse::getFavoriteInstrumentsList);
   }
 
@@ -1262,7 +1645,7 @@ public class InstrumentsService {
   /**
    * Редактирование (синхронное) списка избранных инструментов.
    *
-   * @param figiList список FIGI инструментов.
+   * @param figiList   список FIGI инструментов.
    * @param actionType Тип действия со списком избранных инструментов
    * @return Список избранных инструментов.
    */
