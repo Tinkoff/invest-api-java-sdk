@@ -3,6 +3,8 @@ package ru.tinkoff.piapi.core.stream;
 import ru.tinkoff.piapi.contract.v1.OperationsStreamServiceGrpc;
 import ru.tinkoff.piapi.contract.v1.PortfolioStreamRequest;
 import ru.tinkoff.piapi.contract.v1.PortfolioStreamResponse;
+import ru.tinkoff.piapi.contract.v1.PositionsStreamRequest;
+import ru.tinkoff.piapi.contract.v1.PositionsStreamResponse;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -15,6 +17,58 @@ public class OperationsStreamService {
 
   public OperationsStreamService(OperationsStreamServiceGrpc.OperationsStreamServiceStub stub) {
     this.stub = stub;
+  }
+
+  /**
+   * Подписка на стрим позиций
+   *
+   * @param streamProcessor обработчик пришедших сообщений в стриме
+   * @param account         Идентификатор счета
+   */
+  public void subscribePositions(@Nonnull StreamProcessor<PositionsStreamResponse> streamProcessor,
+                                 @Nonnull String account) {
+    subscribePositions(streamProcessor, null, List.of(account));
+  }
+
+  /**
+   * Подписка на стрим позиций
+   *
+   * @param streamProcessor обработчик пришедших сообщений в стриме
+   * @param onErrorCallback обработчик ошибок в стриме
+   * @param account         Идентификатор счета
+   */
+  public void subscribePositions(@Nonnull StreamProcessor<PositionsStreamResponse> streamProcessor,
+                                 @Nullable Consumer<Throwable> onErrorCallback,
+                                 @Nonnull String account) {
+    subscribePositions(streamProcessor, onErrorCallback, List.of(account));
+  }
+
+  /**
+   * Подписка на стрим позиций
+   *
+   * @param streamProcessor обработчик пришедших сообщений в стриме
+   * @param accounts        Идентификаторы счетов
+   */
+  public void subscribePositions(@Nonnull StreamProcessor<PositionsStreamResponse> streamProcessor,
+                                 @Nonnull Iterable<String> accounts) {
+    subscribePositions(streamProcessor, null, accounts);
+  }
+
+  /**
+   * Подписка на стрим позиций
+   *
+   * @param streamProcessor обработчик пришедших сообщений в стриме
+   * @param onErrorCallback обработчик ошибок в стриме
+   * @param accounts        Идентификаторы счетов
+   */
+  public void subscribePositions(@Nonnull StreamProcessor<PositionsStreamResponse> streamProcessor,
+                                 @Nullable Consumer<Throwable> onErrorCallback,
+                                 @Nonnull Iterable<String> accounts) {
+    var request = PositionsStreamRequest
+      .newBuilder()
+      .addAllAccounts(accounts)
+      .build();
+    stub.positionsStream(request, new StreamObserverWithProcessor<>(streamProcessor, onErrorCallback));
   }
 
   /**

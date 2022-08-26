@@ -165,14 +165,14 @@ message ReplaceOrderRequest {
   PriceType price_type = 13; //Тип цены.
 }
 
-//Направление операции
+//Направление операции.
 enum OrderDirection {
   ORDER_DIRECTION_UNSPECIFIED = 0; //Значение не указано
   ORDER_DIRECTION_BUY = 1; //Покупка
   ORDER_DIRECTION_SELL = 2; //Продажа
 }
 
-//Тип заявки
+//Тип заявки.
 enum OrderType {
   ORDER_TYPE_UNSPECIFIED = 0; //Значение не указано
   ORDER_TYPE_LIMIT = 1; //Лимитная

@@ -3,6 +3,8 @@ package ru.tinkoff.piapi.core;
 import ru.tinkoff.piapi.contract.v1.CandleInterval;
 import ru.tinkoff.piapi.contract.v1.GetCandlesRequest;
 import ru.tinkoff.piapi.contract.v1.GetCandlesResponse;
+import ru.tinkoff.piapi.contract.v1.GetClosePricesRequest;
+import ru.tinkoff.piapi.contract.v1.GetClosePricesResponse;
 import ru.tinkoff.piapi.contract.v1.GetLastPricesRequest;
 import ru.tinkoff.piapi.contract.v1.GetLastPricesResponse;
 import ru.tinkoff.piapi.contract.v1.GetLastTradesRequest;
@@ -12,6 +14,8 @@ import ru.tinkoff.piapi.contract.v1.GetOrderBookResponse;
 import ru.tinkoff.piapi.contract.v1.GetTradingStatusRequest;
 import ru.tinkoff.piapi.contract.v1.GetTradingStatusResponse;
 import ru.tinkoff.piapi.contract.v1.HistoricCandle;
+import ru.tinkoff.piapi.contract.v1.InstrumentClosePriceRequest;
+import ru.tinkoff.piapi.contract.v1.InstrumentClosePriceResponse;
 import ru.tinkoff.piapi.contract.v1.LastPrice;
 import ru.tinkoff.piapi.contract.v1.Trade;
 import ru.tinkoff.piapi.core.utils.DateUtils;
@@ -20,6 +24,7 @@ import ru.tinkoff.piapi.core.utils.Helpers;
 import javax.annotation.Nonnull;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -173,6 +178,82 @@ public class MarketDataService {
     var to = Instant.now();
     var from = to.minus(60, ChronoUnit.MINUTES);
     return getLastTrades(figi, from, to);
+  }
+
+  /**
+   * Получение (асинхронное) списка цен закрытия торговой сессии по инструменту.
+   *
+   * @param instrumentId FIGI-идентификатор / uid инструмента.
+   * @return Цена закрытия торговой сессии по инструменту.
+   */
+  @Nonnull
+  public CompletableFuture<List<InstrumentClosePriceResponse>> getClosePrices(@Nonnull String instrumentId) {
+    var instruments = InstrumentClosePriceRequest.newBuilder().setInstrumentId(instrumentId).build();
+
+    return Helpers.<GetClosePricesResponse>unaryAsyncCall(
+        observer -> marketDataStub.getClosePrices(
+          GetClosePricesRequest.newBuilder()
+            .addAllInstruments(List.of(instruments))
+            .build(),
+          observer))
+      .thenApply(GetClosePricesResponse::getClosePricesList);
+  }
+
+  /**
+   * Получение (асинхронное) списка цен закрытия торговой сессии по инструментам.
+   *
+   * @param instrumentIds FIGI-идентификатор / uid инструментов.
+   * @return Цена закрытия торговой сессии по инструментам.
+   */
+  @Nonnull
+  public CompletableFuture<List<InstrumentClosePriceResponse>> getClosePrices(@Nonnull Iterable<String> instrumentIds) {
+    var instruments = new ArrayList<InstrumentClosePriceRequest>();
+    for (String instrumentId : instrumentIds) {
+      instruments.add(InstrumentClosePriceRequest.newBuilder().setInstrumentId(instrumentId).build());
+    }
+
+    return Helpers.<GetClosePricesResponse>unaryAsyncCall(
+        observer -> marketDataStub.getClosePrices(
+          GetClosePricesRequest.newBuilder()
+            .addAllInstruments(instruments)
+            .build(),
+          observer))
+      .thenApply(GetClosePricesResponse::getClosePricesList);
+  }
+
+  /**
+   * Получение (асинхронное) списка цен закрытия торговой сессии по инструменту.
+   *
+   * @param instrumentId FIGI-идентификатор / uid инструмента.
+   * @return Цена закрытия торговой сессии по инструменту.
+   */
+  @Nonnull
+  public List<InstrumentClosePriceResponse> getClosePricesSync(@Nonnull String instrumentId) {
+    var instruments = InstrumentClosePriceRequest.newBuilder().setInstrumentId(instrumentId).build();
+
+    return unaryCall(() -> marketDataBlockingStub.getClosePrices(
+      GetClosePricesRequest.newBuilder()
+        .addAllInstruments(List.of(instruments))
+        .build()).getClosePricesList());
+  }
+
+  /**
+   * Получение (асинхронное) списка цен закрытия торговой сессии по инструментам.
+   *
+   * @param instrumentIds FIGI-идентификатор / uid инструментов.
+   * @return Цена закрытия торговой сессии по инструментам.
+   */
+  @Nonnull
+  public List<InstrumentClosePriceResponse> getClosePricesSync(@Nonnull Iterable<String> instrumentIds) {
+    var instruments = new ArrayList<InstrumentClosePriceRequest>();
+    for (String instrumentId : instrumentIds) {
+      instruments.add(InstrumentClosePriceRequest.newBuilder().setInstrumentId(instrumentId).build());
+    }
+
+    return unaryCall(() -> marketDataBlockingStub.getClosePrices(
+      GetClosePricesRequest.newBuilder()
+        .addAllInstruments(instruments)
+        .build()).getClosePricesList());
   }
 
   @Nonnull
