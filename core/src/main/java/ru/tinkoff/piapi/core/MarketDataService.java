@@ -1,23 +1,6 @@
 package ru.tinkoff.piapi.core;
 
-import ru.tinkoff.piapi.contract.v1.CandleInterval;
-import ru.tinkoff.piapi.contract.v1.GetCandlesRequest;
-import ru.tinkoff.piapi.contract.v1.GetCandlesResponse;
-import ru.tinkoff.piapi.contract.v1.GetClosePricesRequest;
-import ru.tinkoff.piapi.contract.v1.GetClosePricesResponse;
-import ru.tinkoff.piapi.contract.v1.GetLastPricesRequest;
-import ru.tinkoff.piapi.contract.v1.GetLastPricesResponse;
-import ru.tinkoff.piapi.contract.v1.GetLastTradesRequest;
-import ru.tinkoff.piapi.contract.v1.GetLastTradesResponse;
-import ru.tinkoff.piapi.contract.v1.GetOrderBookRequest;
-import ru.tinkoff.piapi.contract.v1.GetOrderBookResponse;
-import ru.tinkoff.piapi.contract.v1.GetTradingStatusRequest;
-import ru.tinkoff.piapi.contract.v1.GetTradingStatusResponse;
-import ru.tinkoff.piapi.contract.v1.HistoricCandle;
-import ru.tinkoff.piapi.contract.v1.InstrumentClosePriceRequest;
-import ru.tinkoff.piapi.contract.v1.InstrumentClosePriceResponse;
-import ru.tinkoff.piapi.contract.v1.LastPrice;
-import ru.tinkoff.piapi.contract.v1.Trade;
+import ru.tinkoff.piapi.contract.v1.*;
 import ru.tinkoff.piapi.core.utils.DateUtils;
 import ru.tinkoff.piapi.core.utils.Helpers;
 
@@ -43,24 +26,23 @@ public class MarketDataService {
     this.marketDataStub = marketDataStub;
   }
 
-
   /**
    * Получение (синхронное) списка обезличенных сделок по инструменту.
    *
-   * @param figi      FIGI-идентификатор инструмента.
-   * @param from      Начало периода (по UTC).
-   * @param to        Окончание периода (по UTC).
+   * @param instrumentId FIGI-идентификатор / uid инструмента.
+   * @param from         Начало периода (по UTC).
+   * @param to           Окончание периода (по UTC).
    * @return Список обезличенных сделок по инструменту.
    */
   @Nonnull
-  public List<Trade> getLastTradesSync(@Nonnull String figi,
+  public List<Trade> getLastTradesSync(@Nonnull String instrumentId,
                                        @Nonnull Instant from,
                                        @Nonnull Instant to) {
     checkFromTo(from, to);
 
     return unaryCall(() -> marketDataBlockingStub.getLastTrades(
         GetLastTradesRequest.newBuilder()
-          .setFigi(figi)
+          .setInstrumentId(instrumentId)
           .setFrom(DateUtils.instantToTimestamp(from))
           .setTo(DateUtils.instantToTimestamp(to))
           .build())
@@ -70,18 +52,27 @@ public class MarketDataService {
   /**
    * Получение (синхронное) списка обезличенных сделок по инструменту за последний час.
    *
-   * @param figi      FIGI-идентификатор инструмента.
+   * @param instrumentId FIGI-идентификатор / uid инструмента.
    * @return Список обезличенных сделок по инструменту.
    */
   @Nonnull
-  public List<Trade> getLastTradesSync(@Nonnull String figi) {
+  public List<Trade> getLastTradesSync(@Nonnull String instrumentId) {
     var to = Instant.now();
     var from = to.minus(60, ChronoUnit.MINUTES);
-    return getLastTradesSync(figi, from, to);
+    return getLastTradesSync(instrumentId, from, to);
   }
 
+  /**
+   * Получение (синхронное) списка свечей по инструменту.
+   *
+   * @param instrumentId идентификатор инструмента. Может принимать значение FIGI или uid
+   * @param from         Начало периода (по UTC).
+   * @param to           Окончание периода (по UTC).
+   * @param interval     Интервал свечей
+   * @return Список свечей
+   */
   @Nonnull
-  public List<HistoricCandle> getCandlesSync(@Nonnull String figi,
+  public List<HistoricCandle> getCandlesSync(@Nonnull String instrumentId,
                                              @Nonnull Instant from,
                                              @Nonnull Instant to,
                                              @Nonnull CandleInterval interval) {
@@ -89,7 +80,7 @@ public class MarketDataService {
 
     return unaryCall(() -> marketDataBlockingStub.getCandles(
         GetCandlesRequest.newBuilder()
-          .setFigi(figi)
+          .setInstrumentId(instrumentId)
           .setFrom(DateUtils.instantToTimestamp(from))
           .setTo(DateUtils.instantToTimestamp(to))
           .setInterval(interval)
@@ -97,34 +88,62 @@ public class MarketDataService {
       .getCandlesList());
   }
 
+  /**
+   * Получение (синхронное) списка последних цен по инструментам
+   *
+   * @param instrumentIds FIGI-идентификатор / uid инструмента.
+   * @return Список последний цен
+   */
   @Nonnull
-  public List<LastPrice> getLastPricesSync(@Nonnull Iterable<String> figies) {
+  public List<LastPrice> getLastPricesSync(@Nonnull Iterable<String> instrumentIds) {
     return unaryCall(() -> marketDataBlockingStub.getLastPrices(
         GetLastPricesRequest.newBuilder()
-          .addAllFigi(figies)
+          .addAllInstrumentId(instrumentIds)
           .build())
       .getLastPricesList());
   }
 
+  /**
+   * Получение (синхронное) информации о стакане
+   *
+   * @param instrumentId FIGI-идентификатор / uid инструмента.
+   * @param depth        глубина стакана. Может принимать значения 1, 10, 20, 30, 40, 50
+   * @return стакан для инструмента
+   */
   @Nonnull
-  public GetOrderBookResponse getOrderBookSync(@Nonnull String figi, int depth) {
+  public GetOrderBookResponse getOrderBookSync(@Nonnull String instrumentId, int depth) {
     return unaryCall(() -> marketDataBlockingStub.getOrderBook(
       GetOrderBookRequest.newBuilder()
-        .setFigi(figi)
+        .setInstrumentId(instrumentId)
         .setDepth(depth)
         .build()));
   }
 
+  /**
+   * Получение (синхронное) текущего торгового статуса инструмента
+   *
+   * @param instrumentId FIGI-идентификатор / uid инструмента.
+   * @return текущий торговый статус инструмента
+   */
   @Nonnull
-  public GetTradingStatusResponse getTradingStatusSync(@Nonnull String figi) {
+  public GetTradingStatusResponse getTradingStatusSync(@Nonnull String instrumentId) {
     return unaryCall(() -> marketDataBlockingStub.getTradingStatus(
       GetTradingStatusRequest.newBuilder()
-        .setFigi(figi)
+        .setInstrumentId(instrumentId)
         .build()));
   }
 
+  /**
+   * Получение (асинхронное) списка свечей по инструменту.
+   *
+   * @param instrumentId идентификатор инструмента. Может принимать значение FIGI или uid
+   * @param from         Начало периода (по UTC).
+   * @param to           Окончание периода (по UTC).
+   * @param interval     Интервал свечей
+   * @return Список свечей
+   */
   @Nonnull
-  public CompletableFuture<List<HistoricCandle>> getCandles(@Nonnull String figi,
+  public CompletableFuture<List<HistoricCandle>> getCandles(@Nonnull String instrumentId,
                                                             @Nonnull Instant from,
                                                             @Nonnull Instant to,
                                                             @Nonnull CandleInterval interval) {
@@ -133,7 +152,7 @@ public class MarketDataService {
     return Helpers.<GetCandlesResponse>unaryAsyncCall(
         observer -> marketDataStub.getCandles(
           GetCandlesRequest.newBuilder()
-            .setFigi(figi)
+            .setInstrumentId(instrumentId)
             .setFrom(DateUtils.instantToTimestamp(from))
             .setTo(DateUtils.instantToTimestamp(to))
             .setInterval(interval)
@@ -145,13 +164,13 @@ public class MarketDataService {
   /**
    * Получение (асинхронное) списка обезличенных сделок по инструменту.
    *
-   * @param figi      FIGI-идентификатор инструмента.
-   * @param from      Начало периода (по UTC).
-   * @param to        Окончание периода (по UTC).
+   * @param instrumentId FIGI-идентификатор / uid инструмента.
+   * @param from         Начало периода (по UTC).
+   * @param to           Окончание периода (по UTC).
    * @return Список обезличенных сделок по инструменту.
    */
   @Nonnull
-  public CompletableFuture<List<Trade>> getLastTrades(@Nonnull String figi,
+  public CompletableFuture<List<Trade>> getLastTrades(@Nonnull String instrumentId,
                                                       @Nonnull Instant from,
                                                       @Nonnull Instant to) {
     checkFromTo(from, to);
@@ -159,7 +178,7 @@ public class MarketDataService {
     return Helpers.<GetLastTradesResponse>unaryAsyncCall(
         observer -> marketDataStub.getLastTrades(
           GetLastTradesRequest.newBuilder()
-            .setFigi(figi)
+            .setInstrumentId(instrumentId)
             .setFrom(DateUtils.instantToTimestamp(from))
             .setTo(DateUtils.instantToTimestamp(to))
             .build(),
@@ -170,14 +189,14 @@ public class MarketDataService {
   /**
    * Получение (асинхронное) списка обезличенных сделок по инструменту за последний час.
    *
-   * @param figi      FIGI-идентификатор инструмента.
+   * @param instrumentId FIGI-идентификатор / uid инструмента..
    * @return Список обезличенных сделок по инструменту.
    */
   @Nonnull
-  public CompletableFuture<List<Trade>> getLastTrades(@Nonnull String figi) {
+  public CompletableFuture<List<Trade>> getLastTrades(@Nonnull String instrumentId) {
     var to = Instant.now();
     var from = to.minus(60, ChronoUnit.MINUTES);
-    return getLastTrades(figi, from, to);
+    return getLastTrades(instrumentId, from, to);
   }
 
   /**
@@ -256,34 +275,53 @@ public class MarketDataService {
         .build()).getClosePricesList());
   }
 
+  /**
+   * Получение (асинхронное) списка последних цен по инструментам
+   *
+   * @param instrumentIds FIGI-идентификатор / uid инструмента.
+   * @return Список последний цен
+   */
   @Nonnull
-  public CompletableFuture<List<LastPrice>> getLastPrices(@Nonnull Iterable<String> figies) {
+  public CompletableFuture<List<LastPrice>> getLastPrices(@Nonnull Iterable<String> instrumentIds) {
     return Helpers.<GetLastPricesResponse>unaryAsyncCall(
         observer -> marketDataStub.getLastPrices(
           GetLastPricesRequest.newBuilder()
-            .addAllFigi(figies)
+            .addAllInstrumentId(instrumentIds)
             .build(),
           observer))
       .thenApply(GetLastPricesResponse::getLastPricesList);
   }
 
+  /**
+   * Получение (асинхронное) информации о стакане
+   *
+   * @param instrumentId FIGI-идентификатор / uid инструмента.
+   * @param depth        глубина стакана
+   * @return
+   */
   @Nonnull
-  public CompletableFuture<GetOrderBookResponse> getOrderBook(@Nonnull String figi, int depth) {
+  public CompletableFuture<GetOrderBookResponse> getOrderBook(@Nonnull String instrumentId, int depth) {
     return Helpers.unaryAsyncCall(
       observer -> marketDataStub.getOrderBook(
         GetOrderBookRequest.newBuilder()
-          .setFigi(figi)
+          .setInstrumentId(instrumentId)
           .setDepth(depth)
           .build(),
         observer));
   }
 
+  /**
+   * Получение (асинхронное) информации о торговом статусе инструмента
+   *
+   * @param instrumentId FIGI-идентификатор / uid инструмента.
+   * @return Информация о торговом статусе
+   */
   @Nonnull
-  public CompletableFuture<GetTradingStatusResponse> getTradingStatus(@Nonnull String figi) {
+  public CompletableFuture<GetTradingStatusResponse> getTradingStatus(@Nonnull String instrumentId) {
     return Helpers.unaryAsyncCall(
       observer -> marketDataStub.getTradingStatus(
         GetTradingStatusRequest.newBuilder()
-          .setFigi(figi)
+          .setInstrumentId(instrumentId)
           .build(),
         observer));
   }

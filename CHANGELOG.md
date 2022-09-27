@@ -2,6 +2,9 @@
 
 Invest API Java SDK v1.0 требует требует JDK 11 и выше.
 
+## v1.0.14
+Новый способ получения marketdata через instrument_uid
+
 ## v1.0.12
 
 Новый стрим позиций

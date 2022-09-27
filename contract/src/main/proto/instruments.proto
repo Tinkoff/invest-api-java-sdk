@@ -340,6 +340,8 @@ message Bond {
   int32 coupon_quantity_per_year = 17; //Количество выплат по купонам в год.
   google.protobuf.Timestamp maturity_date = 18; //Дата погашения облигации в часовом поясе UTC.
   MoneyValue nominal = 19; //Номинал облигации.
+  MoneyValue initial_nominal = 20; //Первоначальный номинал облигации.
+
   google.protobuf.Timestamp state_reg_date = 21; //Дата выпуска облигации в часовом поясе UTC.
   google.protobuf.Timestamp placement_date = 22; //Дата размещения в часовом поясе UTC.
   MoneyValue placement_price = 23; //Цена размещения.

@@ -414,6 +414,11 @@
     "type": "INVALID_ARGUMENT",
     "description": "Торги недоступны по нерабочим дням."
   },
+  "30093": {
+    "message": "missing parameter: 'figi' or 'instrument_id'",
+    "type": "INVALID_ARGUMENT",
+    "description": "Один из параметров *figi* или *instrument_id* является обязательным."
+  },
   "40002": {
     "message": "insufficient privileges",
     "type": "PERMISSION_DENIED",
