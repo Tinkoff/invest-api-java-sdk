@@ -59,14 +59,14 @@ public class MarketDataServiceTest extends GrpcClientTester<MarketDataService> {
     var service = mkClientBasedOnServer(grpcService);
 
     var inArg = GetCandlesRequest.newBuilder()
-      .setFigi("figi")
+      .setInstrumentId("figi")
       .setFrom(Timestamp.newBuilder().setSeconds(1234567890).build())
       .setTo(Timestamp.newBuilder().setSeconds(1234567890).setNanos(111222333).build())
       .setInterval(CandleInterval.CANDLE_INTERVAL_1_MIN)
       .build();
-    var actualSync = service.getCandlesSync(inArg.getFigi(), DateUtils.timestampToInstant(inArg.getFrom()),
+    var actualSync = service.getCandlesSync(inArg.getInstrumentId(), DateUtils.timestampToInstant(inArg.getFrom()),
       DateUtils.timestampToInstant(inArg.getTo()), inArg.getInterval());
-    var actualAsync = service.getCandles(inArg.getFigi(), DateUtils.timestampToInstant(inArg.getFrom()),
+    var actualAsync = service.getCandles(inArg.getInstrumentId(), DateUtils.timestampToInstant(inArg.getFrom()),
       DateUtils.timestampToInstant(inArg.getTo()), inArg.getInterval()).join();
 
     assertIterableEquals(expected.getCandlesList(), actualSync);
@@ -77,9 +77,10 @@ public class MarketDataServiceTest extends GrpcClientTester<MarketDataService> {
 
   @Test
   void getLastTrades_Test() {
-    var figi = "ny_figi";
+    var figi = "my_figi";
+    var uid = "my_uid";
     var expected = GetLastTradesResponse.newBuilder()
-      .addTrades(Trade.newBuilder().setFigi(figi).setDirection(TradeDirection.TRADE_DIRECTION_BUY).setQuantity(1).build())
+      .addTrades(Trade.newBuilder().setFigi(figi).setInstrumentUid(uid).setDirection(TradeDirection.TRADE_DIRECTION_BUY).setQuantity(1).build())
       .build();
     var grpcService = mock(MarketDataServiceGrpc.MarketDataServiceImplBase.class, delegatesTo(
       new MarketDataServiceGrpc.MarketDataServiceImplBase() {
@@ -93,13 +94,13 @@ public class MarketDataServiceTest extends GrpcClientTester<MarketDataService> {
     var service = mkClientBasedOnServer(grpcService);
 
     var inArg = GetLastTradesRequest.newBuilder()
-      .setFigi(figi)
+      .setInstrumentId(figi)
       .setFrom(Timestamp.newBuilder().setSeconds(1234567890).build())
       .setTo(Timestamp.newBuilder().setSeconds(1234567890).setNanos(111222333).build())
       .build();
-    var actualSync = service.getLastTradesSync(inArg.getFigi(), DateUtils.timestampToInstant(inArg.getFrom()),
+    var actualSync = service.getLastTradesSync(inArg.getInstrumentId(), DateUtils.timestampToInstant(inArg.getFrom()),
       DateUtils.timestampToInstant(inArg.getTo()));
-    var actualAsync = service.getLastTrades(inArg.getFigi(), DateUtils.timestampToInstant(inArg.getFrom()),
+    var actualAsync = service.getLastTrades(inArg.getInstrumentId(), DateUtils.timestampToInstant(inArg.getFrom()),
       DateUtils.timestampToInstant(inArg.getTo())).join();
 
     assertIterableEquals(expected.getTradesList(), actualSync);
@@ -126,8 +127,8 @@ public class MarketDataServiceTest extends GrpcClientTester<MarketDataService> {
     var service = mkClientBasedOnServer(grpcService);
 
     var inArg = GetLastPricesRequest.newBuilder()
-      .addFigi("figi1")
-      .addFigi("figi2")
+      .addInstrumentId("figi1")
+      .addInstrumentId("figi2")
       .build();
     var actualSync = service.getLastPricesSync(List.of("figi1", "figi2"));
     var actualAsync = service.getLastPrices(List.of("figi1", "figi2")).join();
@@ -156,11 +157,11 @@ public class MarketDataServiceTest extends GrpcClientTester<MarketDataService> {
     var service = mkClientBasedOnServer(grpcService);
 
     var inArg = GetOrderBookRequest.newBuilder()
-      .setFigi(expected.getFigi())
+      .setInstrumentId(expected.getFigi())
       .setDepth(expected.getDepth())
       .build();
-    var actualSync = service.getOrderBookSync(inArg.getFigi(), inArg.getDepth());
-    var actualAsync = service.getOrderBook(inArg.getFigi(), inArg.getDepth()).join();
+    var actualSync = service.getOrderBookSync(inArg.getInstrumentId(), inArg.getDepth());
+    var actualAsync = service.getOrderBook(inArg.getInstrumentId(), inArg.getDepth()).join();
 
     assertEquals(expected, actualSync);
     assertEquals(expected, actualAsync);
@@ -185,10 +186,10 @@ public class MarketDataServiceTest extends GrpcClientTester<MarketDataService> {
     var service = mkClientBasedOnServer(grpcService);
 
     var inArg = GetTradingStatusRequest.newBuilder()
-      .setFigi(expected.getFigi())
+      .setInstrumentId(expected.getFigi())
       .build();
-    var actualSync = service.getTradingStatusSync(inArg.getFigi());
-    var actualAsync = service.getTradingStatus(inArg.getFigi()).join();
+    var actualSync = service.getTradingStatusSync(inArg.getInstrumentId());
+    var actualAsync = service.getTradingStatus(inArg.getInstrumentId()).join();
 
     assertEquals(expected, actualSync);
     assertEquals(expected, actualAsync);
