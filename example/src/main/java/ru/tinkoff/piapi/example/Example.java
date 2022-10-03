@@ -202,6 +202,10 @@ public class Example {
   }
 
   private static void sandboxServiceExample(InvestApi sandboxApi, String figi) {
+    //Открываем новый счет в песочнице
+    var accountId = sandboxApi.getSandboxService().openAccountSync();
+    log.info("открыт новый аккаунт в песочнице {}", accountId);
+
     //В sandbox режиме можно делать запросы в те же методы, что и в обычном API
     //Поэтому не придется писать отдельный код для песочницы, чтоб проверить свою стратегию
     var accounts = sandboxApi.getUserService().getAccountsSync();
