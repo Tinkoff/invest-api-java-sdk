@@ -1,12 +1,19 @@
 package ru.tinkoff.piapi.core.models;
 
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import ru.tinkoff.piapi.contract.v1.PortfolioPosition;
 import ru.tinkoff.piapi.core.utils.MapperUtils;
 
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
-import java.util.Objects;
+import java.util.List;
+import java.util.stream.Collectors;
 
+@Getter
+@EqualsAndHashCode
+@Builder
 public class Position {
   private final String figi;
   private final String instrumentType;
@@ -57,77 +64,7 @@ public class Position {
     );
   }
 
-  @Nonnull
-  public String getFigi() {
-    return figi;
-  }
-
-  @Nonnull
-  public String getInstrumentType() {
-    return instrumentType;
-  }
-
-  @Nonnull
-  public BigDecimal getQuantity() {
-    return quantity;
-  }
-
-  @Nonnull
-  public Money getAveragePositionPrice() {
-    return averagePositionPrice;
-  }
-
-  @Nonnull
-  public BigDecimal getExpectedYield() {
-    return expectedYield;
-  }
-
-  @Nonnull
-  public Money getCurrentNkd() {
-    return currentNkd;
-  }
-
-  @Nonnull
-  public BigDecimal getAveragePositionPricePt() {
-    return averagePositionPricePt;
-  }
-
-  @Nonnull
-  public Money getCurrentPrice() {
-    return currentPrice;
-  }
-
-  @Nonnull
-  public Money getAveragePositionPriceFifo() {
-    return averagePositionPriceFifo;
-  }
-
-  @Nonnull
-  public BigDecimal getQuantityLots() {
-    return quantityLots;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    Position position = (Position) o;
-    return figi.equals(position.figi) && instrumentType.equals(position.instrumentType) &&
-      quantity.equals(position.quantity) && averagePositionPrice.equals(position.averagePositionPrice) &&
-      expectedYield.equals(position.expectedYield) && currentNkd.equals(position.currentNkd) &&
-      averagePositionPricePt.equals(position.averagePositionPricePt) &&
-      currentPrice.equals(position.currentPrice) &&
-      averagePositionPriceFifo.equals(position.averagePositionPriceFifo) &&
-      quantityLots.equals(position.quantityLots);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(figi, instrumentType, quantity, averagePositionPrice, expectedYield, currentNkd,
-      averagePositionPricePt, currentPrice, averagePositionPriceFifo, quantityLots);
+  public static List<Position> fromResponse(@Nonnull List<PortfolioPosition> portfolioPositions) {
+    return portfolioPositions.stream().map(Position::fromResponse).collect(Collectors.toList());
   }
 }
