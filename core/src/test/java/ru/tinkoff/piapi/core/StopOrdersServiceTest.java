@@ -68,7 +68,7 @@ public class StopOrdersServiceTest extends GrpcClientTester<StopOrdersService> {
     var service = mkClientBasedOnServer(grpcService);
 
     var inArg = PostStopOrderRequest.newBuilder()
-      .setFigi("figi")
+      .setInstrumentId("figi")
       .setQuantity(1)
       .setPrice(Quotation.newBuilder().setUnits(100).setNano(0).build())
       .setStopPrice(Quotation.newBuilder().setUnits(110).setNano(0).build())
@@ -78,7 +78,7 @@ public class StopOrdersServiceTest extends GrpcClientTester<StopOrdersService> {
       .setStopOrderType(StopOrderType.STOP_ORDER_TYPE_TAKE_PROFIT)
       .build();
     var actualSync = service.postStopOrderGoodTillCancelSync(
-      inArg.getFigi(),
+      inArg.getInstrumentId(),
       inArg.getQuantity(),
       inArg.getPrice(),
       inArg.getStopPrice(),
@@ -87,7 +87,7 @@ public class StopOrdersServiceTest extends GrpcClientTester<StopOrdersService> {
       inArg.getStopOrderType()
     );
     var actualAsync = service.postStopOrderGoodTillCancel(
-      inArg.getFigi(),
+      inArg.getInstrumentId(),
       inArg.getQuantity(),
       inArg.getPrice(),
       inArg.getStopPrice(),
@@ -119,7 +119,7 @@ public class StopOrdersServiceTest extends GrpcClientTester<StopOrdersService> {
     var service = mkClientBasedOnServer(grpcService);
 
     var inArg = PostStopOrderRequest.newBuilder()
-      .setFigi("figi")
+      .setInstrumentId("figi")
       .setQuantity(1)
       .setPrice(Quotation.newBuilder().setUnits(100).setNano(0).build())
       .setStopPrice(Quotation.newBuilder().setUnits(110).setNano(0).build())
@@ -130,7 +130,7 @@ public class StopOrdersServiceTest extends GrpcClientTester<StopOrdersService> {
       .setExpireDate(Timestamp.newBuilder().setSeconds(1234567890).setNanos(0).build())
       .build();
     var actualSync = service.postStopOrderGoodTillDateSync(
-      inArg.getFigi(),
+      inArg.getInstrumentId(),
       inArg.getQuantity(),
       inArg.getPrice(),
       inArg.getStopPrice(),
@@ -140,7 +140,7 @@ public class StopOrdersServiceTest extends GrpcClientTester<StopOrdersService> {
       DateUtils.timestampToInstant(inArg.getExpireDate())
     );
     var actualAsync = service.postStopOrderGoodTillDate(
-      inArg.getFigi(),
+      inArg.getInstrumentId(),
       inArg.getQuantity(),
       inArg.getPrice(),
       inArg.getStopPrice(),

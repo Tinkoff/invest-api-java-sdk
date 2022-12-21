@@ -10,6 +10,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import static ru.tinkoff.piapi.core.utils.Helpers.unaryCall;
@@ -29,25 +30,37 @@ public class OrdersService {
   }
 
 
+  /**
+   *
+   * @param instrumentId figi / instrument_uid инструмента
+   * @param quantity количество лотов
+   * @param price цена (для лимитной заявки)
+   * @param direction покупка/продажа
+   * @param accountId id аккаунта
+   * @param type рыночная / лимитная заявка
+   * @param orderId уникальный идентификатор заявки
+   * @return
+   */
   @Nonnull
-  public PostOrderResponse postOrderSync(@Nonnull String figi,
+  public PostOrderResponse postOrderSync(@Nonnull String instrumentId,
                                          long quantity,
                                          @Nonnull Quotation price,
                                          @Nonnull OrderDirection direction,
                                          @Nonnull String accountId,
                                          @Nonnull OrderType type,
-                                         @Nonnull String orderId) {
+                                         @Nullable String orderId) {
     checkReadonly(readonlyMode);
+    var finalOrderId = orderId == null ? UUID.randomUUID().toString() : orderId;
 
     return unaryCall(() -> ordersBlockingStub.postOrder(
       PostOrderRequest.newBuilder()
-        .setFigi(figi)
+        .setInstrumentId(instrumentId)
         .setQuantity(quantity)
         .setPrice(price)
         .setDirection(direction)
         .setAccountId(accountId)
         .setOrderType(type)
-        .setOrderId(Helpers.preprocessInputOrderId(orderId))
+        .setOrderId(Helpers.preprocessInputOrderId(finalOrderId))
         .build()));
   }
 
@@ -85,26 +98,38 @@ public class OrdersService {
       .getOrdersList());
   }
 
+  /**
+   *
+   * @param instrumentId figi / instrument_uid инструмента
+   * @param quantity количество лотов
+   * @param price цена (для лимитной заявки)
+   * @param direction покупка/продажа
+   * @param accountId id аккаунта
+   * @param type рыночная / лимитная заявка
+   * @param orderId уникальный идентификатор заявки
+   * @return
+   */
   @Nonnull
-  public CompletableFuture<PostOrderResponse> postOrder(@Nonnull String figi,
+  public CompletableFuture<PostOrderResponse> postOrder(@Nonnull String instrumentId,
                                                         long quantity,
                                                         @Nonnull Quotation price,
                                                         @Nonnull OrderDirection direction,
                                                         @Nonnull String accountId,
                                                         @Nonnull OrderType type,
-                                                        @Nonnull String orderId) {
+                                                        @Nullable String orderId) {
     checkReadonly(readonlyMode);
+    var finalOrderId = orderId == null ? UUID.randomUUID().toString() : orderId;
 
     return Helpers.unaryAsyncCall(
       observer -> ordersStub.postOrder(
         PostOrderRequest.newBuilder()
-          .setFigi(figi)
+          .setInstrumentId(instrumentId)
           .setQuantity(quantity)
           .setPrice(price)
           .setDirection(direction)
           .setAccountId(accountId)
           .setOrderType(type)
-          .setOrderId(Helpers.preprocessInputOrderId(orderId))
+          .setOrderId(Helpers.preprocessInputOrderId(finalOrderId))
           .build(),
         observer));
   }

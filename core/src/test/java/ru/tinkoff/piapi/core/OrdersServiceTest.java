@@ -68,15 +68,15 @@ public class OrdersServiceTest extends GrpcClientTester<OrdersService> {
 
     var inArg = PostOrderRequest.newBuilder()
       .setAccountId("accountId")
-      .setFigi(expected.getFigi())
+      .setInstrumentId(expected.getFigi())
       .setDirection(expected.getDirection())
       .setPrice(Quotation.newBuilder().build())
       .build();
     var actualSync = service.postOrderSync(
-      inArg.getFigi(), inArg.getQuantity(), inArg.getPrice(), inArg.getDirection(),
+      inArg.getInstrumentId(), inArg.getQuantity(), inArg.getPrice(), inArg.getDirection(),
       inArg.getAccountId(), inArg.getOrderType(), inArg.getOrderId());
     var actualAsync = service.postOrder(
-        inArg.getFigi(), inArg.getQuantity(), inArg.getPrice(), inArg.getDirection(),
+        inArg.getInstrumentId(), inArg.getQuantity(), inArg.getPrice(), inArg.getDirection(),
         inArg.getAccountId(), inArg.getOrderType(), inArg.getOrderId())
       .join();
 

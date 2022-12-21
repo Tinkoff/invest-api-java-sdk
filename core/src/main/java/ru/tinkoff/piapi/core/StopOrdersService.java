@@ -42,7 +42,7 @@ public class StopOrdersService {
   }
 
   @Nonnull
-  public String postStopOrderGoodTillCancelSync(@Nonnull String figi,
+  public String postStopOrderGoodTillCancelSync(@Nonnull String instrumentId,
                                                 long quantity,
                                                 @Nonnull Quotation price,
                                                 @Nonnull Quotation stopPrice,
@@ -54,7 +54,7 @@ public class StopOrdersService {
 
     return unaryCall(() -> stopOrdersBlockingStub.postStopOrder(
         PostStopOrderRequest.newBuilder()
-          .setFigi(figi)
+          .setInstrumentId(instrumentId)
           .setQuantity(quantity)
           .setPrice(price)
           .setStopPrice(stopPrice)
@@ -67,7 +67,7 @@ public class StopOrdersService {
   }
 
   @Nonnull
-  public String postStopOrderGoodTillDateSync(@Nonnull String figi,
+  public String postStopOrderGoodTillDateSync(@Nonnull String instrumentId,
                                               long quantity,
                                               @Nonnull Quotation price,
                                               @Nonnull Quotation stopPrice,
@@ -80,7 +80,7 @@ public class StopOrdersService {
 
     return unaryCall(() -> stopOrdersBlockingStub.postStopOrder(
         PostStopOrderRequest.newBuilder()
-          .setFigi(figi)
+          .setInstrumentId(instrumentId)
           .setQuantity(quantity)
           .setPrice(price)
           .setStopPrice(stopPrice)
@@ -121,7 +121,7 @@ public class StopOrdersService {
   }
 
   @Nonnull
-  public CompletableFuture<String> postStopOrderGoodTillCancel(@Nonnull String figi,
+  public CompletableFuture<String> postStopOrderGoodTillCancel(@Nonnull String instrumentId,
                                                                long quantity,
                                                                @Nonnull Quotation price,
                                                                @Nonnull Quotation stopPrice,
@@ -134,7 +134,7 @@ public class StopOrdersService {
     return Helpers.<PostStopOrderResponse>unaryAsyncCall(
         observer -> stopOrdersStub.postStopOrder(
           PostStopOrderRequest.newBuilder()
-            .setFigi(figi)
+            .setInstrumentId(instrumentId)
             .setQuantity(quantity)
             .setPrice(price)
             .setStopPrice(stopPrice)
@@ -148,7 +148,7 @@ public class StopOrdersService {
   }
 
   @Nonnull
-  public CompletableFuture<String> postStopOrderGoodTillDate(@Nonnull String figi,
+  public CompletableFuture<String> postStopOrderGoodTillDate(@Nonnull String instrumentId,
                                                              long quantity,
                                                              @Nonnull Quotation price,
                                                              @Nonnull Quotation stopPrice,
@@ -162,7 +162,7 @@ public class StopOrdersService {
     return Helpers.<PostStopOrderResponse>unaryAsyncCall(
         observer -> stopOrdersStub.postStopOrder(
           PostStopOrderRequest.newBuilder()
-            .setFigi(figi)
+            .setInstrumentId(instrumentId)
             .setQuantity(quantity)
             .setPrice(price)
             .setStopPrice(stopPrice)
