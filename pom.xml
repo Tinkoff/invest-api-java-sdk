@@ -18,6 +18,12 @@
             <organization>Tinkoff Bank</organization>
             <organizationUrl>https://www.tinkoff.ru/</organizationUrl>
         </developer>
+        <developer>
+            <name>Arty G</name>
+            <email>a.gaynanov@tinkoff.ru</email>
+            <organization>Tinkoff Bank</organization>
+            <organizationUrl>https://www.tinkoff.ru/</organizationUrl>
+        </developer>
     </developers>
 
     <licenses>
