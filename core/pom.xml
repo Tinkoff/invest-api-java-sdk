@@ -5,11 +5,11 @@
     <parent>
         <groupId>ru.tinkoff.piapi</groupId>
         <artifactId>java-sdk</artifactId>
-        <version>1.1-SNAPSHOT</version>
+        <version>1.1</version>
     </parent>
 
     <artifactId>java-sdk-core</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.1</version>
     <name>Tinkoff Invest API Java SDK - Core</name>
     <packaging>jar</packaging>
 
@@ -25,7 +25,7 @@
         <dependency>
             <groupId>ru.tinkoff.piapi</groupId>
             <artifactId>java-sdk-grpc-contract</artifactId>
-            <version>1.1-SNAPSHOT</version>
+            <version>1.1</version>
         </dependency>
 
         <dependency>
