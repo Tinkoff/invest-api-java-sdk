@@ -8,6 +8,7 @@ import javax.annotation.Nonnull;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -130,6 +131,20 @@ public class MarketDataService {
     return unaryCall(() -> marketDataBlockingStub.getTradingStatus(
       GetTradingStatusRequest.newBuilder()
         .setInstrumentId(instrumentId)
+        .build()));
+  }
+
+  /**
+   * Получение (синхронное) текущего торгового статуса инструментов
+   *
+   * @param instrumentIds FIGI-идентификатор / uid инструментов.
+   * @return текущий торговый статус инструмента
+   */
+  @Nonnull
+  public GetTradingStatusesResponse getTradingStatusesSync(@Nonnull Iterable<String> instrumentIds) {
+    return unaryCall(() -> marketDataBlockingStub.getTradingStatuses(
+      GetTradingStatusesRequest.newBuilder()
+        .addAllInstrumentId(instrumentIds)
         .build()));
   }
 
@@ -322,6 +337,22 @@ public class MarketDataService {
       observer -> marketDataStub.getTradingStatus(
         GetTradingStatusRequest.newBuilder()
           .setInstrumentId(instrumentId)
+          .build(),
+        observer));
+  }
+
+  /**
+   * Получение (асинхронное) информации о торговом статусе инструментов
+   *
+   * @param instrumentIds FIGI-идентификатор / uid инструментов.
+   * @return Информация о торговом статусе
+   */
+  @Nonnull
+  public CompletableFuture<GetTradingStatusesResponse> getTradingStatuses(@Nonnull Iterable<String> instrumentIds) {
+    return Helpers.unaryAsyncCall(
+      observer -> marketDataStub.getTradingStatuses(
+        GetTradingStatusesRequest.newBuilder()
+          .addAllInstrumentId(instrumentIds)
           .build(),
         observer));
   }

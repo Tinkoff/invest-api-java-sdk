@@ -329,6 +329,7 @@ public class Example {
     getOrderbookExample(api);
     getLastPricesExample(api);
     getTradingStatusExample(api);
+    getTradingStatusesExample(api);
     getLastTradesExample(api);
     getClosePricesExample(api);
   }
@@ -728,6 +729,14 @@ public class Example {
     log.info("последние трейды. количество: {}", lastTrades.size());
   }
 
+  private static void getTradingStatusesExample(InvestApi api) {
+
+    //Получаем и печатаем торговый статус инструмента
+    var figi = randomFigi(api, 2);
+    var tradingStatus = api.getMarketDataService().getTradingStatusesSync(figi);
+    log.info("торговый статус для инструмента 1 {} - {}", figi, tradingStatus.getTradingStatuses(0).getTradingStatus().name());
+    log.info("торговый статус для инструмента 2 {} - {}", figi, tradingStatus.getTradingStatuses(1).getTradingStatus().name());
+  }
 
   private static void getTradingStatusExample(InvestApi api) {
 
