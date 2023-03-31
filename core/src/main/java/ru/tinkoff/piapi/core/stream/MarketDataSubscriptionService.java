@@ -1,21 +1,32 @@
 package ru.tinkoff.piapi.core.stream;
 
+import io.grpc.Context;
+import io.grpc.stub.ClientCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 import ru.tinkoff.piapi.contract.v1.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public class MarketDataSubscriptionService {
   private final StreamObserver<MarketDataRequest> observer;
+  private final AtomicReference<Context.CancellableContext> contextRef = new AtomicReference<>();
 
   public MarketDataSubscriptionService(
     @Nonnull MarketDataStreamServiceGrpc.MarketDataStreamServiceStub stub,
     @Nonnull StreamProcessor<MarketDataResponse> streamProcessor,
     @Nullable Consumer<Throwable> onErrorCallback) {
-    this.observer = stub.marketDataStream(new StreamObserverWithProcessor<>(streamProcessor, onErrorCallback));
+    var context = Context.current().fork().withCancellation();
+    var ctx = context.attach();
+    try {
+      this.observer = stub.marketDataStream(new StreamObserverWithProcessor<>(streamProcessor, onErrorCallback));
+      contextRef.set(context);
+    } finally {
+      context.detach(ctx);
+    }
   }
 
   public void subscribeTrades(@Nonnull List<String> instrumentIds) {
@@ -78,6 +89,11 @@ public class MarketDataSubscriptionService {
 
   public void unsubscribeLastPrices(@Nonnull List<String> instrumentIds) {
     lastPricesStream(instrumentIds, SubscriptionAction.SUBSCRIPTION_ACTION_UNSUBSCRIBE);
+  }
+
+  public void cancel() {
+    var context = contextRef.get();
+    if (context != null) context.cancel(new RuntimeException("canceled by user"));
   }
 
 
