@@ -144,30 +144,25 @@ public class Example {
       } else if (response.hasTrade()) {
         log.info("Новые данные по сделкам: {}", response);
       } else if (response.hasSubscribeCandlesResponse()) {
-        var successCount = response.getSubscribeCandlesResponse().getCandlesSubscriptionsList().stream().filter(el -> el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
-        var errorCount = response.getSubscribeTradesResponse().getTradeSubscriptionsList().stream().filter(el -> !el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
-        log.info("удачных подписок на свечи: {}", successCount);
-        log.info("неудачных подписок на свечи: {}", errorCount);
+        var subscribeResult = response.getSubscribeCandlesResponse().getCandlesSubscriptionsList().stream()
+          .collect(Collectors.groupingBy(el -> el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS), Collectors.counting()));
+        logSubscribeStatus("свечи", subscribeResult.getOrDefault(true, 0L), subscribeResult.getOrDefault(false, 0L));
       } else if (response.hasSubscribeInfoResponse()) {
-        var successCount = response.getSubscribeInfoResponse().getInfoSubscriptionsList().stream().filter(el -> el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
-        var errorCount = response.getSubscribeTradesResponse().getTradeSubscriptionsList().stream().filter(el -> !el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
-        log.info("удачных подписок на статусы: {}", successCount);
-        log.info("неудачных подписок на статусы: {}", errorCount);
+        var subscribeResult = response.getSubscribeInfoResponse().getInfoSubscriptionsList().stream()
+          .collect(Collectors.groupingBy(el -> el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS), Collectors.counting()));
+        logSubscribeStatus("статусы", subscribeResult.getOrDefault(true, 0L), subscribeResult.getOrDefault(false, 0L));
       } else if (response.hasSubscribeOrderBookResponse()) {
-        var successCount = response.getSubscribeOrderBookResponse().getOrderBookSubscriptionsList().stream().filter(el -> el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
-        var errorCount = response.getSubscribeTradesResponse().getTradeSubscriptionsList().stream().filter(el -> !el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
-        log.info("удачных подписок на стакан: {}", successCount);
-        log.info("неудачных подписок на стакан: {}", errorCount);
+        var subscribeResult = response.getSubscribeOrderBookResponse().getOrderBookSubscriptionsList().stream()
+          .collect(Collectors.groupingBy(el -> el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS), Collectors.counting()));
+        logSubscribeStatus("стакан", subscribeResult.getOrDefault(true, 0L), subscribeResult.getOrDefault(false, 0L));
       } else if (response.hasSubscribeTradesResponse()) {
-        var successCount = response.getSubscribeTradesResponse().getTradeSubscriptionsList().stream().filter(el -> el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
-        var errorCount = response.getSubscribeTradesResponse().getTradeSubscriptionsList().stream().filter(el -> !el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
-        log.info("удачных подписок на сделки: {}", successCount);
-        log.info("неудачных подписок на сделки: {}", errorCount);
+        var subscribeResult = response.getSubscribeTradesResponse().getTradeSubscriptionsList().stream()
+          .collect(Collectors.groupingBy(el -> el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS), Collectors.counting()));
+        logSubscribeStatus("сделки", subscribeResult.getOrDefault(true, 0L), subscribeResult.getOrDefault(false, 0L));
       } else if (response.hasSubscribeLastPriceResponse()) {
-        var successCount = response.getSubscribeLastPriceResponse().getLastPriceSubscriptionsList().stream().filter(el -> el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
-        var errorCount = response.getSubscribeLastPriceResponse().getLastPriceSubscriptionsList().stream().filter(el -> !el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS)).count();
-        log.info("удачных подписок на последние цены: {}", successCount);
-        log.info("неудачных подписок на последние цены: {}", errorCount);
+        var subscribeResult = response.getSubscribeLastPriceResponse().getLastPriceSubscriptionsList().stream()
+          .collect(Collectors.groupingBy(el -> el.getSubscriptionStatus().equals(SubscriptionStatus.SUBSCRIPTION_STATUS_SUCCESS), Collectors.counting()));
+        logSubscribeStatus("последние цены", subscribeResult.getOrDefault(true, 0L), subscribeResult.getOrDefault(false, 0L));
       }
     };
     Consumer<Throwable> onErrorCallback = error -> log.error(error.toString());
@@ -860,4 +855,9 @@ public class Example {
         "торгов в лотах: {}, время свечи: {}",
       open, close, low, high, volume, time);
   }
+
+  private static void logSubscribeStatus(String eventType, Long successed, Long failed) {
+    log.info("удачных подписок на {}: {}. неудачных подписок на {}: {}.", eventType, successed, eventType, failed);
+  }
+
 }
