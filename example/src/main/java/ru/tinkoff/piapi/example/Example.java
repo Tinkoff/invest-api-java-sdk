@@ -14,6 +14,9 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -23,6 +26,7 @@ import static ru.tinkoff.piapi.core.utils.MapperUtils.quotationToBigDecimal;
 
 public class Example {
   static final Logger log = LoggerFactory.getLogger(Example.class);
+  static final Executor delayedExecutor = CompletableFuture.delayedExecutor(5, TimeUnit.SECONDS);
 
   public static void main(String[] args) {
     //Figi инструмента, который будет использоваться в методах исполнения заявок и стоп-заявок
@@ -50,6 +54,9 @@ public class Example {
     ordersStreamExample(api);
     portfolioStreamExample(api);
     positionsStreamExample(api);
+
+    CompletableFuture.runAsync(()->api.destroy(3), delayedExecutor)
+      .join();
   }
 
   private static void positionsStreamExample(InvestApi api) {
@@ -74,6 +81,8 @@ public class Example {
 
     //Если требуется подписаться на обновление сразу по нескольким accountId - можно передать список
     api.getOperationsStreamService().subscribePositions(consumer, List.of(accountId1, accountId2));
+
+    api.getOperationsStreamService().cancelPositionSubscription();
   }
 
   private static void portfolioStreamExample(InvestApi api) {
@@ -95,6 +104,12 @@ public class Example {
 
     //Если обработка ошибок не требуется, то можно использовать перегруженный метод
     api.getOperationsStreamService().subscribePortfolio(consumer, accountId2);
+
+    //Если требуется подписаться на обновление сразу по нескольким accountId - можно передать список
+    api.getOperationsStreamService().subscribePortfolio(consumer, List.of(accountId1, accountId2));
+
+    //Отменить стрим
+    api.getOperationsStreamService().cancelPortfolioSubscription();
 
     //Если требуется подписаться на обновление сразу по нескольким accountId - можно передать список
     api.getOperationsStreamService().subscribePortfolio(consumer, List.of(accountId1, accountId2));
@@ -180,13 +195,23 @@ public class Example {
     //глубина стакана = 10, интервал свечи = 1 минута
     api.getMarketDataStreamService().getStreamById("trades_stream").subscribeOrderbook(randomFigi);
     api.getMarketDataStreamService().getStreamById("candles_stream").subscribeCandles(randomFigi);
+    api.getMarketDataStreamService().getStreamById("candles_stream").cancel();
+    //отписываемся от стримов с задержкой
+    CompletableFuture.runAsync(()->{
 
-    //Отписка на список инструментов. Не блокирующий вызов
-    api.getMarketDataStreamService().getStreamById("trades_stream").unsubscribeTrades(randomFigi);
-    api.getMarketDataStreamService().getStreamById("candles_stream").unsubscribeCandles(randomFigi);
-    api.getMarketDataStreamService().getStreamById("info_stream").unsubscribeInfo(randomFigi);
-    api.getMarketDataStreamService().getStreamById("orderbook_stream").subscribeOrderbook(randomFigi);
-    api.getMarketDataStreamService().getStreamById("last_prices_stream").unsubscribeLastPrices(randomFigi);
+      //Отписка на список инструментов. Не блокирующий вызов
+      api.getMarketDataStreamService().getStreamById("trades_stream").unsubscribeTrades(randomFigi);
+      api.getMarketDataStreamService().getStreamById("candles_stream").unsubscribeCandles(randomFigi);
+      api.getMarketDataStreamService().getStreamById("info_stream").unsubscribeInfo(randomFigi);
+      api.getMarketDataStreamService().getStreamById("orderbook_stream").unsubscribeOrderbook(randomFigi);
+      api.getMarketDataStreamService().getStreamById("last_prices_stream").unsubscribeLastPrices(randomFigi);
+
+      //закрытие стрима
+      api.getMarketDataStreamService().getStreamById("candles_stream").cancel();
+
+    }, delayedExecutor)
+      .thenRun(()->log.info("market data unsubscribe done"));
+
 
     //Каждый marketdata стрим может отдавать информацию максимум по 300 инструментам
     //Если нужно подписаться на большее количество, есть 2 варианта:
@@ -194,6 +219,10 @@ public class Example {
     api.getMarketDataStreamService().newStream("new_stream", processor, onErrorCallback).subscribeCandles(randomFigi);
     // - отписаться от инструментов в существующем стриме, освободив место под новые
     api.getMarketDataStreamService().getStreamById("new_stream").unsubscribeCandles(randomFigi);
+
+    //При вызове newStream с id уже подписаного приведет к пересозданию стрима с версии 1.4
+    api.getMarketDataStreamService().newStream("candles_stream", processor, onErrorCallback)
+      .subscribeCandles(randomFigi);
   }
 
   private static void sandboxServiceExample(InvestApi sandboxApi, String figi) {
@@ -800,6 +829,8 @@ public class Example {
 
   private static void getCandlesExample(InvestApi api) {
 
+
+    var service = api.getMarketDataService();
     //Получаем и печатаем список свечей для инструмента
     var figi = randomFigi(api, 1).get(0);
     var candles1min = api.getMarketDataService()

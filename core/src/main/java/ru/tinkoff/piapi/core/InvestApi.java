@@ -6,6 +6,7 @@ import io.grpc.ClientCall;
 import io.grpc.ClientInterceptor;
 import io.grpc.ForwardingClientCall;
 import io.grpc.ForwardingClientCallListener;
+import io.grpc.ManagedChannel;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
@@ -378,6 +379,21 @@ public class InvestApi {
   @Nonnull
   public Channel getChannel() {
     return channel;
+  }
+
+
+  /**
+   * остановка подключение к api
+   * @param waitChannelTerminationSec - ожидание терминирования канала сек
+   */
+  public void destroy(int waitChannelTerminationSec) {
+    try {
+      ((ManagedChannel)getChannel())
+        .shutdownNow()
+        .awaitTermination(waitChannelTerminationSec, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public boolean isReadonlyMode() {
