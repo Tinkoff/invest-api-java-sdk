@@ -243,6 +243,7 @@ public class InvestApi {
       // что таймаут имеет разумную величину.
       .useTransportSecurity()
       .keepAliveTimeout(60, TimeUnit.SECONDS)
+      .maxInboundMessageSize(16777216) // 16 Mb
       .build();
   }
 
