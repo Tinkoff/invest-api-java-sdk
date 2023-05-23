@@ -23,7 +23,6 @@ public class Helpers {
   private static final Map<String, HashMap<String, String>> errorsMap = new HashMap<>();
   private static final String DEFAULT_ERROR_ID = "70001";
   private static final String DEFAULT_ERROR_DESCRIPTION = "unknown error";
-  private static final String TRACKING_ID_HEADER = "x-tracking-id";
 
   static {
     try {
@@ -49,23 +48,23 @@ public class Helpers {
 
   private static ApiRuntimeException apiRuntimeException(Throwable exception) {
     var status = Status.fromThrowable(exception);
-    var id = getErrorId(status);
-    var description = getErrorDescription(id);
-    var trackingId = getTrackingId(exception);
-    return new ApiRuntimeException(description, id, exception, trackingId);
+    var code = getErrorId(status);
+    var description = getErrorDescription(code);
+    var metadata = getMetadata(exception);
+    var trackingId = getHeader("x-tracking-id", metadata);
+    return new ApiRuntimeException(description, code, trackingId, exception, metadata);
   }
 
-  private static String getTrackingId(Throwable exception) {
+  public static String getHeader(String headerName, Metadata metadata) {
+    return metadata.get(Metadata.Key.of(headerName, Metadata.ASCII_STRING_MARSHALLER));
+  }
+
+  public static Metadata getMetadata(Throwable exception) {
     if (!(exception instanceof StatusRuntimeException)) {
       return null;
     }
 
-    var trailers = ((StatusRuntimeException) exception).getTrailers();
-    if (trailers == null) {
-      return null;
-    }
-
-    return trailers.get(Metadata.Key.of(TRACKING_ID_HEADER, Metadata.ASCII_STRING_MARSHALLER));
+    return ((StatusRuntimeException) exception).getTrailers();
   }
 
   private static String getErrorId(Status status) {
