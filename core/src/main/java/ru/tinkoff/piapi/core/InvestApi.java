@@ -23,6 +23,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.time.Duration;
+import java.time.format.DateTimeParseException;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
@@ -204,7 +206,8 @@ public class InvestApi {
    */
   @Nonnull
   public static InvestApi createSandbox(@Nonnull String token) {
-    var target = props.getProperty("ru.tinkoff.piapi.core.sandbox.target");
+    var target = Optional.ofNullable(System.getenv("TINKOFF_INVEST_API_TARGET_SANDBOX"))
+      .orElseGet(() -> props.getProperty("ru.tinkoff.piapi.core.sandbox.target"));
     return new InvestApi(defaultChannel(token, defaultAppName, target), false, true);
   }
 
@@ -221,7 +224,8 @@ public class InvestApi {
    */
   @Nonnull
   public static InvestApi createSandbox(@Nonnull String token, @Nonnull String appName) {
-    var target = props.getProperty("ru.tinkoff.piapi.core.sandbox.target");
+    var target = Optional.ofNullable(System.getenv("TINKOFF_INVEST_API_TARGET_SANDBOX"))
+      .orElseGet(() -> props.getProperty("ru.tinkoff.piapi.core.sandbox.target"));
     return new InvestApi(defaultChannel(token, appName, target), false, true);
   }
 
@@ -230,8 +234,25 @@ public class InvestApi {
     var headers = new Metadata();
     addAuthHeader(headers, token);
     addAppNameHeader(headers, appName);
-    var connectionTimeout = Duration.parse(props.getProperty("ru.tinkoff.piapi.core.connection-timeout"));
-    var requestTimeout = Duration.parse(props.getProperty("ru.tinkoff.piapi.core.request-timeout"));
+
+    Duration connectionTimeout;
+    try {
+      var availableTimeOutValue = Optional.ofNullable(System.getenv("TINKOFF_INVEST_API_CONNECTION_TIMEOUT"))
+        .orElseGet(() -> props.getProperty("ru.tinkoff.piapi.core.connection-timeout"));
+      connectionTimeout = Duration.parse(availableTimeOutValue);
+    } catch (DateTimeParseException e) {
+      connectionTimeout = Duration.parse(props.getProperty("ru.tinkoff.piapi.core.connection-timeout"));
+    }
+
+    Duration requestTimeout;
+    try {
+      var availableTimeOutValue = Optional.ofNullable(System.getenv("TINKOFF_INVEST_API_REQUEST_TIMEOUT"))
+        .orElseGet(() -> props.getProperty("ru.tinkoff.piapi.core.request-timeout"));
+      requestTimeout = Duration.parse(availableTimeOutValue);
+    } catch (DateTimeParseException e) {
+      requestTimeout = Duration.parse(props.getProperty("ru.tinkoff.piapi.core.request-timeout"));
+    }
+
     return NettyChannelBuilder
       .forTarget(target)
       .intercept(
@@ -250,13 +271,15 @@ public class InvestApi {
 
   @Nonnull
   public static Channel defaultChannel(String token, String appName) {
-    var target = props.getProperty("ru.tinkoff.piapi.core.api.target");
+    var target = Optional.ofNullable(System.getenv("TINKOFF_INVEST_API_TARGET"))
+      .orElseGet(() -> props.getProperty("ru.tinkoff.piapi.core.api.target"));
     return defaultChannel(token, appName, target);
   }
 
   @Nonnull
   public static Channel defaultChannel(String token) {
-    var target = props.getProperty("ru.tinkoff.piapi.core.api.target");
+    var target = Optional.ofNullable(System.getenv("TINKOFF_INVEST_API_TARGET"))
+      .orElseGet(() -> props.getProperty("ru.tinkoff.piapi.core.api.target"));
     return defaultChannel(token, defaultAppName, target);
   }
 
