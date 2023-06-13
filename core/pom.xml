@@ -29,7 +29,7 @@
 
         <dependency>
             <groupId>io.grpc</groupId>
-            <artifactId>grpc-okhttp</artifactId>
+            <artifactId>grpc-netty-shaded</artifactId>
             <version>${io.grpc.version}</version>
         </dependency>
         <dependency>
