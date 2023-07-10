@@ -17,11 +17,11 @@
 
 Для начала работы подключите к вашему проекту core-модуль
 
-|     Система сборки     | Код                                                                                                                                                                                                                                                                                                                     |
-|:----------------------:|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|         Maven          | <b>\<dependency></b><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>\<groupId></b>ru.tinkoff.piapi<b>\</groupId></b><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>\<artifactId></b>java-sdk-core<b>\</artifactId></b><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>\<version></b>1.4<b>\</version></b><br><b>\</dependency></b> |
- | Gradle with Groovy DSL | <b>implementation</b> 'ru.tinkoff.piapi:java-sdk-core:1.4'                                                                                                                                                                                                                                                           |
- | Gradle with Kotlin DSL | <b>implementation</b>("ru.tinkoff.piapi:java-sdk-core:1.4")                                                                                                                                                                                                                                                          |
+|     Система сборки     | Код                                                                                                                                                                                                                                                                                                                  |
+|:----------------------:|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|         Maven          | <b>\<dependency></b><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>\<groupId></b>ru.tinkoff.piapi<b>\</groupId></b><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>\<artifactId></b>java-sdk-core<b>\</artifactId></b><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>\<version></b>1.5<b>\</version></b><br><b>\</dependency></b> |
+ | Gradle with Groovy DSL | <b>implementation</b> 'ru.tinkoff.piapi:java-sdk-core:1.5'                                                                                                                                                                                                                                                           |
+ | Gradle with Kotlin DSL | <b>implementation</b>("ru.tinkoff.piapi:java-sdk-core:1.5")                                                                                                                                                                                                                                                          |
 
 
 
@@ -37,15 +37,34 @@ var order = api.getOrdersService().postOrderSync(...)
 ```
 
 ## Сборка
-
+### JVM
 Для сборки перейдите в директорию проекта и выполните одну из следующих команд
 
 |     Система сборки     | Код                |
 |:----------------------:|--------------------|
 |         Maven          | mvn clean package  |
-| Gradle with Groovy DSL | gradle clean build |
-| Gradle with Kotlin DSL | gradle clean build |
+|         Gradle         | gradle clean build |
 
+### Native
+Для сборки native образа [потребуется добавить зависимость](https://github.com/Tinkoff/invest-api-java-sdk/issues/61) от `native-image-support` в свой проект:
+
+Maven:
+```xml
+<dependency>
+ <groupId>com.google.cloud</groupId>
+ <artifactId>native-image-support</artifactId>
+ <version>0.14.1</version>
+</dependency>
+```
+Gradle:
+```groovy
+implementation 'com.google.cloud:native-image-support:0.14.1'
+```
+
+К аргументам сборки [GraalVM](https://github.com/oracle/graal/blob/master/docs/reference-manual/native-image/README.md) необходимо добавить:
+```
+--initialize-at-build-time=ch.qos.logback,org.slf4j.LoggerFactory,org.slf4j.simple.SimpleLogger,org.slf4j.impl.StaticLoggerBinder,org.slf4j.MDC
+```
 
 ## Предложения и пожелания к SDK
 

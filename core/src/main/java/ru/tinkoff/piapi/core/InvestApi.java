@@ -234,7 +234,7 @@ public class InvestApi {
     var headers = new Metadata();
     addAuthHeader(headers, token);
     addAppNameHeader(headers, appName);
-
+    
     Duration connectionTimeout;
     try {
       var availableTimeOutValue = Optional.ofNullable(System.getenv("TINKOFF_INVEST_API_CONNECTION_TIMEOUT"))
@@ -252,7 +252,6 @@ public class InvestApi {
     } catch (DateTimeParseException e) {
       requestTimeout = Duration.parse(props.getProperty("ru.tinkoff.piapi.core.request-timeout"));
     }
-
     return NettyChannelBuilder
       .forTarget(target)
       .intercept(
