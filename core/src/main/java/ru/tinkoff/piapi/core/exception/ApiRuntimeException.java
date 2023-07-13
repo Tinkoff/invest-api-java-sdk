@@ -13,7 +13,7 @@ public class ApiRuntimeException extends RuntimeException {
   private final Metadata metadata;
 
   public ApiRuntimeException(String message, String code, String trackingId, Throwable throwable, Metadata metadata) {
-    super(code + " " + message + " tracking_id " + trackingId);
+    super(code + " " + message + " tracking_id " + trackingId, throwable);
     this.metadata = metadata;
     this.throwable = throwable;
     this.message = message;
