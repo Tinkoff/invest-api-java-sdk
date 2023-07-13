@@ -47,7 +47,7 @@
         <maven.compiler.target>11</maven.compiler.target>
         <maven.compiler.release>11</maven.compiler.release>
         <jackson.version>2.13.2.2</jackson.version>
-        <io.grpc.version>1.44.0</io.grpc.version>
+        <io.grpc.version>1.56.1</io.grpc.version>
     </properties>
 
     <modules>

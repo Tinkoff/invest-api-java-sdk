@@ -55,7 +55,8 @@ public class Example {
     portfolioStreamExample(api);
     positionsStreamExample(api);
 
-    CompletableFuture.runAsync(()->api.destroy(3), delayedExecutor)
+    CompletableFuture.runAsync(()->{log.info("starting shutdown");}, delayedExecutor)
+      .thenAcceptAsync(__ -> api.destroy(3), delayedExecutor)
       .join();
   }
 
@@ -128,10 +129,20 @@ public class Example {
 
     //Подписка стрим сделок. Не блокирующий вызов
     //При необходимости обработки ошибок (реконнект по вине сервера или клиента), рекомендуется сделать onErrorCallback
-    api.getOrdersStreamService().subscribeTrades(consumer, onErrorCallback);
-
+    String streamKey = api.getOrdersStreamService().subscribeTrades(consumer, onErrorCallback);
     //Если обработка ошибок не требуется, то можно использовать перегруженный метод
-    api.getOrdersStreamService().subscribeTrades(consumer);
+    String anotherStreamKey = api.getOrdersStreamService().subscribeTrades(consumer);
+
+    CompletableFuture.runAsync(()->{
+
+        //закрытие стрима
+        api.getOrdersStreamService().closeStream(streamKey);
+        api.getOrdersStreamService().closeStream(anotherStreamKey);
+        log.info("стримы сделок закрыты");
+      }, delayedExecutor)
+      .thenRun(()->log.info("orders stream unsubscribe done"));
+
+
   }
 
   private static List<String> randomFigi(InvestApi api, int count) {
